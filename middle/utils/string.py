@@ -27,7 +27,7 @@ def sanitize_string(text, custom_chars=""):
     allowed_chars += r'\s'
     if custom_chars:
         allowed_chars += re.escape(custom_chars)
-    
+
     text = re.sub(f'[^{allowed_chars}]', '', text)
     text = re.sub(r'\s+', ' ', text)
 
@@ -36,3 +36,4 @@ def sanitize_string(text, custom_chars=""):
     text = text.strip('_')
 
     return text.upper()
+
