@@ -1,0 +1,2 @@
+# Core dependencies - none required for basic functionality
+# All required modules (re, unicodedata) are part of Python standard library
