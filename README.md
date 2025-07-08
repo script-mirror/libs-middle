@@ -1,20 +1,22 @@
 # Raizen Power Trading Libraries - Middle Layer
 
-Middle layer utilities for Raizen Power Trading applications.
+Libs Raizen Power Middle
 
 ## Installation
 
-You can install this library directly from GitHub using pip:
+Instalação HTTPS
 
 ```bash
-pip install git+https://github.com/your-username/raizen-power-trading-libs-middle.git
+pip install git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git
 ```
 
-Or for a specific branch/tag:
+Instalação branch especifica:
 
 ```bash
-pip install git+https://github.com/your-username/raizen-power-trading-libs-middle.git@main
+pip install git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git@main
 ```
+
+
 
 ## Usage
 
