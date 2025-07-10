@@ -35,5 +35,4 @@ def sanitize_string(text, custom_chars=""):
 
     text = text.strip('_')
 
-    return text.upper()
-
+    return text

@@ -3,6 +3,6 @@
 __version__ = "0.1.0"
 __author__ = "Raizen Power Middle"
 
-import utils
+import middle.utils as utils
 
 __all__ = ["utils"]
