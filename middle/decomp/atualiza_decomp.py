@@ -9,7 +9,6 @@ from .decomp_params import DecompParams
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-
 logger = None
 
 FONTE_MAP = {
@@ -576,8 +575,8 @@ def process_decomp(
 
 def main() -> None:
     params: DecompParams = DecompParams(
-        dadger_path="/projetos/raizen-power-trading-estudos-middle/estudos_prospec/roda_sensibilidades/input/deck/decomp/DC202507-sem3/dadger.rv2",
-        output_path="/projetos/raizen-power-trading-estudos-middle/estudos_prospec/roda_sensibilidades/output",
+        dadger_path="/home/arthur-moraes/WX2TB/Documentos/fontes/PMO/raizen-power-trading-libs-middle/middle/decomp/dadger.rv0",
+        output_path="/home/arthur-moraes/WX2TB/Documentos/fontes/PMO/raizen-power-trading-libs-middle/middle/decomp/output/dadger.rv0",
         id_estudo="111"
     )
     logger.info("Date=%s", datetime.now())
@@ -629,7 +628,10 @@ def main() -> None:
     
     params.case = "ATUALIZANDO-CVU"
     # Adicionar parâmetros para log_dir e sensibilidade_nome
-    process_decomp(params, sensibilidade)
+    # process_decomp(params, sensibilidade)
+    teste = retrieve_data_stages(params)
+    setup_logger(log_path=params.to_dict()['output_path']+f'cvu_{datetime.now()}.log')
+    print(teste)
     exemplos_sensibilidades
     # for sensitivity, sensitivity_df in exemplos_sensibilidades.items():
     #     params.case = sensitivity
