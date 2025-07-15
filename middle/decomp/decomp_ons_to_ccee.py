@@ -88,19 +88,19 @@ def dadgnl_ons_to_ccee(dadgnl_in_path: Union[str, Path], dadgnl_out_path: Union[
 def cria_diretorio(path: str) -> None:
     os.makedirs(path, exist_ok=True)
     
-def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arqzip: str, arqdec: str, rev: str, dt_decomp: datetime) -> None:
+def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arquivo_zip: str, arquivo_decomp: str, rev: str, dt_decomp: datetime) -> None:
     pathOut = str(Path(output_path))
     pathIn = str(Path(input_path))
 
-    if os.path.exists(os.path.join(pathIn, arqzip)):
-        print(arqzip + ' encontrado!')
+    if os.path.exists(os.path.join(pathIn, arquivo_zip)):
+        print(arquivo_zip + ' encontrado!')
 
         # DECOMP
         shutil.rmtree(pathOut, ignore_errors=True)
         cria_diretorio(pathOut)
 
         try:
-            with zipfile.ZipFile(os.path.join(pathIn, arqzip), 'r') as zip_ref:
+            with zipfile.ZipFile(os.path.join(pathIn, arquivo_zip), 'r') as zip_ref:
                 zip_ref.extractall(pathIn)
             sleep(2)
         except Exception as e:
@@ -108,7 +108,7 @@ def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arq
             logger.error(f"Error unzipping PMO: {e}")
 
         try:
-            with zipfile.ZipFile(os.path.join(pathIn, arqdec), 'r') as zip_ref:
+            with zipfile.ZipFile(os.path.join(pathIn, arquivo_decomp), 'r') as zip_ref:
                 zip_ref.extractall(pathOut)
             sleep(2)
         except Exception as e:
