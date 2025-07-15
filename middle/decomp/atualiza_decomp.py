@@ -58,11 +58,11 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
 
 
 def retrieve_data_stages(
-    params: DecompParams
+    dadger_path: str,
+    **kwargs: dict
 ) -> Tuple[datetime, List[int]]:
-    params_dict = params.to_dict()
     logger.info("Retrieving date and number of stages")
-    df_dadger, comments = leitura_dadger(params_dict['dadger_path'])
+    df_dadger, comments = leitura_dadger(dadger_path)
     deck_date = datetime(
         int(df_dadger['DT']['ano'].iloc[0]),
         int(df_dadger['DT']['mes'].iloc[0]),
@@ -531,7 +531,7 @@ def process_decomp(
 
         df_dadger, comments = leitura_dadger(params_dict['dadger_path'])
         rv = int(params_dict['dadger_path'].split('.')[1][-1:])
-        deck_date, stages = retrieve_data_stages(params)
+        deck_date, stages = retrieve_data_stages(**params_dict)
 
         logger.debug("Read dadger file, RV=%s", rv)
         
