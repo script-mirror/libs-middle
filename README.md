@@ -1,6 +1,6 @@
-# Raizen Power Trading Libraries - Middle Layer
+# Middle Libs
 
-Libs Raizen Power Middle
+Libs Middle
 
 ## Installation
 
@@ -8,6 +8,12 @@ Instalação HTTPS
 
 ```bash
 pip install --upgrade --force-reinstall git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git
+```
+
+Instalação SSH
+
+```bash
+pip install --upgrade --force-reinstall git+ssh://git@github.com/raizen-energy/raizen-power-trading-libs-middle.git
 ```
 
 Instalação branch especifica:
