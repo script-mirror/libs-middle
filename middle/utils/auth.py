@@ -6,7 +6,9 @@ import requests
 
 
 def get_auth_header() -> str:
-    CACHE_FILE = 'token_cache.json'
+    cache_env_path = os.getenv("path_token_cognito")
+    CACHE_FILE = (f'{cache_env_path}/token_cache.json'
+                  if cache_env_path else 'token_cache.json')
     URL_COGNITO = os.getenv('URL_COGNITO')
     CONFIG_COGNITO = os.getenv('CONFIG_COGNITO')
 

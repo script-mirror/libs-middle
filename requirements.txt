@@ -1,3 +1,4 @@
 # Core dependencies - none required for basic functionality
 # All required modules (re, unicodedata) are part of Python standard library
-pandas==2.3.1
+pandas
+requests

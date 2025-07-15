@@ -1,6 +1,7 @@
 import os
 import re
 import codecs
+import datetime
 import pandas as pd
 from typing import Dict, List, Tuple, Any, IO
 from .constants import info_blocos
@@ -16,7 +17,7 @@ def leitura_dadger(
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Dict[int, List[str]]]]:
     global logger
     if logger is None:
-        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
+        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
     logger.info(f"Starting to read file: {file_path}")
 
     try:
@@ -97,7 +98,7 @@ def escrever_bloco_restricoes(
 ) -> None:
     global logger
     if logger is None:
-        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
+        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
 
     logger.debug(f"Writing restrictions block for {mnemonico_restricao}")
 
@@ -183,7 +184,7 @@ def escrever_dadger(
 ) -> str:
     global logger
     if logger is None:
-        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
+        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
 
     logger.info(f"Starting to write dadger file: {file_path}")
 
@@ -268,7 +269,7 @@ def comparar_arquivos(
 ) -> None:
     global logger
     if logger is None:
-        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
+        logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
 
     logger.info(f"Comparando arquivos: original ({original_path})"
                 f" e impresso ({impresso_path})")
@@ -310,7 +311,7 @@ def comparar_arquivos(
 
 
 if __name__ == '__main__':
-    logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_main_{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
+    logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_main_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
     try:
         path_dadger = os.path.abspath(r"dadger.rv2")
         logger.info(f"Main: Starting processing with input file {path_dadger}")
