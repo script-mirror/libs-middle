@@ -9,8 +9,8 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 setup(
     name="middle",
     version="1.1.0",
-    author="Raizen Power Trading Middle Team",
-    description="Middle layer utilities for Raizen Power Trading applications",
+    author="Trading Middle",
+    description="Utilities for Trading applications",
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/raizen/raizen-power-trading-libs-middle",

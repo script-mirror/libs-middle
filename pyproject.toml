@@ -4,19 +4,17 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "middle"
-version = "0.1.0"
-description = "Middle layer utilities for Raizen Power Trading applications"
+version = "1.1.0"
+description = "Utilities for Trading applications"
 readme = "README.md"
 requires-python = ">=3.8"
-license = {text = "MIT"}
 authors = [
-    {name = "Raizen Power Trading Team", email = "power-trading@raizen.com"},
+    {name = "Trading Middle", email = "middle@raizen.com"},
 ]
-keywords = ["raizen", "power-trading", "utilities", "middle-layer"]
+keywords = []
 classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
-    "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
