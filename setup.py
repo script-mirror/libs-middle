@@ -8,9 +8,8 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="middle",
-    version="0.1.0",
-    author="Raizen Power Trading Team",
-    author_email="power-trading@raizen.com",
+    version="1.1.0",
+    author="Raizen Power Trading Middle Team",
     description="Middle layer utilities for Raizen Power Trading applications",
     long_description=long_description,
     long_description_content_type="text/markdown",
@@ -18,8 +17,6 @@ setup(
     packages=find_packages(),
     classifiers=[
         "Development Status :: 3 - Alpha",
-        "Intended Audience :: Developers",
-        "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
@@ -29,13 +26,4 @@ setup(
     ],
     python_requires=">=3.8",
     install_requires=requirements,
-    extras_require={
-        "dev": [
-            "pytest>=6.0",
-            "pytest-cov>=2.0",
-            "black>=22.0",
-            "isort>=5.0",
-            "flake8>=4.0",
-        ],
-    },
 )
