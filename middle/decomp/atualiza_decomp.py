@@ -57,13 +57,13 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
     return result
 
 
-def retrieve_data_stages(
+def retrieve_dadger_metadata(
     dadger_path: str,
     **kwargs: dict
 ) -> Tuple[datetime, List[int]]:
     global logger
     if not logger:
-        if kwargs['output_path']:
+        if kwargs.get('output_path', None):
             log_dir = kwargs.get('output_path')
             log_filename = f"{kwargs.get('case', 'log')}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
             log_path = os.path.join(log_dir, log_filename)
@@ -82,7 +82,17 @@ def retrieve_data_stages(
     df_dadger['DP']['id'] = df_dadger['DP']['id'].astype(int)
     expected_stages = list(range(1, df_dadger['DP']['id'].max() + 1))
     logger.info("Deck date=%s, stages=%s", deck_date, expected_stages)
-    return deck_date, expected_stages
+    power_plants = df_dadger['CT'][
+        ['id', 'nome']
+    ].drop_duplicates().to_dict('records')
+    uh = df_dadger['UH'][['id', 'ree']].to_dict('records')
+    
+    return {
+        "deck_date": deck_date,
+        "stages": expected_stages,
+        "power_plants": power_plants,
+        "uh": uh,
+    }
 
 
 def retrieve_load_levels(
@@ -603,7 +613,7 @@ def process_decomp(
 
         df_dadger, comments = leitura_dadger(params_dict['dadger_path'])
         rv = int(params_dict['dadger_path'].split('.')[1][-1:])
-        deck_date, stages = retrieve_data_stages(**params_dict)
+        stages = retrieve_dadger_metadata(**params_dict)['stages']
 
         logger.debug("Read dadger file, RV=%s", rv)
         
