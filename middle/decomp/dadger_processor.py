@@ -5,7 +5,7 @@ import datetime
 import pandas as pd
 from typing import Dict, List, Tuple, Any, IO
 from .constants import info_blocos
-from .logger_config import setup_logger
+from middle.utils import setup_logger
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
