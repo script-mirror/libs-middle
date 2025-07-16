@@ -60,7 +60,7 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
 def retrieve_dadger_metadata(
     dadger_path: str,
     **kwargs: dict
-) -> Dict[str]:
+) -> Dict[str, any]:
     global logger_decomp
     if not logger_decomp:
         if kwargs.get('output_path', None):
