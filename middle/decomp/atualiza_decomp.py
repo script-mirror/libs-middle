@@ -571,6 +571,7 @@ def process_decomp(
     params: DecompParams,
     sensitivity_df: Dict[str, Dict[str, Dict]],
 ) -> None:
+    params_dict = params.to_dict()
     global logger
     if logger is None:
         output_path = getattr(params, 'output_path', None) if params else None
