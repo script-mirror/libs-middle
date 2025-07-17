@@ -653,8 +653,6 @@ def process_decomp(
     except Exception as e:
         logger_decomp.error("Error in analysis: %s", str(e))
         raise
-    finally:
-        logger_decomp = None
 
 
 def main() -> None:
