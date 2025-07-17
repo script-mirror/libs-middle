@@ -1,8 +1,10 @@
 import logging
 import os
 
+logger = None
 
 def setup_logger(log_path: str = None):
+    global logger
     logger = logging.getLogger(log_path if log_path else "default_logger")
     logger.setLevel(logging.INFO)
     formatter = logging.Formatter('%(levelname)s:\t%(asctime)s\t %(message)s')
@@ -17,4 +19,3 @@ def setup_logger(log_path: str = None):
     sh = logging.StreamHandler()
     sh.setFormatter(formatter)
     logger.addHandler(sh)
-    return logger

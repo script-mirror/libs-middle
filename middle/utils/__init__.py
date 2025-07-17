@@ -13,6 +13,7 @@ from .date_utils import (
 )
 from .logger import (
     setup_logger,
+    logger,
 )
 
 __all__ = [
@@ -21,4 +22,5 @@ __all__ = [
     "convert_date_columns",
     "get_auth_header",
     "setup_logger",
+    "logger",
 ]

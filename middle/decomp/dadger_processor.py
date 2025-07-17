@@ -5,11 +5,11 @@ import datetime
 import pandas as pd
 from typing import Dict, List, Tuple, Any, IO
 from .constants import info_blocos
-from middle.utils import setup_logger
+from middle.utils import setup_logger, logger
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
+setup_logger()
 
-logger = setup_logger()
 
 
 def leitura_dadger(
@@ -300,7 +300,7 @@ def comparar_arquivos(
 
 
 if __name__ == '__main__':
-    logger = setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_main_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
+    setup_logger(os.path.join(BASE_PATH, 'output', 'log', f"dadger_main_{datetime.datetime.now().strftime('%Y%m%d_%H%M%S')}.log"))
     try:
         path_dadger = os.path.abspath(r"dadger.rv2")
         logger.info(f"Main: Starting processing with input file {path_dadger}")

@@ -4,12 +4,12 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Union, Tuple
 from .dadger_processor import leitura_dadger, escrever_dadger
-from middle.utils import setup_logger
+from middle.utils import setup_logger, logger
 from .decomp_params import DecompParams
+setup_logger()
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-logger = setup_logger()
 
 FONTE_MAP = {
     'PCH': 1, 'PCT': 2, 'EOL': 3, 'UFV': 4,
