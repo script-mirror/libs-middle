@@ -9,7 +9,7 @@ from .decomp_params import DecompParams
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-logger_decomp = None
+logger_decomp = setup_logger()
 
 FONTE_MAP = {
     'PCH': 1, 'PCT': 2, 'EOL': 3, 'UFV': 4,
@@ -181,16 +181,7 @@ def adjust_dp_block(
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
     global logger_decomp
-    if logger_decomp is None:
-        output_path = getattr(params, 'output_path', None) if params else None
-        case = getattr(params, 'case', None) if params else None
-        if output_path:
-            log_dir = output_path
-            log_filename = f"{case or 'log'}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(log_path)
-        else:
-            logger_decomp = setup_logger()
+
     logger_decomp.info("Manipulating DP block")
 
     for submarket, value_list in load_adjust_data.items():
@@ -320,17 +311,7 @@ def adjust_ct_block(
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
-    global logger_decomp
-    if logger_decomp is None:
-        output_path = getattr(params, 'output_path', None) if params else None
-        case = getattr(params, 'case', None) if params else None
-        if output_path:
-            log_dir = output_path
-            log_filename = f"{case or 'log'}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(log_path)
-        else:
-            logger_decomp = setup_logger()
+
     logger_decomp.info("Manipulating CT block for type=%s, absolute=%s",
                 type_param, absolute)
     df_ct = df_dadger['CT']
@@ -389,19 +370,6 @@ def adjust_re_block(
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
-    global logger_decomp
-    if logger_decomp is None:
-        output_path = getattr(params, 'output_path', None) if params else None
-        case = getattr(params, 'case', None) if params else None
-        if output_path:
-            log_dir = output_path
-            log_filename = f"{case or 'log'}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(log_path)
-        else:
-            logger_decomp = setup_logger()
-    logger_decomp.info("Manipulating RE block for type=%s, absolute=%s",
-                type_param, absolute)
     df = df_dadger['LU']
     df['id'] = df['id'].astype(int)
     df['estagio'] = df['estagio'].astype(int)
@@ -435,17 +403,7 @@ def adjust_pq_block(
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
-    global logger_decomp
-    if logger_decomp is None:
-        output_path = getattr(params, 'output_path', None) if params else None
-        case = getattr(params, 'case', None) if params else None
-        if output_path:
-            log_dir = output_path
-            log_filename = f"{case or 'log'}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(log_path)
-        else:
-            logger_decomp = setup_logger()
+
     logger_decomp.info("Manipulating PQ block")
 
     df_dadger['PQ']['sub'] = df_dadger['PQ']['sub'].astype(str).str.strip()
@@ -512,17 +470,7 @@ def adjust_hq_block(
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
-    global logger_decomp
-    if logger_decomp is None:
-        output_path = getattr(params, 'output_path', None) if params else None
-        case = getattr(params, 'case', None) if params else None
-        if output_path:
-            log_dir = output_path
-            log_filename = f"{case or 'log'}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(log_path)
-        else:
-            logger_decomp = setup_logger()
+
     logger_decomp.info("Manipulating HQ block for type=%s, absolute=%s",
                 type_param, absolute)
     df = df_dadger['LQ']
@@ -583,16 +531,7 @@ def process_decomp(
 ) -> None:
     params_dict = params.to_dict()
     global logger_decomp
-    if logger_decomp is None:
-        output_path = getattr(params, 'output_path', None) if params else None
-        case = getattr(params, 'case', None) if params else None
-        if output_path:
-            log_dir = os.path.join(output_path, 'output', 'log')
-            log_filename = f"{case or 'log'}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(log_path)
-        else:
-            logger_decomp = setup_logger()
+
     try:
         logger_decomp.info(" ")
         logger_decomp.info("Processing case=%s, date=%s",
