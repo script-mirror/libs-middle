@@ -8,6 +8,7 @@ class DecompParams:
         output_path: str = None,
         id_estudo: str = None,
         case: str = None,
+        mapa: str = None,
         load_level_path: str = None,
         load_level_data: pd.DataFrame = None,
         pq_load_level: pd.DataFrame = None,
@@ -16,6 +17,7 @@ class DecompParams:
         self.output_path = output_path
         self.id_estudo = id_estudo
         self.case = case
+        self.mapa = mapa
         self.load_level_path = load_level_path
         self.load_level_data = load_level_data
         self.pq_load_level = pq_load_level
