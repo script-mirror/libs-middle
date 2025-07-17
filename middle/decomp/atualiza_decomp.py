@@ -531,7 +531,7 @@ def process_decomp(
 ) -> None:
     global logger
     params_dict = params.to_dict()
-    if params_dict.get('logger_path', None) is None:
+    if params_dict.get('logger', None) is None:
         output_path = getattr(params, 'output_path', None) if params else None
         case = getattr(params, 'case', None) if params else None
         if output_path:
@@ -540,7 +540,7 @@ def process_decomp(
             log_path = os.path.join(log_dir, log_filename)
             logger = setup_logger(log_path)
     else:
-        logger = setup_logger(params_dict.get('logger_path', None))
+        logger = params_dict.get('logger', None)
     try:
         logger.info(" ")
         logger.info("Processing case=%s, date=%s",
@@ -602,7 +602,7 @@ def process_decomp(
         logger.error("Error in analysis: %s", str(e))
         raise
     finally:
-        if params_dict.get('logger_path', None) is None:
+        if params_dict.get('logger', None) is None:
             logger = None
 
 
