@@ -9,7 +9,7 @@ from .decomp_params import DecompParams
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
-logger_decomp = setup_logger()
+logger = setup_logger()
 
 FONTE_MAP = {
     'PCH': 1, 'PCT': 2, 'EOL': 3, 'UFV': 4,
@@ -24,20 +24,20 @@ def validate_stages(df: Dict[str, Dict[str, pd.DataFrame]],
         str_list = list(df_1.keys())
         int_list = list(map(int, str_list))
         if max(int_list) > max(stages):
-            logger_decomp.error(
+            logger.error(
                 "Dictionary: %s, contains more stages than dadger", df_1)
-            logger_decomp.error(
+            logger.error(
                 "Stages in dadger: %s, Stages in dictionary: %s",
                 max(stages), max(int_list)
             )
             raise RuntimeError(
                 "Invalid stages: number of stages in dictionary exceeds those in dadger"
             )
-    logger_decomp.info("Stages validated successfully")
+    logger.info("Stages validated successfully")
 
 
 def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
-    logger_decomp.debug(
+    logger.debug(
         "Entering days_per_month with start=%s, end=%s",
         start_date, end_date
     )
@@ -45,7 +45,7 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
     if start_date.month == end_date.month:
         result[1] = 0
         result[2] = 7
-        logger_decomp.debug("Same month, returning %s", result)
+        logger.debug("Same month, returning %s", result)
         return result
     result[1] = min(
         7,
@@ -53,7 +53,7 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
         start_date.day + 1
     )
     result[2] = 7 - result[1]
-    logger_decomp.debug("Cross-month, returning %s", result)
+    logger.debug("Cross-month, returning %s", result)
     return result
 
 
@@ -61,18 +61,8 @@ def retrieve_dadger_metadata(
     dadger_path: str,
     **kwargs: dict
 ) -> Dict[str, any]:
-    global logger_decomp
-    if not logger_decomp:
-        if kwargs.get('output_path', None):
-            log_dir = kwargs.get('output_path')
-            log_filename = f"{kwargs.get('case', 'log')}{datetime.now().strftime('%Y%m%d_%H%M%S')}.log"
-            log_path = os.path.join(log_dir, log_filename)
-            logger_decomp = setup_logger(
-                log_path
-            )
-        else:
-            logger_decomp = setup_logger()
-    logger_decomp.info("Retrieving date and number of stages")
+
+    logger.info("Retrieving date and number of stages")
     df_dadger, comments = leitura_dadger(dadger_path)
     deck_date = datetime(
         int(df_dadger['DT']['ano'].iloc[0]),
@@ -81,7 +71,7 @@ def retrieve_dadger_metadata(
     )
     df_dadger['DP']['id'] = df_dadger['DP']['id'].astype(int)
     expected_stages = list(range(1, df_dadger['DP']['id'].max() + 1))
-    logger_decomp.info("Deck date=%s, stages=%s", deck_date, expected_stages)
+    logger.info("Deck date=%s, stages=%s", deck_date, expected_stages)
     power_plants = df_dadger['CT'][
         ['id', 'nome']
     ].drop_duplicates().to_dict('records')
@@ -99,7 +89,7 @@ def retrieve_load_levels(
     df_dadger: Dict[str, pd.DataFrame],
     load_level_data: pd.DataFrame
 ) -> Dict[int, pd.DataFrame]:
-    logger_decomp.debug("Processing load levels")
+    logger.debug("Processing load levels")
     year = int(df_dadger['DT']['ano'].iloc[0])
     month = int(df_dadger['DT']['mes'].iloc[0])
     day = int(df_dadger['DT']['dia'].iloc[0])
@@ -113,7 +103,7 @@ def retrieve_load_levels(
     for estagio in expected_stages:
         end_rv_date = rv_date + timedelta(days=6)
         days_each_month = days_per_month(rv_date, end_rv_date)
-        logger_decomp.debug(
+        logger.debug(
             "Estagio %s: days per month=%s", estagio, days_each_month
         )
 
@@ -136,7 +126,7 @@ def retrieve_load_levels(
             merged_df['carga_pu_df1'] + merged_df['carga_pu_df2']
         )
         rv_date = rv_date + timedelta(days=7)
-    logger_decomp.info(
+    logger.info(
         "Load level processing complete, returning %s stages",
         len(stage_data)
     )
@@ -147,7 +137,7 @@ def complete_stages(
     df: pd.DataFrame,
     id_list: Union[str, int]
 ) -> pd.DataFrame:
-    logger_decomp.info("Completing stages for block")
+    logger.info("Completing stages for block")
     complete_df = pd.DataFrame(columns=df.columns)
     df['estagio'] = df['estagio'].astype(int)
     min_stage = int(min(df['estagio']))
@@ -158,7 +148,7 @@ def complete_stages(
         if name == id_list:
             for estagio in range(min_stage, max_stage + 1):
                 if estagio not in stages:
-                    logger_decomp.debug(
+                    logger.debug(
                         "Adding missing estagio %s for id=%s", estagio, name)
                     base_row = df_name.iloc[estagio-2].copy()
                     base_row['estagio'] = estagio
@@ -168,7 +158,7 @@ def complete_stages(
                         by=['id', 'estagio']).reset_index(drop=True)
         complete_df = pd.concat([complete_df, df_name], ignore_index=True)
     complete_df = complete_df.drop_duplicates(['id', 'estagio'])
-    logger_decomp.info("Estagio completion done, %s rows", len(complete_df))
+    logger.info("Estagio completion done, %s rows", len(complete_df))
     return complete_df
 
 
@@ -180,9 +170,8 @@ def adjust_dp_block(
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
-    global logger_decomp
 
-    logger_decomp.info("Manipulating DP block")
+    logger.info("Manipulating DP block")
 
     for submarket, value_list in load_adjust_data.items():
         for week, value in value_list.items():
@@ -235,19 +224,19 @@ def adjust_dp_block(
                     value * df['carga_pu'][df['patamar'] == 3].values[0], 0
                 )
 
-                logger_decomp.info(
+                logger.info(
                     "Adjusting DP: Submarket=%s, type=valor_p1, week=%s, "
                     "current value=%s, new value=%s",
                     submarket, week, deck_value_p1,
                     df_dadger['DP'].loc[condition, 'valor_p1'].values[0]
                 )
-                logger_decomp.info(
+                logger.info(
                     "Adjusting DP: Submarket=%s, type=valor_p2, week=%s, "
                     "current value=%s, new value=%s",
                     submarket, week, deck_value_p2,
                     df_dadger['DP'].loc[condition, 'valor_p2'].values[0]
                 )
-                logger_decomp.info(
+                logger.info(
                     "Adjusting DP: Submarket=%s, type=valor_p3, week=%s, "
                     "current value=%s, new value=%s",
                     submarket, week, deck_value_p3,
@@ -261,14 +250,14 @@ def adjust_dp_block(
                 df_dadger['DP'].loc[
                     condition, type_param
                 ] = round(value, 0)
-                logger_decomp.info(
+                logger.info(
                     "Adjusting DP: Submarket=%s, type=%s, week=%s, "
                     "current value=%s, new value=%s",
                     submarket, type_param, week, deck_value,
                     df_dadger['DP'].loc[condition, type_param].values[0]
                 )
 
-    logger_decomp.info("DP block manipulation complete")
+    logger.info("DP block manipulation complete")
     return df_dadger
 
 
@@ -276,7 +265,7 @@ def validate_plant(
     id: int, df: pd.DataFrame, condition: pd.Series,
     value: float, type_param: str, load_level: str
 ) -> float:
-    logger_decomp.debug(
+    logger.debug(
         "Validating %s for load level=%s, value=%s",
         type_param, load_level, value
     )
@@ -284,22 +273,22 @@ def validate_plant(
         max_inflex = max(
             min(value, int(float(df.loc[condition, 'disp' + load_level]))), 0)
         if max_inflex < value:
-            logger_decomp.warning(
+            logger.warning(
                 "Inflex exceeds plant availability, UTE=%s, provided=%s, used=%s", id, value, max_inflex)
-        logger_decomp.debug("Returning max_inflex=%s", max_inflex)
+        logger.debug("Returning max_inflex=%s", max_inflex)
         return max_inflex
 
     elif type_param == 'disp':
         min_dispatch = max(0, value, int(
             float(df.loc[condition, 'inflex' + load_level])))
         if min_dispatch > value:
-            logger_decomp.warning(
+            logger.warning(
                 "Dispatch below plant inflexibility, UTE=%s, provided=%s, used=%s", id, value, min_dispatch)
-        logger_decomp.debug("Returning min_dispatch=%s", min_dispatch)
+        logger.debug("Returning min_dispatch=%s", min_dispatch)
         return min_dispatch
 
     else:
-        logger_decomp.debug("Returning value=%s", max(value, 0))
+        logger.debug("Returning value=%s", max(value, 0))
         return max(value, 0)
 
 
@@ -312,7 +301,7 @@ def adjust_ct_block(
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
 
-    logger_decomp.info("Manipulating CT block for type=%s, absolute=%s",
+    logger.info("Manipulating CT block for type=%s, absolute=%s",
                 type_param, absolute)
     df_ct = df_dadger['CT']
     df_ct['id'] = df_ct['id'].astype(int)
@@ -323,7 +312,7 @@ def adjust_ct_block(
         df_ct = complete_stages(df_ct, id)
         for week, value in value_list.items():
             week = int(week)
-            logger_decomp.info("Adjusting CT: id=%s, week=%s, value=%s",
+            logger.info("Adjusting CT: id=%s, week=%s, value=%s",
                         id, week, value)
             condition = (df_ct['id'] == id) & (df_ct['estagio'] == week)
 
@@ -349,16 +338,16 @@ def adjust_ct_block(
                 df_ct.loc[condition, type_param + '_p3'] = validate_plant(
                     id, df_ct, condition, value, type_param, '_p3')
 
-            logger_decomp.info("Adjusting CT: UTE=%s, type=%s_p1, week=%s, current value=%s, new value=%s",
+            logger.info("Adjusting CT: UTE=%s, type=%s_p1, week=%s, current value=%s, new value=%s",
                         id, type_param, week, deck_value_p1, df_ct.loc[condition, type_param + '_p1'].values[0])
-            logger_decomp.info("Adjusting CT: UTE=%s, type=%s_p2, week=%s, current value=%s, new value=%s",
+            logger.info("Adjusting CT: UTE=%s, type=%s_p2, week=%s, current value=%s, new value=%s",
                         id, type_param, week, deck_value_p2, df_ct.loc[condition, type_param + '_p2'].values[0])
-            logger_decomp.info("Adjusting CT: UTE=%s, type=%s_p3, week=%s, current value=%s, new value=%s",
+            logger.info("Adjusting CT: UTE=%s, type=%s_p3, week=%s, current value=%s, new value=%s",
                         id, type_param, week, deck_value_p3, df_ct.loc[condition, type_param + '_p3'].values[0])
 
     df_dadger['CT'] = df_ct.copy()
     del df_ct
-    logger_decomp.info("CT block manipulation complete")
+    logger.info("CT block manipulation complete")
     return df_dadger
 
 
@@ -386,12 +375,12 @@ def adjust_re_block(
 
             df.loc[condition, type_param] = value
 
-            logger_decomp.info("Adjusting LU: id=%s, type=%s, week=%s, current value=%s, new value=%s",
+            logger.info("Adjusting LU: id=%s, type=%s, week=%s, current value=%s, new value=%s",
                         id, type_param, week, deck_value, int(float(df.loc[condition, type_param].iloc[0])))
 
     df_dadger['LU'] = df.copy()
     del df
-    logger_decomp.info("LU block manipulation complete")
+    logger.info("LU block manipulation complete")
     return df_dadger
 
 
@@ -404,7 +393,7 @@ def adjust_pq_block(
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
 
-    logger_decomp.info("Manipulating PQ block")
+    logger.info("Manipulating PQ block")
 
     df_dadger['PQ']['sub'] = df_dadger['PQ']['sub'].astype(str).str.strip()
     df_dadger['PQ']['id'] = df_dadger['PQ']['id'].astype(str).str.strip()
@@ -443,11 +432,11 @@ def adjust_pq_block(
                     round(value * df['carga_pu'][df['patamar'] == 2].values[0], 3))[:5]
                 df_dadger['PQ'].loc[condition_pq, 'valor_p3'] = str(
                     round(value * df['carga_pu'][df['patamar'] == 3].values[0], 3))[:5]
-                logger_decomp.info("Adjusting PQ: Source=%s, type=valor_p1, week=%s, current value=%s, new value=%s",
+                logger.info("Adjusting PQ: Source=%s, type=valor_p1, week=%s, current value=%s, new value=%s",
                             source, week, deck_value_p1, df_dadger['PQ'].loc[condition_pq, 'valor_p1'].values[0])
-                logger_decomp.info("Adjusting PQ: Source=%s, type=valor_p2, week=%s, current value=%s, new value=%s",
+                logger.info("Adjusting PQ: Source=%s, type=valor_p2, week=%s, current value=%s, new value=%s",
                             source, week, deck_value_p2, df_dadger['PQ'].loc[condition_pq, 'valor_p2'].values[0])
-                logger_decomp.info("Adjusting PQ: Source=%s, type=valor_p3, week=%s, current value=%s, new value=%s",
+                logger.info("Adjusting PQ: Source=%s, type=valor_p3, week=%s, current value=%s, new value=%s",
                             source, week, deck_value_p3, df_dadger['PQ'].loc[condition_pq, 'valor_p3'].values[0])
 
             else:
@@ -455,10 +444,10 @@ def adjust_pq_block(
                                                  type_param].values[0].strip()
                 df_dadger['PQ'].loc[condition_pq, type_param] = str(round(value, 3))[
                     :5]
-                logger_decomp.info("Adjusting PQ: Source=%s, type=%s, week=%s, current value=%s, new value=%s", source,
+                logger.info("Adjusting PQ: Source=%s, type=%s, week=%s, current value=%s, new value=%s", source,
                             type_param, week, deck_value, df_dadger['PQ'].loc[condition_pq, type_param].values[0])
 
-    logger_decomp.info("PQ block manipulation complete")
+    logger.info("PQ block manipulation complete")
     return df_dadger
 
 
@@ -471,7 +460,7 @@ def adjust_hq_block(
 ) -> Dict[str, pd.DataFrame]:
     params_dict = params.to_dict()
 
-    logger_decomp.info("Manipulating HQ block for type=%s, absolute=%s",
+    logger.info("Manipulating HQ block for type=%s, absolute=%s",
                 type_param, absolute)
     df = df_dadger['LQ']
     df['id'] = df['id'].astype(int)
@@ -494,11 +483,11 @@ def adjust_hq_block(
                 df.loc[condition, type_param + '_p1'] = value
                 df.loc[condition, type_param + '_p2'] = value
                 df.loc[condition, type_param + '_p3'] = value
-                logger_decomp.info("Adjusting LQ: id=%s, type=%s_p1, week=%s, current value=%s, new value=%s", id,
+                logger.info("Adjusting LQ: id=%s, type=%s_p1, week=%s, current value=%s, new value=%s", id,
                             type_param, week, deck_value_p1, int(float(df.loc[condition, type_param + '_p1'].iloc[0])))
-                logger_decomp.info("Adjusting LQ: id=%s, type=%s_p1, week=%s, current value=%s, new value=%s", id,
+                logger.info("Adjusting LQ: id=%s, type=%s_p1, week=%s, current value=%s, new value=%s", id,
                             type_param, week, deck_value_p2, int(float(df.loc[condition, type_param + '_p2'].iloc[0])))
-                logger_decomp.info("Adjusting LQ: id=%s, type=%s_p1, week=%s, current value=%s, new value=%s", id,
+                logger.info("Adjusting LQ: id=%s, type=%s_p1, week=%s, current value=%s, new value=%s", id,
                             type_param, week, deck_value_p3, int(float(df.loc[condition, type_param + '_p3'].iloc[0])))
 
             else:
@@ -507,12 +496,12 @@ def adjust_hq_block(
                     value += deck_value
                 df.loc[condition, type_param] = value
 
-                logger_decomp.info("Adjusting LQ: id=%s, type=%s, week=%s, current value=%s, new value=%s",
+                logger.info("Adjusting LQ: id=%s, type=%s, week=%s, current value=%s, new value=%s",
                             id, type_param, week, deck_value, int(float(df.loc[condition, type_param].iloc[0])))
 
     df_dadger['LQ'] = df.copy()
     del df
-    logger_decomp.info("LQ block manipulation complete")
+    logger.info("LQ block manipulation complete")
     return df_dadger
 
 
@@ -530,20 +519,19 @@ def process_decomp(
     sensitivity_df: Dict[str, Dict[str, Dict]],
 ) -> None:
     params_dict = params.to_dict()
-    global logger_decomp
 
     try:
-        logger_decomp.info(" ")
-        logger_decomp.info("Processing case=%s, date=%s",
+        logger.info(" ")
+        logger.info("Processing case=%s, date=%s",
                     params_dict['case'], datetime.now())
-        logger_decomp.info(" ")
+        logger.info(" ")
 
-        logger_decomp.info("Starting process decomp with params=%s", sensitivity_df)
-        logger_decomp.info("Study parameters updated: dadger_path=%s",
+        logger.info("Starting process decomp with params=%s", sensitivity_df)
+        logger.info("Study parameters updated: dadger_path=%s",
                     params_dict['dadger_path'])
-        logger_decomp.info("Study parameters updated: output_path=%s",
+        logger.info("Study parameters updated: output_path=%s",
                     params_dict['output_path'])
-        logger_decomp.info("Study parameters updated: id_estudo=%s",
+        logger.info("Study parameters updated: id_estudo=%s",
                     params_dict['id_estudo'])
         params_dict['load_level_path'] = os.path.abspath(
             os.path.abspath(os.getcwd() + '/input/patamar/patamar.dat'))
@@ -554,18 +542,18 @@ def process_decomp(
         rv = int(params_dict['dadger_path'].split('.')[1][-1:])
         stages = retrieve_dadger_metadata(**params_dict)['stages']
 
-        logger_decomp.debug("Read dadger file, RV=%s", rv)
+        logger.debug("Read dadger file, RV=%s", rv)
         
         for block, df_1 in sensitivity_df.items():
             for type_param, df in df_1.items():
-                logger_decomp.info(
+                logger.info(
                     "============================================================================")
 
                 absolute = True
                 if 'absoluto' in df:
                     absolute = bool(df['absoluto'])
                     df.pop('absoluto')
-                    logger_decomp.debug("Block=%s, type=%s, absolute=%s",
+                    logger.debug("Block=%s, type=%s, absolute=%s",
                                  block, type_param, absolute)
 
                 validate_stages(df, stages)
@@ -576,9 +564,9 @@ def process_decomp(
                 else:
                     raise ValueError("Unknown block type: %s", block)
 
-        logger_decomp.info(
+        logger.info(
             "============================================================================")
-        logger_decomp.debug("Writing output for case %s", params_dict['case'])
+        logger.debug("Writing output for case %s", params_dict['case'])
         
         escrever_dadger(
             df_dadger,
@@ -590,7 +578,7 @@ def process_decomp(
         )
 
     except Exception as e:
-        logger_decomp.error("Error in analysis: %s", str(e))
+        logger.error("Error in analysis: %s", str(e))
         raise
 
 
@@ -600,8 +588,8 @@ def main() -> None:
         output_path="/home/arthur-moraes/WX2TB/Documentos/fontes/PMO/raizen-power-trading-libs-middle/middle/decomp/output/dadger.rv0",
         id_estudo="111"
     )
-    logger_decomp.info("Date=%s", datetime.now())
-    logger_decomp.info("Starting sensitivity analysis with params=%s", params.to_dict())
+    logger.info("Date=%s", datetime.now())
+    logger.info("Starting sensitivity analysis with params=%s", params.to_dict())
 
     # Exemplo de dados de sensibilidade
     exemplos_sensibilidades = {
@@ -658,5 +646,5 @@ def main() -> None:
 
 
 if __name__ == '__main__':
-    # logger_decomp será configurado dentro de process_decomp
+    # logger será configurado dentro de process_decomp
     main()
