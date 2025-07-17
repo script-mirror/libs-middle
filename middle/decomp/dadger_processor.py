@@ -5,16 +5,17 @@ import datetime
 import pandas as pd
 from typing import Dict, List, Tuple, Any, IO
 from .constants import info_blocos
-from middle.utils import setup_logger, logger
+from middle.utils import setup_logger
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
-setup_logger()
 
+logger = globals().get("logger", setup_logger())
 
 
 def leitura_dadger(
     file_path: str
 ) -> Tuple[Dict[str, pd.DataFrame], Dict[str, Dict[int, List[str]]]]:
+    global logger
 
     logger.info(f"Starting to read file: {file_path}")
 
@@ -94,6 +95,7 @@ def escrever_bloco_restricoes(
     submnemonicos_restricao: List[str],
     comentarios: Dict[str, Dict[int, List[str]]]
 ) -> None:
+    global logger
 
     logger.debug(f"Writing restrictions block for {mnemonico_restricao}")
 
@@ -177,6 +179,7 @@ def escrever_dadger(
     comentarios: Dict[str, Dict[int, List[str]]],
     file_path: str,
 ) -> str:
+    global logger
 
     logger.info(f"Starting to write dadger file: {file_path}")
 
@@ -259,6 +262,7 @@ def comparar_arquivos(
     original_path: str,
     impresso_path: str,
 ) -> None:
+    global logger
 
     logger.info(f"Comparando arquivos: original ({original_path})"
                 f" e impresso ({impresso_path})")

@@ -4,9 +4,10 @@ import pandas as pd
 from datetime import datetime, timedelta
 from typing import Dict, List, Union, Tuple
 from .dadger_processor import leitura_dadger, escrever_dadger
-from middle.utils import setup_logger, logger
+from middle.utils import setup_logger
 from .decomp_params import DecompParams
-setup_logger()
+
+logger = globals().get("logger", setup_logger())
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
@@ -20,6 +21,7 @@ SUBMERCADO_MAP = {1: 'SECO', 2: 'S', 3: 'NE', 4: 'N'}
 
 def validate_stages(df: Dict[str, Dict[str, pd.DataFrame]],
                     stages: List[int]) -> None:
+    global logger
     for block, df_1 in df.items():
         str_list = list(df_1.keys())
         int_list = list(map(int, str_list))
@@ -37,6 +39,7 @@ def validate_stages(df: Dict[str, Dict[str, pd.DataFrame]],
 
 
 def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
+    global logger
     logger.debug(
         "Entering days_per_month with start=%s, end=%s",
         start_date, end_date
@@ -61,6 +64,7 @@ def retrieve_dadger_metadata(
     dadger_path: str,
     **kwargs: dict
 ) -> Dict[str, any]:
+    global logger
 
     logger.info("Retrieving date and number of stages")
     df_dadger, comments = leitura_dadger(dadger_path)
@@ -89,6 +93,7 @@ def retrieve_load_levels(
     df_dadger: Dict[str, pd.DataFrame],
     load_level_data: pd.DataFrame
 ) -> Dict[int, pd.DataFrame]:
+    global logger
     logger.debug("Processing load levels")
     year = int(df_dadger['DT']['ano'].iloc[0])
     month = int(df_dadger['DT']['mes'].iloc[0])
@@ -137,6 +142,7 @@ def complete_stages(
     df: pd.DataFrame,
     id_list: Union[str, int]
 ) -> pd.DataFrame:
+    global logger
     logger.info("Completing stages for block")
     complete_df = pd.DataFrame(columns=df.columns)
     df['estagio'] = df['estagio'].astype(int)
@@ -169,6 +175,7 @@ def adjust_dp_block(
     absolute: bool = False,
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
+    global logger
     params_dict = params.to_dict()
 
     logger.info("Manipulating DP block")
@@ -265,6 +272,7 @@ def validate_plant(
     id: int, df: pd.DataFrame, condition: pd.Series,
     value: float, type_param: str, load_level: str
 ) -> float:
+    global logger
     logger.debug(
         "Validating %s for load level=%s, value=%s",
         type_param, load_level, value
@@ -299,6 +307,7 @@ def adjust_ct_block(
     absolute: bool = True,
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
+    global logger
     params_dict = params.to_dict()
 
     logger.info("Manipulating CT block for type=%s, absolute=%s",
@@ -358,6 +367,7 @@ def adjust_re_block(
     absolute: bool = True,
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
+    global logger
     params_dict = params.to_dict()
     df = df_dadger['LU']
     df['id'] = df['id'].astype(int)
@@ -391,7 +401,7 @@ def adjust_pq_block(
     absolute: bool = False,
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
-    params_dict = params.to_dict()
+    global logger
 
     logger.info("Manipulating PQ block")
 
@@ -458,6 +468,7 @@ def adjust_hq_block(
     absolute: bool = True,
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
+    global logger
     params_dict = params.to_dict()
 
     logger.info("Manipulating HQ block for type=%s, absolute=%s",
@@ -518,8 +529,18 @@ def process_decomp(
     params: DecompParams,
     sensitivity_df: Dict[str, Dict[str, Dict]],
 ) -> None:
+    global logger
     params_dict = params.to_dict()
-
+    if params_dict.get('logger_path', None) is None:
+        output_path = getattr(params, 'output_path', None) if params else None
+        case = getattr(params, 'case', None) if params else None
+        if output_path:
+            log_dir = output_path
+            log_filename = f"{case or 'log'}{datetime.now().strftime('_%Y-%m-%d_%H:%M:%S')}.log"
+            log_path = os.path.join(log_dir, log_filename)
+            logger = setup_logger(log_path)
+    else:
+        logger = setup_logger(params_dict.get('logger_path', None))
     try:
         logger.info(" ")
         logger.info("Processing case=%s, date=%s",
@@ -580,9 +601,13 @@ def process_decomp(
     except Exception as e:
         logger.error("Error in analysis: %s", str(e))
         raise
+    finally:
+        if params_dict.get('logger_path', None) is None:
+            logger = None
 
 
 def main() -> None:
+    global logger
     params: DecompParams = DecompParams(
         dadger_path="/home/arthur-moraes/WX2TB/Documentos/fontes/PMO/raizen-power-trading-libs-middle/middle/decomp/dadger.rv0",
         output_path="/home/arthur-moraes/WX2TB/Documentos/fontes/PMO/raizen-power-trading-libs-middle/middle/decomp/output/dadger.rv0",

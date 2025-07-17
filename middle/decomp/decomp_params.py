@@ -1,6 +1,5 @@
 import pandas as pd
 
-
 class DecompParams:
     def __init__(
         self,
@@ -13,6 +12,7 @@ class DecompParams:
         load_level_path: str = None,
         load_level_data: pd.DataFrame = None,
         pq_load_level: pd.DataFrame = None,
+        logger_path: str = None
     ):
         self.dadger_path = dadger_path
         self.output_path = output_path
@@ -23,6 +23,7 @@ class DecompParams:
         self.load_level_path = load_level_path
         self.load_level_data = load_level_data
         self.pq_load_level = pq_load_level
-
+        self.logger_path = logger_path
+        
     def to_dict(self):
         return self.__dict__
