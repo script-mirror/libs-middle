@@ -5,7 +5,7 @@ import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
 import scipy.ndimage as nd
-from utils import (
+from .utils import (
     get_dado_cacheado,
     ensemble_mean,
     resample_variavel,
