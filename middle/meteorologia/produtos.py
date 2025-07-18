@@ -13,8 +13,8 @@ import cartopy.crs as ccrs
 # import scipy.ndimage as nd
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.colors import LinearSegmentedColormap
-from utils import abrir_modelo_sem_vazios
-from plots import gerar_prec24h, gerar_acumulado_total, gerar_semanas_operativas, gerar_prec24hr_pnmm, gerar_jato_div200, gerar_geop_500, gerar_geop_vorticidade_500, gerar_vento_temp850, gerar_vento850, gerar_chuva_geop500_vento850, gerar_ivt
+from .utils import abrir_modelo_sem_vazios
+from .plots import gerar_prec24h, gerar_acumulado_total, gerar_semanas_operativas, gerar_prec24hr_pnmm, gerar_jato_div200, gerar_geop_500, gerar_geop_vorticidade_500, gerar_vento_temp850, gerar_vento850, gerar_chuva_geop500_vento850, gerar_ivt
 
 ###################################################################################################################
 
