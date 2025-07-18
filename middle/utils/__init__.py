@@ -11,10 +11,14 @@ from .auth import (
 from .date_utils import (
     SemanaOperativa,
 )
+from .logger import (
+    setup_logger,
+)
 
 __all__ = [
     "SemanaOperativa",
     "sanitize_string",
     "convert_date_columns",
-    "get_auth_header"
+    "get_auth_header",
+    "setup_logger",
 ]
