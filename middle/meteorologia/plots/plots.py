@@ -166,7 +166,7 @@ def plot_campos(
                 plot_bacias=True,
                 color_contour='white',
                 shapefiles=None
-):
+    ):
 
     os.makedirs(path_to_save, exist_ok=True)
 
@@ -299,28 +299,29 @@ class GeraCamposMeteorologicos:
             unico_tempo=unico_tempo
         )
 
-    def gerar_prec24h(self):
-        try:
-            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
-            tp_mean = ensemble_mean(tp)
-            tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
-            cond_ini = get_inicializacao_fmt(tp_mean)
+    def gerar_prec24h(self, **kwargs):
+        # try:
+        tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
+        tp_mean = ensemble_mean(tp)
+        tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
+        cond_ini = get_inicializacao_fmt(tp_mean)
 
-            for n_24h in tp_24h.tempo:
-                tp_plot = tp_24h.sel(tempo=n_24h)
-                tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
+        for n_24h in tp_24h.tempo:
+            tp_plot = tp_24h.sel(tempo=n_24h)
+            tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
+            semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
 
-                titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, cond_ini)
-                plot_campos(
-                    ds=tp_plot['tp'],
-                    variavel_plotagem='chuva_ons',
-                    title=titulo,
-                    filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
-                    shapefiles=self.shapefiles,
-                )
-        except Exception as e:
-            print(f'Erro ao gerar prec24h: {e}')
+            titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, cond_ini)
+            plot_campos(
+                ds=tp_plot['tp'],
+                variavel_plotagem='chuva_ons',
+                title=titulo,
+                filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
+                shapefiles=self.shapefiles,
+                **kwargs
+            )
+        # except Exception as e:
+        #     print(f'Erro ao gerar prec24h: {e}')
 
     def gerar_acumulado_total(self):
         try:
