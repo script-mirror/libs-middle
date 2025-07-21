@@ -531,7 +531,7 @@ class GeraCamposMeteorologicos:
                 ds_contour=geop_plot['gh'] / 10,
                 variavel_contour='gh_500',
                 plot_bacias=False,
-                shapefiles=self.shapefiles
+                shapefiles=self.shapefiles,
                 **kwargs
             )
 
