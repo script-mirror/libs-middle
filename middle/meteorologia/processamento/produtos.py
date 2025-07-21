@@ -2,48 +2,17 @@ from datetime import datetime
 import requests
 import os
 import time
-import pdb
 import pandas as pd
-import numpy as np
-from functools import lru_cache
 import matplotlib
 matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
-import matplotlib.pyplot as plt
-import cartopy.crs as ccrs
-# import scipy.ndimage as nd
-from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.colors import LinearSegmentedColormap
-from .utils import abrir_modelo_sem_vazios
-from .plots import gerar_prec24h, gerar_acumulado_total, gerar_semanas_operativas, gerar_prec24hr_pnmm, gerar_jato_div200, gerar_geop_500, gerar_geop_vorticidade_500, gerar_vento_temp850, gerar_vento850, gerar_chuva_geop500_vento850, gerar_ivt
+
+from ..utils.utils import abrir_modelo_sem_vazios
+from ..consts.namelist import CONSTANTES
+# from ..plots.plots import gerar_prec24h, gerar_acumulado_total, gerar_semanas_operativas, gerar_prec24hr_pnmm, gerar_jato_div200, gerar_geop_500, gerar_geop_vorticidade_500, gerar_vento_temp850, gerar_vento850, gerar_chuva_geop500_vento850, gerar_ivt
 
 ###################################################################################################################
 
-# Tipos de variaveis
-surface = ['tp', 'u10', 'v10', 'prec']  # Variáveis em superfície
-height_above_ground = ['t2m', '2t']  # Variáveis a 2 metros
-isobaric_inhPa = ['u', 'v', 'z', 'gh', 't', 'q']  # Variáveis isobáricas
-mean_sea = ['pnmm', 'msl', 'prmsl']  # mean sea level pressure
-nominalTop = ['ttr', 'sulwrf']  # Variáveis no topo nominal
-
-###################################################################################################################
-
-shapefiles = ['C:/Temp/shapefiles/Bacias_Hidrograficas_SIN.shp', 'C:/Temp/shapefiles/estados_2010.shp']
-
-###################################################################################################################
-
-# Dicionario de labels e variaveis
-labels_variaveis = {
-    '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop'],
-    '[m/s]': ['wind200'],
-    '[dam]': ['geop_500'],
-    '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
-    '[°C]': ['temp850', 't2m', '2t'],
-    '[kg*m-1*s-1]': ['ivt']
-}
-
-###################################################################################################################
-
-class Produtos:
+class ProdutosPrevisaoCurtoPrazo:
 
     def __init__(self, modelo, inicializacao=0, resolucao='0p25', data=datetime.now(), output_path='./tmp/downloads', days_time_delta=None, shapefiles=None, name_prefix=None):
 
@@ -57,9 +26,9 @@ class Produtos:
         self.name_prefix = name_prefix
 
         if days_time_delta:
-            self.data = data - pd.Timedelta(days=days_time_delta)
+            self.data = pd.to_datetime(data) - pd.Timedelta(days=days_time_delta)
         else:
-            self.data = data
+            self.data = pd.to_datetime(data)
 
     # --- DOWNLOAD ---
     def download_files_models(self, variables: str | list, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
@@ -276,6 +245,13 @@ class Produtos:
         
         import xarray as xr
 
+        # Importando os tipos de variáveis do arquivo de constantes
+        surface = CONSTANTES['tipos_variaveis']['surface']
+        height_above_ground = CONSTANTES['tipos_variaveis']['height_above_ground']
+        isobaric_inhPa = CONSTANTES['tipos_variaveis']['isobaric_inhPa']
+        mean_sea = CONSTANTES['tipos_variaveis']['mean_sea']
+        nominalTop = CONSTANTES['tipos_variaveis']['nominalTop']
+
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
         inicializacao_fmt = str(self.inicializacao).zfill(2)
@@ -445,250 +421,6 @@ class Produtos:
             ds['tp'] = ds['tp'] * 1000
 
         return ds
-
-    # --- BASE DO MAPA ---
-    # @lru_cache(maxsize=8)
-    def get_base_ax(self, extent, figsize, central_longitude=0):
-
-        import cartopy.feature as cfeature
-
-        fig = plt.figure(figsize=figsize)
-        ax = plt.axes(projection=ccrs.PlateCarree(central_longitude=central_longitude))
-        ax.set_extent(list(extent), crs=ccrs.PlateCarree())
-
-        ax.coastlines(resolution='110m', color='black')
-        ax.add_feature(cfeature.BORDERS, edgecolor='black')
-
-        # Labels dos ticks de lat e lon
-        gl = ax.gridlines(draw_labels=True, alpha=0.2, linestyle='--')
-        gl.top_labels = False
-        gl.right_labels = False
-
-        return fig, ax
-
-    # --- COLOR BARS ---
-    def custom_colorbar(self, variavel_plotagem):
-
-        if variavel_plotagem in ['chuva_ons', 'tp', 'chuva_pnmm']:
-            levels = [0, 1 ,5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
-            colors = ['#ffffff', '#e1ffff', '#b3f0fb','#95d2f9','#2585f0','#0c68ce','#73fd8b','#39d52b','#3ba933','#ffe67b','#ffbd4a','#fd5c22','#b91d22','#f7596f','#a9a9a9']
-            cmap = None
-
-        elif variavel_plotagem == 'acumulado_total':
-            levels = range(0, 420, 20)
-            colors = [
-                '#FFFFFF',
-                '#B1EDCF',
-                '#97D8B7',
-                '#7DC19E',
-                '#62AA85',
-                '#48936D',
-                '#2E7E54',
-                '#14673C',
-                '#14678C',
-                '#337E9F',
-                '#5094B5',
-                '#6DACC8',
-                '#8BC4DE',
-                '#A9DBF2',
-                '#EBD5EB',
-                '#D9BED8',
-                '#C5A7C5',
-                '#B38FB2',
-                '#A0779F',
-                '#8E5F8D',
-                '#682F67',
-                '#6C0033',
-                '#631C2A',
-                '#A54945',
-                '#C16E4E',
-                '#DE9357',
-                '#FAC66C',
-                '#FBD479',
-                '#FDE385',
-                '#FEF192',
-                '#FFFF9F',
-            ]
-            cmap = None
-
-        elif variavel_plotagem == 'wind200':
-            colors = ['#FFFFFF','#FFFFC1','#EBFF51','#ACFE53','#5AFD5B','#54FCD2','#54DBF5','#54ACFC', '#4364FC','#2F29ED','#3304BC','#440499']
-            levels = np.arange(40, 85, 2)
-            custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
-            cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
-
-        elif variavel_plotagem == 'geop_500':
-            levels = range(450, 605, 5)
-            colors = ['#303030', '#585858', '#7A7A7A', '#C9E2F6', '#C6DAF3', '#A0B4CC', '#6A7384', '#E0DCFF',
-                    '#C6BBFF', '#836FEC', '#7467D1', '#4230C0', '#3020A5', '#2877ED', '#2D88F1', '#3897F3',
-                    '#6CA0D0', '#5EA4EC', '#A1DFDE', '#C1EDBC', '#9EFA95', '#7DE17F', '#24A727', '#069F09',
-                    '#FAF6AF', '#F5DD6F', '#E8C96E', '#FBA103', '#E9610D', '#EB3D18', '#DF1507', '#BC0005',
-                    '#A50102', '#614338', '#75524C', '#806762', '#886760', '#917571', '#AE867E', '#C3A09A',
-                    '#E0C5BE', '#DFABAD', '#E26863', '#C83A36', '#8F1E1A', '#6A0606']
-            custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
-            cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
-
-        elif variavel_plotagem == 'vorticidade':
-            levels = range(-100, 110, 10)
-            colors = None
-            cmap = plt.get_cmap('RdBu_r', len(levels)  + 1)
-
-        elif variavel_plotagem == 'temp850':
-            levels = np.arange(-14, 34, 1)
-            colors = ['#8E27BA','#432A98','#1953A8','#148BC1','#15B3A4', '#16C597','#77DE75','#C5DD47','#F5BB1A','#F0933A','#EF753D',
-            '#F23B39', '#C41111', '#8D0A0A']
-            custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
-            cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
-
-        elif variavel_plotagem == 'divergencia850':
-            levels = np.arange(-5, 6, 1)
-            colors = None
-            cmap = plt.get_cmap('RdBu_r', len(levels)  + 1)
-
-        elif variavel_plotagem == 'ivt':
-            colors = ['white', 'yellow', 'orange', 'red', 'gray']
-            levels = np.arange(250, 1650, 50)
-            custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
-            cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
-
-        elif variavel_plotagem == 'wind_prec_geop':
-            levels = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 35]
-            colors = ["#ffffff", '#00004C', '#003862',
-                    '#001D7E', '#004C98', '#0066AD', 
-                    '#009BDB', '#77BAE8', '#9ED7FF',
-                    '#F6E5BD', '#F1E3A0', '#F3D98B',
-                    '#F5C96C', '#EFB73F', '#EA7B32',
-                    '#D75C12', '#BF0411']
-            cmap = None
-
-        return levels, colors, cmap
-
-    # --- PLOT DE VARIÁVEIS ---
-    def plot_campos(self, 
-                    ds, 
-                    # variavel, 
-                    variavel_plotagem, 
-                    filename, 
-                    title, 
-                    extent=[240, 360, -60, 20], 
-                    figsize=(12, 12), 
-                    central_longitude=0, 
-                    loc_title='left', 
-                    title_fontsize=16, 
-                    posicao_colorbar='horizontal',
-                    path_to_save='./tmp/plots',
-                    ds_contour=None,
-                    variavel_contour=None,
-                    ds_streamplot=None,
-                    variavel_streamplot=None,
-                    ds_quiver=None,
-                    variavel_quiver=None,
-                    plot_bacias=True,
-                    color_contour='white'
-    ):
-
-        os.makedirs(path_to_save, exist_ok=True)
-
-        extent = tuple(extent)
-        figsize = tuple(figsize)
-        fig, ax = self.get_base_ax(extent=extent, figsize=figsize, central_longitude=central_longitude)
-        levels, colors, cmap = self.custom_colorbar(variavel_plotagem)
-
-        # Se colors e cmap nao forem None, seta levels para None
-        if colors is not None and cmap is not None:
-            colors = None
-        
-        lon, lat = np.meshgrid(ds['longitude'], ds['latitude'])
-        cf = ax.contourf(lon, lat, ds, transform=ccrs.PlateCarree(), transform_first=True, origin='upper', levels=levels, colors=colors, extend='both', cmap=cmap)
-
-        if ds_contour is not None:
-
-            if variavel_contour == 'pnmm':
-                red_levels = np.arange(970, 1020, 5)
-                cf2 = ax.contour(lon, lat, ds_contour, levels=red_levels, colors='red', linestyles='solid', linewidths=1.5, transform=ccrs.PlateCarree(), transform_first=True)
-                plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=15, colors='red')
-
-                blue_levels = np.arange(1020, 1035, 5)
-                cf2 = ax.contour(lon, lat, ds_contour, levels=blue_levels, colors='blue', linestyles='solid', linewidths=1.5, transform=ccrs.PlateCarree(), transform_first=True)
-                plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=15, colors='blue')
-
-            elif variavel_contour == 'gh_500':
-                cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(500, 605, 5))
-                plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)
-
-            elif variavel_contour == 'gh_700':
-                cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(286, 324, 4))
-                plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)
-
-        if ds_streamplot is not None:
-
-            if variavel_streamplot == 'wind200':
-                u = ds_streamplot['u']
-                v = ds_streamplot['v']
-                div = ds_streamplot['divergencia']
-                ax.streamplot(lon, lat, u.data, v.data, linewidth=1.5, arrowsize=1, density=2.5, color='black')
-                ax.contourf(lon, lat, div, np.arange(2, 15.5, 0.5), colors='#F00082', alpha=0.5)
-
-            elif variavel_streamplot == 'wind850':
-                u = ds_streamplot['u']
-                v = ds_streamplot['v']
-                # div = ds_streamplot['divergencia']
-                ax.streamplot(lon, lat, u.data, v.data, linewidth=1.5, arrowsize=1, density=2.5, color='black')
-                #ax.contourf(lon, lat, div, np.arange(-15.5, -2, 0.5), colors='#F00082', alpha=0.5)
-
-        if ds_quiver is not None:
-
-            if variavel_quiver == 'wind850':
-
-                u = ds_quiver['u']
-                v = ds_quiver['v']
-                N_interp = 2.5
-
-                u_interp=u.interp(
-                    longitude=np.arange(u.longitude.min().values,u.longitude.max().values, N_interp),
-                    latitude=np.arange(u.latitude.min().values,u.latitude.max().values, N_interp))
-
-                v_interp=v.interp(
-                    longitude=np.arange(v.longitude.min().values,v.longitude.max().values, N_interp),
-                    latitude=np.arange(v.latitude.min().values,v.latitude.max().values, N_interp))
-
-
-                quiver_kwargs= {'headlength': 4, 'headwidth': 3,'angles': 'uv', 'scale':400}
-                qp = ax.quiver(u_interp.longitude, u_interp.latitude, u_interp, v_interp, pivot='mid', transform=ccrs.PlateCarree(), zorder=5, **quiver_kwargs)
-
-            elif variavel_quiver == 'ivt':
-
-                u = ds_quiver['qu']
-                v = ds_quiver['qv']
-
-                quiver_kwargs= {'headlength': 4, 'headwidth': 3,'angles': 'uv', 'scale':300}
-                qp = ax.quiver(u.longitude, u.latitude, u, v, pivot='mid', transform=ccrs.PlateCarree(), zorder=5, **quiver_kwargs)
-
-        ax.set_title(title, loc=loc_title, fontsize=title_fontsize)
-
-        # Barra de cor
-        label = [k for k, v in labels_variaveis.items() if variavel_plotagem in v]
-        if label:
-            label = label[0]
-
-        if posicao_colorbar == 'vertical':
-            axins = inset_axes(ax, width="3%", height="100%", loc='right', borderpad=-2.7)
-            fig.colorbar(cf, cax=axins, orientation='vertical', label=label, ticks=levels, extendrect=True)
-
-        elif posicao_colorbar == 'horizontal':
-            axins = inset_axes(ax, width="95%", height="2%", loc='lower center', borderpad=-3.6)
-            fig.colorbar(cf, cax=axins, orientation='horizontal', ticks=levels if len(levels)<=26 else levels[::2], extendrect=True, label=label)
-
-        if self.shapefiles is not None:
-            for gdf in self.shapefiles.values():
-                if 'Nome_Bacia' in gdf.columns:
-                    if plot_bacias:
-                        gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
-                else:
-                    gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
-
-        plt.savefig(f'{path_to_save}/{filename}.png', bbox_inches='tight')
-        plt.close(fig)
 
 ###################################################################################################################
 
