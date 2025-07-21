@@ -3,6 +3,7 @@ import numpy as np
 import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
+import pdb
 import scipy.ndimage as nd
 from ..utils.utils import (
     get_dado_cacheado,
@@ -216,7 +217,8 @@ def plot_campos(
         elif variavel_streamplot == 'wind850':
             u = ds_streamplot['u']
             v = ds_streamplot['v']
-            ax.streamplot(lon, lat, u, v, linewidth=1.5, arrowsize=1, density=2.5, color='black')
+            pdb.set_trace()
+            ax.streamplot(lon, lat, u.data, v.data, linewidth=1.5, arrowsize=1, density=2.5, color='black')
 
     if ds_quiver is not None:
 
@@ -282,6 +284,7 @@ def plot_campos(
 class GeraCamposMeteorologicos:
 
     def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, shapefiles=None, produto_config_pl=None):
+
         self.modelo_fmt = modelo_fmt
         self.produto_config_sf = produto_config_sf
         self.tp_params = tp_params or {}
@@ -289,9 +292,11 @@ class GeraCamposMeteorologicos:
         self.produto_config_pl = produto_config_pl
 
     def _ajustar_tempo_e_titulo(self, ds_plot, tipo, semana, cond_ini=None, unico_tempo=False):
+
         tempo_ini = ajustar_hora_utc(pd.to_datetime(ds_plot.data_inicial.item()))
         tempo_fim = pd.to_datetime(ds_plot.data_final.item())
         cond_ini = cond_ini or get_inicializacao_fmt(ds_plot)
+
         return gerar_titulo(
             modelo=self.modelo_fmt,
             tipo=tipo,
@@ -303,7 +308,9 @@ class GeraCamposMeteorologicos:
         )
 
     def gerar_prec24h(self, **kwargs):
+        
         try:
+
             print('Gerando mapa de precipitação acumulada em 24 horas...')
             tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp)
@@ -311,6 +318,8 @@ class GeraCamposMeteorologicos:
             cond_ini = get_inicializacao_fmt(tp_mean)
 
             for n_24h in tp_24h.tempo:
+
+                print(f'Processando {n_24h.item()}...')
                 tp_plot = tp_24h.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
@@ -330,6 +339,7 @@ class GeraCamposMeteorologicos:
     def gerar_acumulado_total(self, **kwargs):
         
         try:
+
             print('Gerando mapa de acumulado total de precipitação...')
             tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp)
@@ -359,7 +369,9 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao gerar acumulado total: {e}')
 
     def gerar_semanas_operativas(self, membros=False, **kwargs):
+
         try:
+
             print('Gerando mapa de semanas operativas...')
             tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp) if not membros else tp.copy()
@@ -367,6 +379,8 @@ class GeraCamposMeteorologicos:
             cond_ini = get_inicializacao_fmt(tp_mean)
 
             for n_semana in tp_sop.num_semana:
+
+                print(f'Processando semana {n_semana.item()}...')
                 tp_plot = tp_sop.sel(num_semana=n_semana)
                 intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
                 days_of_week = tp_plot.days_of_weeks.item()
@@ -409,7 +423,9 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao executar semanas operativas: {e}')
 
     def gerar_prec24hr_pnmm(self, **kwargs):
+
         try:
+
             print('Gerando mapa de precipitação acumulada em 24 horas com PNMM...')
             varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
 
@@ -425,6 +441,8 @@ class GeraCamposMeteorologicos:
             pnmm_24h = resample_variavel(pnmm_mean, self.modelo_fmt, varname, '24h', modo_agrupador='mean')
 
             for n_24h, p_24h in zip(tp_24h.tempo, pnmm_24h.tempo):
+
+                print(f'Processando {n_24h.item()}...')
                 tp_plot = tp_24h.sel(tempo=n_24h)
                 pnmm_plot = pnmm_24h.sel(tempo=p_24h)
                 pnmm_plot = nd.gaussian_filter(pnmm_plot[varname]*1e-2, sigma=2)
@@ -455,6 +473,7 @@ class GeraCamposMeteorologicos:
     def gerar_jato_div200(self, level_divergencia=200, **kwargs):
 
         try:
+
             print(f'Gerando mapa de vento e jato de divergência a {level_divergencia}hPa...')
             us = get_dado_cacheado('u', self.produto_config_pl)
             vs = get_dado_cacheado('v', self.produto_config_pl)
@@ -470,6 +489,8 @@ class GeraCamposMeteorologicos:
             cond_ini = get_inicializacao_fmt(us_mean)
 
             for n_24h in us_24h.tempo:
+
+                print(f'Processando {n_24h.item()}...')
                 us_plot = us_24h.sel(tempo=n_24h)
                 vs_plot = vs_24h.sel(tempo=n_24h)
                 vento_jato = (us_plot['u']**2 + vs_plot['v']**2)**0.5
@@ -517,6 +538,7 @@ class GeraCamposMeteorologicos:
             cond_ini = get_inicializacao_fmt(geop_mean)
 
             for n_24h in geop_500.tempo:
+                print(f'Processando {n_24h.item()}...')
                 geop_plot = geop_500.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
@@ -539,7 +561,9 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
     def gerar_geop_vorticidade_500(self, level_geop=500, **kwargs):
+
         try:
+
             print(f'Gerando mapa de geopotencial e vorticidade a {level_geop}hPa...')
             us = get_dado_cacheado('u', self.produto_config_pl)
             vs = get_dado_cacheado('v', self.produto_config_pl)
@@ -555,6 +579,8 @@ class GeraCamposMeteorologicos:
             geop_500 = resample_variavel(geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean')
 
             for n_24h in geop_500.tempo:
+
+                print(f'Processando {n_24h.item()}...')
                 geop_ = geop_500.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini)[0]
@@ -591,7 +617,9 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao gerar geopotencial e vorticidade {level_geop}: {e}')
 
     def gerar_vento_temp850(self, level_temp=850, **kwargs):
+
         try:
+
             print(f'Gerando mapa de vento e temperatura a {level_temp}hPa...')
             us = get_dado_cacheado('u', self.produto_config_pl)
             vs = get_dado_cacheado('v', self.produto_config_pl)
@@ -608,6 +636,8 @@ class GeraCamposMeteorologicos:
             cond_ini = get_inicializacao_fmt(us_mean)
 
             for n_24h in us_24h_850.tempo:
+
+                print(f'Processando {n_24h.item()}...')
                 us_plot = us_24h_850.sel(tempo=n_24h)
                 vs_plot = vs_24h_850.sel(tempo=n_24h)
                 t850_plot = t850_24h.sel(tempo=n_24h)
@@ -639,7 +669,9 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao gerar vento e temperatura a {level_temp}hPa: {e}')
 
     def gerar_vento850_divergencia(self, level_divergencia=850, **kwargs):
+
         try:
+
             print(f'Gerando mapa de vento e divergência a {level_divergencia}hPa...')
             us = get_dado_cacheado('u', self.produto_config_pl)
             vs = get_dado_cacheado('v', self.produto_config_pl)
@@ -653,6 +685,8 @@ class GeraCamposMeteorologicos:
             cond_ini = get_inicializacao_fmt(us_mean)
 
             for n_24h in us_24h_850.tempo:
+
+                print(f'Processando {n_24h.item()}...')
                 us_plot = us_24h_850.sel(tempo=n_24h)
                 vs_plot = vs_24h_850.sel(tempo=n_24h)
                 divergencia = mpcalc.divergence(us_plot['u'], vs_plot['v']) * 1e5
@@ -662,6 +696,8 @@ class GeraCamposMeteorologicos:
                     'v': vs_plot['v'],
                     'divergencia': divergencia
                 })
+
+                print(ds_streamplot)
 
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(us.time.values), tempo_ini)[0]
@@ -699,6 +735,8 @@ class GeraCamposMeteorologicos:
             tp_mean = ensemble_mean(tp)
 
             for index, n_24h in enumerate(tp_mean.valid_time):
+
+                print(f'Processando {n_24h.item()}...')
 
                 us_plot = us_mean.sel(valid_time=n_24h)
                 vs_plot = vs_mean.sel(valid_time=n_24h)
@@ -777,6 +815,8 @@ class GeraCamposMeteorologicos:
 
             # Plotando
             for n_24h in gh_24h.tempo:
+
+                print(f'Processando {n_24h.item()}...')
 
                 gh_plot = gh_24h.sel(tempo=n_24h)
                 ivt_plot = IVT.sel(tempo=n_24h)
