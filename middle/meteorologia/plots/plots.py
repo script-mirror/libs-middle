@@ -276,6 +276,8 @@ def plot_campos(
     plt.savefig(f'{path_to_save}/{filename}.png', bbox_inches='tight')
     plt.close(fig)
 
+    return
+
 ###################################################################################################################
 
 class GeraCamposMeteorologicos:
@@ -302,30 +304,30 @@ class GeraCamposMeteorologicos:
         )
 
     def gerar_prec24h(self, **kwargs):
-        # try:
-        tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
-        tp_mean = ensemble_mean(tp)
-        tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
-        cond_ini = get_inicializacao_fmt(tp_mean)
+        try:
+            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
+            tp_mean = ensemble_mean(tp)
+            tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
+            cond_ini = get_inicializacao_fmt(tp_mean)
 
-        for n_24h in tp_24h.tempo:
-            tp_plot = tp_24h.sel(tempo=n_24h)
-            tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
-            semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
+            for n_24h in tp_24h.tempo:
+                tp_plot = tp_24h.sel(tempo=n_24h)
+                tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
+                semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
 
-            titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, cond_ini)
-            plot_campos(
-                ds=tp_plot['tp'],
-                variavel_plotagem='chuva_ons',
-                title=titulo,
-                filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
-                shapefiles=self.shapefiles,
-                **kwargs
-            )
-        # except Exception as e:
-        #    print(f'Erro ao gerar prec24h: {e}')
+                titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, cond_ini)
+                plot_campos(
+                    ds=tp_plot['tp'],
+                    variavel_plotagem='chuva_ons',
+                    title=titulo,
+                    filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
+        except Exception as e:
+            print(f'Erro ao gerar prec24h: {e}')
 
-    def gerar_acumulado_total(self):
+    def gerar_acumulado_total(self, **kwargs):
         
         try:
             tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
@@ -349,12 +351,13 @@ class GeraCamposMeteorologicos:
                 title=titulo,
                 filename=f'tp_acumulado_total_{self.modelo_fmt}',
                 shapefiles=self.shapefiles,
+                **kwargs
             )
 
         except Exception as e:
             print(f'Erro ao gerar acumulado total: {e}')
 
-    def gerar_semanas_operativas(self, membros=False):
+    def gerar_semanas_operativas(self, membros=False, **kwargs):
         try:
             tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
             tp_mean = ensemble_mean(tp) if not membros else tp.copy()
@@ -380,6 +383,7 @@ class GeraCamposMeteorologicos:
                             title=titulo,
                             filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}_{membro.item()}',
                             shapefiles=self.shapefiles,
+                            **kwargs
                         )
                 else:
                     plot_campos(
@@ -388,11 +392,12 @@ class GeraCamposMeteorologicos:
                         title=titulo,
                         filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}',
                         shapefiles=self.shapefiles,
+                        **kwargs
                     )
         except Exception as e:
             print(f'Erro ao executar semanas operativas: {e}')
 
-    def gerar_prec24hr_pnmm(self):
+    def gerar_prec24hr_pnmm(self, **kwargs):
         try:
             varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
 
@@ -430,11 +435,12 @@ class GeraCamposMeteorologicos:
                     ds_contour=pnmm_plot,
                     variavel_contour='pnmm',
                     shapefiles=self.shapefiles,
+                    **kwargs
                 )
         except Exception as e:
             print(f'Erro ao gerar prec24hr_pnmm: {e}')
 
-    def gerar_jato_div200(self, level_divergencia=200):
+    def gerar_jato_div200(self, level_divergencia=200, **kwargs):
 
         try:
             us = get_dado_cacheado('u', self.produto_config)
@@ -479,13 +485,14 @@ class GeraCamposMeteorologicos:
                     ds_streamplot=ds_streamplot,
                     variavel_streamplot='wind200',
                     plot_bacias=False,
-                    shapefiles=self.shapefiles
+                    shapefiles=self.shapefiles,
+                    **kwargs
                 )
 
         except Exception as e:
             print(f'Erro ao gerar vento_jato_div{level_divergencia}: {e}')
 
-    def gerar_geop_500(self, level_geop=500):
+    def gerar_geop_500(self, level_geop=500, **kwargs):
         try:
             geop = get_dado_cacheado('gh', self.produto_config)
             geop_mean = ensemble_mean(geop)
@@ -510,12 +517,13 @@ class GeraCamposMeteorologicos:
                     variavel_contour='gh_500',
                     plot_bacias=False,
                     shapefiles=self.shapefiles
+                    **kwargs
                 )
 
         except Exception as e:
             print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
-    def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500):
+    def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500, **kwargs):
         try:
             us = self.get_dado_cacheado('u')
             vs = self.get_dado_cacheado('v')
@@ -558,13 +566,14 @@ class GeraCamposMeteorologicos:
                     ds_contour=ds_plot['gh']/10,
                     variavel_contour='gh_500',
                     plot_bacias=False,
-                    color_contour='black'
+                    color_contour='black',
+                    **kwargs
                 )
 
         except Exception as e:
             print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
-    def gerar_vento_temp850(self, level_temp=850):
+    def gerar_vento_temp850(self, level_temp=850, **kwargs):
         try:
             us = get_dado_cacheado('u', self.produto_config)
             vs = get_dado_cacheado('v', self.produto_config)
@@ -604,13 +613,14 @@ class GeraCamposMeteorologicos:
                     ds_quiver=ds_quiver,
                     variavel_quiver='wind850',
                     plot_bacias=False,
-                    shapefiles=self.shapefiles
+                    shapefiles=self.shapefiles,
+                    **kwargs
                 )
 
         except Exception as e:
             print(f'Erro ao gerar vento e temperatura a {level_temp}hPa: {e}')
 
-    def gerar_vento850_divergencia(self, level_divergencia=850):
+    def gerar_vento850_divergencia(self, level_divergencia=850, **kwargs):
         try:
             us = get_dado_cacheado('u', self.produto_config)
             vs = get_dado_cacheado('v', self.produto_config)
@@ -647,13 +657,14 @@ class GeraCamposMeteorologicos:
                     ds_streamplot=ds_streamplot,
                     variavel_streamplot='wind850',
                     plot_bacias=False,
-                    shapefiles=self.shapefiles
+                    shapefiles=self.shapefiles,
+                    **kwargs
                 )
 
         except Exception as e:
             print(f'Erro ao gerar vento e divergência a {level_divergencia}hPa: {e}')
 
-    def gerar_chuva_geop500_vento850(self, level_vento=850, level_geop=500):
+    def gerar_chuva_geop500_vento850(self, level_vento=850, level_geop=500, **kwargs):
 
         try:
 
@@ -699,13 +710,14 @@ class GeraCamposMeteorologicos:
                             ds_contour=ds_quiver['geop_500'], 
                             variavel_contour='gh_500', 
                             color_contour='black',
-                            shapefiles=self.shapefiles
+                            shapefiles=self.shapefiles,
+                            **kwargs
                             )
 
         except Exception as e:
             print(f'Erro ao gerar vento e chuva a 500hPa: {e}')
 
-    def gerar_ivt(self):
+    def gerar_ivt(self, **kwargs):
 
         try:
 
@@ -779,10 +791,32 @@ class GeraCamposMeteorologicos:
                     plot_bacias=False,
                     color_contour='black',
                     shapefiles=self.shapefiles,
+                    **kwargs
                 )
 
         except Exception as e:
             print(f'Erro ao gerar IVT: {e}')
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 # # --- Geração de precipitação acumulada em 24 horas ---
