@@ -369,14 +369,16 @@ class GeraCamposMeteorologicos:
                 intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
                 days_of_week = tp_plot.days_of_weeks.item()
 
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
-                    cond_ini=cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                    semana_operativa=True
-                )
-
                 if membros:
+
                     for membro in tp['number']:
+
+                        titulo = gerar_titulo(
+                            modelo=f'{self.modelo_fmt}-M{membro.item()}', tipo=f'Semana{n_semana.item()}',
+                            cond_ini=cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                        )
+
                         plot_campos(
                             ds=tp_plot['tp'].sel(number=membro),
                             variavel_plotagem='chuva_ons',
@@ -386,6 +388,13 @@ class GeraCamposMeteorologicos:
                             **kwargs
                         )
                 else:
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                        cond_ini=cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True
+                    )
+
                     plot_campos(
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',

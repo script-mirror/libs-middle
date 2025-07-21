@@ -324,7 +324,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
         titulo = (
             f'{modelo.upper()} - {tipo} \u2022 '
             f'Condição Inicial: {cond_ini}\n'
-            f'$\\mathbf{{Válido\\ de\\ {data_ini}\\ a\\ {data_fim}\\}}$'
+            f'$\\mathbf{{Válido\ de\ {data_ini}\ a\ {data_fim}}}$'
         )
 
     elif unico_tempo:
