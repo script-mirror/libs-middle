@@ -485,11 +485,10 @@ class GeraCamposMeteorologicos:
                 })
 
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                tempo_fim = pd.to_datetime(us_plot.data_final.item())
                 semana = encontra_semanas_operativas(pd.to_datetime(us.time.values), tempo_ini)[0]
 
                 titulo = self._ajustar_tempo_e_titulo(
-                    us_plot, f'Vento e Jato {level_divergencia}hPa', semana, cond_ini, tempo_fim=tempo_fim
+                    us_plot, f'Vento e Jato {level_divergencia}hPa', semana, cond_ini,
                 )
 
                 plot_campos(
