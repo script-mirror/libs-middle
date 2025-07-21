@@ -349,20 +349,6 @@ class ProdutosPrevisaoCurtoPrazo:
             else:
 
                 ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs)
-
-                # datasets = []
-                # for f in files:
-                #     try:
-                #         ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
-                #         if ds.variables:  # verifica se tem variáveis (não está vazio)
-                #             datasets.append(ds)
-                #     except Exception as e:
-                #         print(f'Ignorando {f}: {e}')
-
-                # ds = xr.concat(datasets, dim='valid_time')
-                
-                # Abrindo o arquivo com xarray
-                # ds = xr.open_mfdataset(files, engine='cfgrib', backend_kwargs=backend_kwargs, combine='nested', concat_dim='valid_time', decode_timedelta=True)
         
         # Renomeando lat para latitude e lon para longitude
         if 'lat' in ds.dims:

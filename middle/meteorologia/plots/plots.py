@@ -279,14 +279,16 @@ def plot_campos(
 
 ###################################################################################################################
 
+# SELF PRODUTOS CONFIG
+
 class GeraCamposMeteorologicos:
 
-    def __init__(self, modelo_fmt, produto_config, tp_params=None, shapefiles=None, produto_config_sf=None):
+    def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, shapefiles=None, produto_config_pl=None):
         self.modelo_fmt = modelo_fmt
-        self.produto_config = produto_config
+        self.produto_config_sf = produto_config_sf
         self.tp_params = tp_params or {}
         self.shapefiles = shapefiles
-        self.produto_config_sf = produto_config_sf
+        self.produto_config_pl = produto_config_pl
 
     def _ajustar_tempo_e_titulo(self, ds_plot, tipo, semana, cond_ini=None, unico_tempo=False):
         tempo_ini = ajustar_hora_utc(pd.to_datetime(ds_plot.data_inicial.item()))
@@ -305,7 +307,7 @@ class GeraCamposMeteorologicos:
     def gerar_prec24h(self, **kwargs):
         try:
             print('Gerando mapa de precipitação acumulada em 24 horas...')
-            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
+            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp)
             tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
             cond_ini = get_inicializacao_fmt(tp_mean)
@@ -331,7 +333,7 @@ class GeraCamposMeteorologicos:
         
         try:
             print('Gerando mapa de acumulado total de precipitação...')
-            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
+            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp)
 
             cond_ini = get_inicializacao_fmt(tp_mean)
@@ -361,7 +363,7 @@ class GeraCamposMeteorologicos:
     def gerar_semanas_operativas(self, membros=False, **kwargs):
         try:
             print('Gerando mapa de semanas operativas...')
-            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
+            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp) if not membros else tp.copy()
             tp_sop = resample_variavel(tp_mean, self.modelo_fmt, 'tp', 'sop', qtdade_max_semanas=3)
             cond_ini = get_inicializacao_fmt(tp_mean)
@@ -414,13 +416,13 @@ class GeraCamposMeteorologicos:
             varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
 
             # Tp
-            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
+            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
             tp_mean = ensemble_mean(tp)
             tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
             cond_ini = get_inicializacao_fmt(tp_mean)
 
             # Pnmm
-            pnmm = get_dado_cacheado(varname, self.produto_config)
+            pnmm = get_dado_cacheado(varname, self.produto_config_sf)
             pnmm_mean = ensemble_mean(pnmm)
             pnmm_24h = resample_variavel(pnmm_mean, self.modelo_fmt, varname, '24h', modo_agrupador='mean')
 
@@ -456,8 +458,8 @@ class GeraCamposMeteorologicos:
 
         try:
             print(f'Gerando mapa de vento e jato de divergência a {level_divergencia}hPa...')
-            us = get_dado_cacheado('u', self.produto_config)
-            vs = get_dado_cacheado('v', self.produto_config)
+            us = get_dado_cacheado('u', self.produto_config_pl)
+            vs = get_dado_cacheado('v', self.produto_config_pl)
             us_mean = ensemble_mean(us)
             vs_mean = ensemble_mean(vs)
 
@@ -508,7 +510,7 @@ class GeraCamposMeteorologicos:
     def gerar_geop_500(self, level_geop=500, **kwargs):
         try:
             print(f'Gerando mapa de geopotencial a {level_geop}hPa...')
-            geop = get_dado_cacheado('gh', self.produto_config)
+            geop = get_dado_cacheado('gh', self.produto_config_pl)
             geop_mean = ensemble_mean(geop)
             geop_500 = resample_variavel(
                 geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean'
@@ -537,63 +539,63 @@ class GeraCamposMeteorologicos:
         except Exception as e:
             print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
-    def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500, **kwargs):
-        try:
-            print(f'Gerando mapa de geopotencial e vorticidade a {level_geop}hPa...')
-            us = self.get_dado_cacheado('u')
-            vs = self.get_dado_cacheado('v')
-            geop = self.get_dado_cacheado('gh')
-            us_mean = self.ensemble_mean(us)
-            vs_mean = self.ensemble_mean(vs)
-            geop_mean = self.ensemble_mean(geop)
-            cond_ini = get_inicializacao_fmt(geop_mean)
+    # def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500, **kwargs):
+    #     try:
+    #         print(f'Gerando mapa de geopotencial e vorticidade a {level_geop}hPa...')
+    #         us = self.get_dado_cacheado('u')
+    #         vs = self.get_dado_cacheado('v')
+    #         geop = self.get_dado_cacheado('gh')
+    #         us_mean = self.ensemble_mean(us)
+    #         vs_mean = self.ensemble_mean(vs)
+    #         geop_mean = self.ensemble_mean(geop)
+    #         cond_ini = get_inicializacao_fmt(geop_mean)
             
-            # Resample para 24 horas
-            us_24h_500 = self.resample_variavel(us_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'u', '24h', modo_agrupador='mean')
-            vs_24h_500 = self.resample_variavel(vs_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'v', '24h', modo_agrupador='mean')
-            geop_500 = self.resample_variavel(geop_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'gh', '24h', modo_agrupador='mean')
+    #         # Resample para 24 horas
+    #         us_24h_500 = self.resample_variavel(us_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'u', '24h', modo_agrupador='mean')
+    #         vs_24h_500 = self.resample_variavel(vs_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'v', '24h', modo_agrupador='mean')
+    #         geop_500 = self.resample_variavel(geop_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'gh', '24h', modo_agrupador='mean')
 
-            for n_24h in geop_500.tempo:
-                geop_plot = geop_500.sel(tempo=n_24h)
-                tempo_ini = self.ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
+    #         for n_24h in geop_500.tempo:
+    #             geop_plot = geop_500.sel(tempo=n_24h)
+    #             tempo_ini = self.ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
+    #             semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
 
-                geop_plot = nd.gaussian_filter(geop_plot['gh'], sigma=3)
-                u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
-                v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
-                vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
-                vorticidade = nd.gaussian_filter(vorticidade, sigma=3)
+    #             geop_plot = nd.gaussian_filter(geop_plot['gh'], sigma=3)
+    #             u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
+    #             v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
+    #             vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
+    #             vorticidade = nd.gaussian_filter(vorticidade, sigma=3)
 
-                ds_plot = xr.Dataset({
-                    'gh': (('latitude', 'longitude'), geop_plot),
-                    'vorticidade': (('latitude', 'longitude'), vorticidade),
-                    'u': u_plot['u'],
-                    'v': v_plot['v']
-                })
+    #             ds_plot = xr.Dataset({
+    #                 'gh': (('latitude', 'longitude'), geop_plot),
+    #                 'vorticidade': (('latitude', 'longitude'), vorticidade),
+    #                 'u': u_plot['u'],
+    #                 'v': v_plot['v']
+    #             })
 
-                titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Vort. e Geop. em {level_geop}hPa', semana, cond_ini)
+    #             titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Vort. e Geop. em {level_geop}hPa', semana, cond_ini)
 
-                self.plot_campos(
-                    ds=ds_plot['vorticidade'],
-                    variavel_plotagem='vorticidade',
-                    title=titulo,
-                    filename=f'geop_vorticidade_{level_geop}_{modelo_fmt}_{n_24h.item()}',
-                    ds_contour=ds_plot['gh']/10,
-                    variavel_contour='gh_500',
-                    plot_bacias=False,
-                    color_contour='black',
-                    **kwargs
-                )
+    #             self.plot_campos(
+    #                 ds=ds_plot['vorticidade'],
+    #                 variavel_plotagem='vorticidade',
+    #                 title=titulo,
+    #                 filename=f'geop_vorticidade_{level_geop}_{modelo_fmt}_{n_24h.item()}',
+    #                 ds_contour=ds_plot['gh']/10,
+    #                 variavel_contour='gh_500',
+    #                 plot_bacias=False,
+    #                 color_contour='black',
+    #                 **kwargs
+    #             )
 
-        except Exception as e:
-            print(f'Erro ao gerar geopotencial {level_geop}: {e}')
+    #     except Exception as e:
+    #         print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
     def gerar_vento_temp850(self, level_temp=850, **kwargs):
         try:
             print(f'Gerando mapa de vento e temperatura a {level_temp}hPa...')
-            us = get_dado_cacheado('u', self.produto_config)
-            vs = get_dado_cacheado('v', self.produto_config)
-            t = get_dado_cacheado('t', self.produto_config)
+            us = get_dado_cacheado('u', self.produto_config_pl)
+            vs = get_dado_cacheado('v', self.produto_config_pl)
+            t = get_dado_cacheado('t', self.produto_config_pl)
 
             us_mean = ensemble_mean(us)
             vs_mean = ensemble_mean(vs)
@@ -639,8 +641,8 @@ class GeraCamposMeteorologicos:
     def gerar_vento850_divergencia(self, level_divergencia=850, **kwargs):
         try:
             print(f'Gerando mapa de vento e divergência a {level_divergencia}hPa...')
-            us = get_dado_cacheado('u', self.produto_config)
-            vs = get_dado_cacheado('v', self.produto_config)
+            us = get_dado_cacheado('u', self.produto_config_pl)
+            vs = get_dado_cacheado('v', self.produto_config_pl)
 
             us_mean = ensemble_mean(us)
             vs_mean = ensemble_mean(vs)
@@ -686,10 +688,10 @@ class GeraCamposMeteorologicos:
         try:
             print(f'Gerando mapa de vento, precipitação e geopotencial a {level_geop}hPa e vento a {level_vento}hPa...')
 
-            us = get_dado_cacheado('u', self.produto_config)
-            vs = get_dado_cacheado('v', self.produto_config)
-            gh = get_dado_cacheado('gh', self.produto_config)
-            tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params) if self.produto_config_sf is None else get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+            us = get_dado_cacheado('u', self.produto_config_pl)
+            vs = get_dado_cacheado('v', self.produto_config_pl)
+            gh = get_dado_cacheado('gh', self.produto_config_pl)
+            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
 
             us_mean = ensemble_mean(us)
             vs_mean = ensemble_mean(vs)
@@ -840,11 +842,11 @@ class GeraCamposMeteorologicos:
 
 
 # # --- Geração de precipitação acumulada em 24 horas ---
-# def gerar_prec24h(modelo_fmt, produto_config, tp_params, shapefiles=None):
+# def gerar_prec24h(modelo_fmt, produto_config_sf, tp_params, shapefiles=None):
     
 #     try:
 
-#         tp = get_dado_cacheado('tp', produto_config, **tp_params)
+#         tp = get_dado_cacheado('tp', produto_config_sf, **tp_params)
 #         tp_mean = ensemble_mean(tp)
 #         tp_24h = resample_variavel(tp_mean, modelo_fmt, 'tp', '24h')
 #         cond_ini = get_inicializacao_fmt(tp_mean)
@@ -876,11 +878,11 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de precipitação acumulada total ---
-# def gerar_acumulado_total(modelo_fmt, produto_config, tp_params, shapefiles=None):
+# def gerar_acumulado_total(modelo_fmt, produto_config_sf, tp_params, shapefiles=None):
 
 #     try:
 
-#         tp = get_dado_cacheado('tp', produto_config, **tp_params)
+#         tp = get_dado_cacheado('tp', produto_config_sf, **tp_params)
 #         tp_mean = ensemble_mean(tp)
 
 #         cond_ini = get_inicializacao_fmt(tp_mean)
@@ -910,11 +912,11 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de semanas operativas ---
-# def gerar_semanas_operativas(modelo_fmt, produto_config, tp_params, membros=False, shapefiles=None):
+# def gerar_semanas_operativas(modelo_fmt, produto_config_sf, tp_params, membros=False, shapefiles=None):
 
 #     try:
 
-#         tp = get_dado_cacheado('tp', produto_config, **tp_params)
+#         tp = get_dado_cacheado('tp', produto_config_sf, **tp_params)
         
 #         if membros == False:
 #             tp_mean = ensemble_mean(tp)
@@ -967,14 +969,14 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de precipitação acumulada em 24 horas com PNMM ---
-# def gerar_prec24hr_pnmm(modelo_fmt, produto_config, tp_params, shapefiles=None):
+# def gerar_prec24hr_pnmm(modelo_fmt, produto_config_sf, tp_params, shapefiles=None):
     
 #     try:
 
 #         varname = 'msl' if 'ecmwf' in modelo_fmt else 'prmsl'
 
 #         # Tp
-#         tp = get_dado_cacheado('tp', produto_config, **tp_params)
+#         tp = get_dado_cacheado('tp', produto_config_sf, **tp_params)
 #         tp_mean = ensemble_mean(tp)
 #         tp_24h = resample_variavel(tp_mean, modelo_fmt, 'tp', '24h')
 #         cond_ini = get_inicializacao_fmt(tp_mean)
@@ -1017,7 +1019,7 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de vento jato e divergência a 200hPa ---
-# def gerar_jato_div200(modelo_fmt, produto_config, us=None, vs=None, level_divergencia=200, shapefiles=None):
+# def gerar_jato_div200(modelo_fmt, produto_config_sf, us=None, vs=None, level_divergencia=200, shapefiles=None):
 
 #     try:
 
@@ -1070,7 +1072,7 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de geopotencial a 500hPa ---
-# def gerar_geop_500(modelo_fmt, produto_config, geop=None, level_geop=500):
+# def gerar_geop_500(modelo_fmt, produto_config_sf, geop=None, level_geop=500):
     
 #     try:
 
@@ -1108,7 +1110,7 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de vorticidade e geopotencial a 500hPa ---
-# def gerar_geop_vorticidade_500(modelo_fmt, produto_config, geop=None, level_geop=500):
+# def gerar_geop_vorticidade_500(modelo_fmt, produto_config_sf, geop=None, level_geop=500):
 
 #     try:
 
@@ -1162,7 +1164,7 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de vento e temperatura a 850hPa ---
-# def gerar_vento_temp850(modelo_fmt, produto_config, level_temp=850):
+# def gerar_vento_temp850(modelo_fmt, produto_config_sf, level_temp=850):
 
 #     try:
 
@@ -1220,7 +1222,7 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de vento e divergência a 850hPa ---
-# def gerar_vento850(modelo_fmt, produto_config, level_vento=850):
+# def gerar_vento850(modelo_fmt, produto_config_sf, level_vento=850):
 
 #     try:
 
@@ -1271,14 +1273,14 @@ class GeraCamposMeteorologicos:
 # ###################################################################################################################
 
 # # --- Geração de precipitação, geopotencial e vento a 850hPa ---
-# def gerar_chuva_geop500_vento850(modelo_fmt, produto_config, tp_params, produto_config_sf=None, level_vento=850, level_geop=500):
+# def gerar_chuva_geop500_vento850(modelo_fmt, produto_config_sf, tp_params, produto_config_sf=None, level_vento=850, level_geop=500):
 
 #     try:
 
 #         us = get_dado_cacheado('u', produto_config)
 #         vs = get_dado_cacheado('v', produto_config)
 #         gh = get_dado_cacheado('gh', produto_config)
-#         tp = get_dado_cacheado('tp', produto_config, **tp_params) if produto_config_sf is None else get_dado_cacheado('tp', produto_config_sf, **tp_params)
+#         tp = get_dado_cacheado('tp', produto_config_sf, **tp_params) if produto_config_sf is None else get_dado_cacheado('tp', produto_config_sf, **tp_params)
 
 #         us_mean = ensemble_mean(us)
 #         vs_mean = ensemble_mean(vs)
