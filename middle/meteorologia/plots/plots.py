@@ -1,6 +1,5 @@
 import pandas as pd
 import numpy as np
-import pdb
 import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
@@ -305,6 +304,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_prec24h(self, **kwargs):
         try:
+            print('Gerando mapa de precipitação acumulada em 24 horas...')
             tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
             tp_mean = ensemble_mean(tp)
             tp_24h = resample_variavel(tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -330,6 +330,7 @@ class GeraCamposMeteorologicos:
     def gerar_acumulado_total(self, **kwargs):
         
         try:
+            print('Gerando mapa de acumulado total de precipitação...')
             tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
             tp_mean = ensemble_mean(tp)
 
@@ -359,6 +360,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_semanas_operativas(self, membros=False, **kwargs):
         try:
+            print('Gerando mapa de semanas operativas...')
             tp = get_dado_cacheado('tp', self.produto_config, **self.tp_params)
             tp_mean = ensemble_mean(tp) if not membros else tp.copy()
             tp_sop = resample_variavel(tp_mean, self.modelo_fmt, 'tp', 'sop', qtdade_max_semanas=3)
@@ -408,6 +410,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_prec24hr_pnmm(self, **kwargs):
         try:
+            print('Gerando mapa de precipitação acumulada em 24 horas com PNMM...')
             varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
 
             # Tp
@@ -452,6 +455,7 @@ class GeraCamposMeteorologicos:
     def gerar_jato_div200(self, level_divergencia=200, **kwargs):
 
         try:
+            print(f'Gerando mapa de vento e jato de divergência a {level_divergencia}hPa...')
             us = get_dado_cacheado('u', self.produto_config)
             vs = get_dado_cacheado('v', self.produto_config)
             us_mean = ensemble_mean(us)
@@ -503,6 +507,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_geop_500(self, level_geop=500, **kwargs):
         try:
+            print(f'Gerando mapa de geopotencial a {level_geop}hPa...')
             geop = get_dado_cacheado('gh', self.produto_config)
             geop_mean = ensemble_mean(geop)
             geop_500 = resample_variavel(
@@ -534,6 +539,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500, **kwargs):
         try:
+            print(f'Gerando mapa de geopotencial e vorticidade a {level_geop}hPa...')
             us = self.get_dado_cacheado('u')
             vs = self.get_dado_cacheado('v')
             geop = self.get_dado_cacheado('gh')
@@ -584,6 +590,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_vento_temp850(self, level_temp=850, **kwargs):
         try:
+            print(f'Gerando mapa de vento e temperatura a {level_temp}hPa...')
             us = get_dado_cacheado('u', self.produto_config)
             vs = get_dado_cacheado('v', self.produto_config)
             t = get_dado_cacheado('t', self.produto_config)
@@ -631,6 +638,7 @@ class GeraCamposMeteorologicos:
 
     def gerar_vento850_divergencia(self, level_divergencia=850, **kwargs):
         try:
+            print(f'Gerando mapa de vento e divergência a {level_divergencia}hPa...')
             us = get_dado_cacheado('u', self.produto_config)
             vs = get_dado_cacheado('v', self.produto_config)
 
@@ -676,6 +684,7 @@ class GeraCamposMeteorologicos:
     def gerar_chuva_geop500_vento850(self, level_vento=850, level_geop=500, **kwargs):
 
         try:
+            print(f'Gerando mapa de vento, precipitação e geopotencial a {level_geop}hPa e vento a {level_vento}hPa...')
 
             us = get_dado_cacheado('u', self.produto_config)
             vs = get_dado_cacheado('v', self.produto_config)
@@ -729,6 +738,8 @@ class GeraCamposMeteorologicos:
     def gerar_ivt(self, **kwargs):
 
         try:
+
+            print('Gerando mapa de IVT (Fluxo de Umidade Integrado Vertical)...')
 
             gh = get_dado_cacheado('gh', self.produto_config)
             qs = get_dado_cacheado('q', self.produto_config)
@@ -806,7 +817,7 @@ class GeraCamposMeteorologicos:
         except Exception as e:
             print(f'Erro ao gerar IVT: {e}')
 
-
+###################################################################################################################
 
 
 

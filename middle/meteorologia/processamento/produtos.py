@@ -39,8 +39,12 @@ class ProdutosPrevisaoCurtoPrazo:
 
         # Formatando modelo
         modelo_fmt = self.modelo.lower()
+        print(f'Processando dados:\n')
+        print(f'Modelo: {modelo_fmt.upper()}')
+        print(f'Resolução: {resolucao}')
+        print(f'Rodada: {data_fmt}{inicializacao_fmt}')
 
-        print(f'************* INICIANDO DONWLOAD {data_fmt}{inicializacao_fmt} para o modelo {modelo_fmt.upper()} *************\n')
+        print(f'\n************* INICIANDO DONWLOAD {data_fmt}{inicializacao_fmt} para o modelo {modelo_fmt.upper()} *************')
 
         # Diretório para salvar os arquivos
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
@@ -237,7 +241,7 @@ class ProdutosPrevisaoCurtoPrazo:
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True):
 
-        print(f'************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
+        print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
         
         import xarray as xr
 
