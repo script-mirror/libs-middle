@@ -14,6 +14,8 @@ from ..utils.utils import (
     encontra_semanas_operativas,
     gerar_titulo
 )
+import matplotlib
+matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
 import matplotlib.pyplot as plt
 import cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes

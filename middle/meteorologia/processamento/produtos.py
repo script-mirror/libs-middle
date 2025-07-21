@@ -3,12 +3,8 @@ import requests
 import os
 import time
 import pandas as pd
-import matplotlib
-matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
-
 from ..utils.utils import abrir_modelo_sem_vazios
 from ..consts.namelist import CONSTANTES
-# from ..plots.plots import gerar_prec24h, gerar_acumulado_total, gerar_semanas_operativas, gerar_prec24hr_pnmm, gerar_jato_div200, gerar_geop_500, gerar_geop_vorticidade_500, gerar_vento_temp850, gerar_vento850, gerar_chuva_geop500_vento850, gerar_ivt
 
 ###################################################################################################################
 
