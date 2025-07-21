@@ -17,6 +17,7 @@ from ..utils.utils import (
 import matplotlib
 matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
 import matplotlib.pyplot as plt
+import geopandas as gpd
 import cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.colors import LinearSegmentedColormap
@@ -264,7 +265,8 @@ def plot_campos(
         fig.colorbar(cf, cax=axins, orientation='horizontal', ticks=levels if len(levels)<=26 else levels[::2], extendrect=True, label=label)
 
     if shapefiles is not None:
-        for gdf in shapefiles:
+        for shapefile in shapefiles:
+            gdf = gpd.read_file(shapefile)
             if 'Nome_Bacia' in gdf.columns:
                 if plot_bacias:
                     gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
