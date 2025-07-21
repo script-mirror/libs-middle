@@ -539,56 +539,56 @@ class GeraCamposMeteorologicos:
         except Exception as e:
             print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
-    # def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500, **kwargs):
-    #     try:
-    #         print(f'Gerando mapa de geopotencial e vorticidade a {level_geop}hPa...')
-    #         us = self.get_dado_cacheado('u')
-    #         vs = self.get_dado_cacheado('v')
-    #         geop = self.get_dado_cacheado('gh')
-    #         us_mean = self.ensemble_mean(us)
-    #         vs_mean = self.ensemble_mean(vs)
-    #         geop_mean = self.ensemble_mean(geop)
-    #         cond_ini = get_inicializacao_fmt(geop_mean)
+    def gerar_geop_vorticidade_500(self, modelo_fmt, level_geop=500, **kwargs):
+        try:
+            print(f'Gerando mapa de geopotencial e vorticidade a {level_geop}hPa...')
+            us = get_dado_cacheado('u', self.produto_config_pl)
+            vs = get_dado_cacheado('v', self.produto_config_pl)
+            geop = get_dado_cacheado('gh', self.produto_config_pl)
+            us_mean = ensemble_mean(us)
+            vs_mean = ensemble_mean(vs)
+            geop_mean = ensemble_mean(geop)
+            cond_ini = get_inicializacao_fmt(geop_mean)
             
-    #         # Resample para 24 horas
-    #         us_24h_500 = self.resample_variavel(us_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'u', '24h', modo_agrupador='mean')
-    #         vs_24h_500 = self.resample_variavel(vs_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'v', '24h', modo_agrupador='mean')
-    #         geop_500 = self.resample_variavel(geop_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'gh', '24h', modo_agrupador='mean')
+            # Resample para 24 horas
+            us_24h_500 = resample_variavel(us_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'u', '24h', modo_agrupador='mean')
+            vs_24h_500 = resample_variavel(vs_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'v', '24h', modo_agrupador='mean')
+            geop_500 = resample_variavel(geop_mean.sel(isobaricInhPa=level_geop), modelo_fmt, 'gh', '24h', modo_agrupador='mean')
 
-    #         for n_24h in geop_500.tempo:
-    #             geop_plot = geop_500.sel(tempo=n_24h)
-    #             tempo_ini = self.ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
-    #             semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
+            for n_24h in geop_500.tempo:
+                geop_plot = geop_500.sel(tempo=n_24h)
+                tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
+                semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
 
-    #             geop_plot = nd.gaussian_filter(geop_plot['gh'], sigma=3)
-    #             u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
-    #             v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
-    #             vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
-    #             vorticidade = nd.gaussian_filter(vorticidade, sigma=3)
+                geop_plot = nd.gaussian_filter(geop_plot['gh'], sigma=3)
+                u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
+                v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
+                vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
+                vorticidade = nd.gaussian_filter(vorticidade, sigma=3)
 
-    #             ds_plot = xr.Dataset({
-    #                 'gh': (('latitude', 'longitude'), geop_plot),
-    #                 'vorticidade': (('latitude', 'longitude'), vorticidade),
-    #                 'u': u_plot['u'],
-    #                 'v': v_plot['v']
-    #             })
+                ds_plot = xr.Dataset({
+                    'gh': (('latitude', 'longitude'), geop_plot),
+                    'vorticidade': (('latitude', 'longitude'), vorticidade),
+                    'u': u_plot['u'],
+                    'v': v_plot['v']
+                })
 
-    #             titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Vort. e Geop. em {level_geop}hPa', semana, cond_ini)
+                titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Vort. e Geop. em {level_geop}hPa', semana, cond_ini)
 
-    #             self.plot_campos(
-    #                 ds=ds_plot['vorticidade'],
-    #                 variavel_plotagem='vorticidade',
-    #                 title=titulo,
-    #                 filename=f'geop_vorticidade_{level_geop}_{modelo_fmt}_{n_24h.item()}',
-    #                 ds_contour=ds_plot['gh']/10,
-    #                 variavel_contour='gh_500',
-    #                 plot_bacias=False,
-    #                 color_contour='black',
-    #                 **kwargs
-    #             )
+                plot_campos(
+                    ds=ds_plot['vorticidade'],
+                    variavel_plotagem='vorticidade',
+                    title=titulo,
+                    filename=f'geop_vorticidade_{level_geop}_{modelo_fmt}_{n_24h.item()}',
+                    ds_contour=ds_plot['gh']/10,
+                    variavel_contour='gh_500',
+                    plot_bacias=False,
+                    color_contour='black',
+                    **kwargs
+                )
 
-    #     except Exception as e:
-    #         print(f'Erro ao gerar geopotencial {level_geop}: {e}')
+        except Exception as e:
+            print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
     def gerar_vento_temp850(self, level_temp=850, **kwargs):
         try:
