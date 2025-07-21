@@ -507,36 +507,38 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao gerar vento_jato_div{level_divergencia}: {e}')
 
     def gerar_geop_500(self, level_geop=500, **kwargs):
-        # try:
-        print(f'Gerando mapa de geopotencial a {level_geop}hPa...')
-        geop = get_dado_cacheado('gh', self.produto_config_pl)
-        geop_mean = ensemble_mean(geop)
-        geop_500 = resample_variavel(
-            geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean'
-        )
-        cond_ini = get_inicializacao_fmt(geop_mean)
 
-        for n_24h in geop_500.tempo:
-            geop_plot = geop_500.sel(tempo=n_24h)
-            tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
-            semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
+        try:
 
-            titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Geopotencial {level_geop}hPa', semana, cond_ini)
-
-            plot_campos(
-                ds=geop_plot['gh'] / 10,
-                variavel_plotagem='geop_500',
-                title=titulo,
-                filename=f'geopotencial_{level_geop}_{self.modelo_fmt}_{n_24h.item()}',
-                ds_contour=geop_plot['gh'] / 10,
-                variavel_contour='gh_500',
-                plot_bacias=False,
-                shapefiles=self.shapefiles,
-                **kwargs
+            print(f'Gerando mapa de geopotencial a {level_geop}hPa...')
+            geop = get_dado_cacheado('gh', self.produto_config_pl)
+            geop_mean = ensemble_mean(geop)
+            geop_500 = resample_variavel(
+                geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean'
             )
+            cond_ini = get_inicializacao_fmt(geop_mean)
 
-        # except Exception as e:
-        #    print(f'Erro ao gerar geopotencial {level_geop}: {e}')
+            for n_24h in geop_500.tempo:
+                geop_plot = geop_500.sel(tempo=n_24h)
+                tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
+                semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
+
+                titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Geopotencial {level_geop}hPa', semana, cond_ini)
+
+                plot_campos(
+                    ds=geop_plot['gh'] / 10,
+                    variavel_plotagem='geop_500',
+                    title=titulo,
+                    filename=f'geopotencial_{level_geop}_{self.modelo_fmt}_{n_24h.item()}',
+                    ds_contour=geop_plot['gh'] / 10,
+                    variavel_contour='gh_500',
+                    plot_bacias=False,
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
+
+        except Exception as e:
+            print(f'Erro ao gerar geopotencial {level_geop}: {e}')
 
     def gerar_geop_vorticidade_500(self, level_geop=500, **kwargs):
         try:
@@ -555,11 +557,11 @@ class GeraCamposMeteorologicos:
             geop_500 = resample_variavel(geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean')
 
             for n_24h in geop_500.tempo:
-                geop_plot = geop_500.sel(tempo=n_24h)
-                tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(geop.time.values), tempo_ini)[0]
+                geop_ = geop_500.sel(tempo=n_24h)
+                tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
+                semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini)[0]
 
-                geop_plot = nd.gaussian_filter(geop_plot['gh'], sigma=3)
+                geop_plot = nd.gaussian_filter(geop_['gh'], sigma=3)
                 u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
                 v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
                 vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
@@ -572,7 +574,7 @@ class GeraCamposMeteorologicos:
                     'v': v_plot['v']
                 })
 
-                titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Vort. e Geop. em {level_geop}hPa', semana, cond_ini)
+                titulo = self._ajustar_tempo_e_titulo(geop_, f'Vort. e Geop. em {level_geop}hPa', semana, cond_ini)
 
                 plot_campos(
                     ds=ds_plot['vorticidade'],
@@ -587,7 +589,7 @@ class GeraCamposMeteorologicos:
                 )
 
         except Exception as e:
-            print(f'Erro ao gerar geopotencial {level_geop}: {e}')
+            print(f'Erro ao gerar geopotencial e vorticidade {level_geop}: {e}')
 
     def gerar_vento_temp850(self, level_temp=850, **kwargs):
         try:
@@ -742,10 +744,10 @@ class GeraCamposMeteorologicos:
 
             print('Gerando mapa de IVT (Fluxo de Umidade Integrado Vertical)...')
 
-            gh = get_dado_cacheado('gh', self.produto_config)
-            qs = get_dado_cacheado('q', self.produto_config)
-            us = get_dado_cacheado('u', self.produto_config)
-            vs = get_dado_cacheado('v', self.produto_config)
+            gh = get_dado_cacheado('gh', self.produto_config_pl)
+            qs = get_dado_cacheado('q', self.produto_config_pl)
+            us = get_dado_cacheado('u', self.produto_config_pl)
+            vs = get_dado_cacheado('v', self.produto_config_pl)
 
             gh_mean = ensemble_mean(gh).sel(isobaricInhPa=700)
             qs_mean = ensemble_mean(qs).sel(isobaricInhPa=slice(1000, 300))
