@@ -216,9 +216,7 @@ def plot_campos(
         elif variavel_streamplot == 'wind850':
             u = ds_streamplot['u']
             v = ds_streamplot['v']
-            # div = ds_streamplot['divergencia']
-            ax.streamplot(lon, lat, u.data, v.data, linewidth=1.5, arrowsize=1, density=2.5, color='black')
-            #ax.contourf(lon, lat, div, np.arange(-15.5, -2, 0.5), colors='#F00082', alpha=0.5)
+            ax.streamplot(lon, lat, u, v, linewidth=1.5, arrowsize=1, density=2.5, color='black')
 
     if ds_quiver is not None:
 
@@ -1247,7 +1245,8 @@ class GeraCamposMeteorologicos:
 #                 semana=semana
 #             )
 
-#             plot_campos(ds=xr.where((divergencia.values >= -1) & (divergencia.values <= 1),divergencia,np.nan),variavel_plotagem='divergencia850',title=titulo,filename=f'vento{level_vento}_{modelo_fmt}_{n_24h.item()}',ds_streamplot=ds_streamplot,variavel_streamplot='wind850',plot_bacias=False)
+#             plot_campos(ds=xr.where((divergencia.values >= -1) & (divergencia.values <= 1),divergencia,np.nan),variavel_plotagem='divergencia850',title=titulo,filename=f'vento{level_vento}_{modelo_fmt}_{n_24h.item()}',
+# ds_streamplot=ds_streamplot,variavel_streamplot='wind850',plot_bacias=False)
 
 #     except Exception as e:
 #         print(f'Erro ao gerar vento e temperatura a 850hPa: {e}')
