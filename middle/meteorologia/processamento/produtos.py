@@ -39,15 +39,19 @@ class ProdutosPrevisaoCurtoPrazo:
 
         # Formatando modelo
         modelo_fmt = self.modelo.lower()
+
+        # Diretório para salvar os arquivos
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
+        os.makedirs(caminho_para_salvar, exist_ok=True)
+
         print(f'Processando dados:\n')
         print(f'Modelo: {modelo_fmt.upper()}')
         print(f'Resolução: {resolucao}')
         print(f'Rodada: {data_fmt}{inicializacao_fmt}')
+        print(f'Prefixo do nome: {self.name_prefix if self.name_prefix else "Nenhum"}')
+        print(f'Salvando em: {caminho_para_salvar}')
 
         print(f'\n************* INICIANDO DONWLOAD {data_fmt}{inicializacao_fmt} para o modelo {modelo_fmt.upper()} *************')
-
-        # Diretório para salvar os arquivos
-        caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
 
         if wait_members:
             tamanho_min_bytes = 45 * 1024 * 1024  # 45 MB
@@ -64,9 +68,6 @@ class ProdutosPrevisaoCurtoPrazo:
                     print(f'Aguardando arquivo {last_member_file} de membros do modelo {modelo_fmt} serem baixados...')
 
                 time.sleep(10)
-
-        os.makedirs(caminho_para_salvar, exist_ok=True)
-        print(f'Salvando no diretório: {caminho_para_salvar}')
 
         if modelo_fmt == 'gfs':
             prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gfs_{resolucao}.pl?dir=%2F'
@@ -89,7 +90,7 @@ class ProdutosPrevisaoCurtoPrazo:
 
                     # Se o arquivo já existe e está com tamanho esperado, pula
                     if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
-                        print(f'Arquivo {filename} já existe e está OK, pulando download...')
+                        print(f'✅ Arquivo {filename} já existe e está OK, pulando download...')
                         continue
 
                     url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
@@ -102,7 +103,7 @@ class ProdutosPrevisaoCurtoPrazo:
                         with open(caminho_arquivo, 'wb') as f:
                             f.write(file.content)
                     else:
-                        print(f'Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                        print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
                         todos_sucesso = False
                         time.sleep(5)
                         break  # Sai do for e volta ao início do while
@@ -116,9 +117,9 @@ class ProdutosPrevisaoCurtoPrazo:
                             time.sleep(5)
                             break  # Sai do for e tenta de novo no while
                         else:
-                            print(f'Arquivo {filename} baixado com sucesso!')
+                            print(f'✅ Arquivo {filename} baixado com sucesso!')
                     else:
-                        print(f'Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                        print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
                         todos_sucesso = False
                         time.sleep(5)
                         break
@@ -141,10 +142,8 @@ class ProdutosPrevisaoCurtoPrazo:
                     if self.name_prefix:
                         caminho_arquivo = f'{caminho_para_salvar}/{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
 
-                    print(f'Baixando... {caminho_arquivo}')
-
                     if os.path.exists(caminho_arquivo):
-                        print(f'Arquivo {caminho_arquivo} já existe, pulando download...')
+                        print(f'✅ Arquivo {caminho_arquivo} já existe, pulando download...')
                         continue
 
                     if levlist_ecmwf_opendata:
@@ -176,10 +175,12 @@ class ProdutosPrevisaoCurtoPrazo:
                         client.retrieve(**retrive)
 
                     except Exception as e:
-                        print(f'Erro ao baixar ECMWF: {e}, tentando novamente...')
+                        print(f'❌ Erro ao baixar ECMWF: {e}, tentando novamente...')
                         todos_sucesso = False
                         time.sleep(5)
                         break  # Sai do for e tenta novamente o while
+
+                    print(f'✅ Arquivo {caminho_arquivo} baixado com sucesso!')
 
                 if todos_sucesso:
                     break  # Sai do while se tudo deu certo
@@ -302,15 +303,6 @@ class ProdutosPrevisaoCurtoPrazo:
             # Abrindo o arquivo com xarray
             pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf)
             cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf)
-
-            # pf = xr.open_mfdataset(files, engine='cfgrib', 
-            #                     backend_kwargs=backend_kwargs_pf,
-            #                     combine='nested', concat_dim='step', decode_timedelta=True)
-
-            # cf = xr.open_mfdataset(files, engine='cfgrib', 
-            #                     backend_kwargs=backend_kwargs_cf,
-            #                     combine='nested', concat_dim='step', decode_timedelta=True)
-
             ds = xr.concat([cf, pf], dim='number')            
 
         else:
@@ -419,6 +411,10 @@ class ProdutosPrevisaoCurtoPrazo:
         if m_to_mm and variavel == 'tp':
             # Converte de metros para milímetros
             ds['tp'] = ds['tp'] * 1000
+
+        print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
+        print(f'Dataset após ajustes:')
+        print(ds)
 
         return ds
 
