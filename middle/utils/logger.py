@@ -3,8 +3,14 @@ import os
 
 
 def setup_logger(log_path: str = None):
-    logger = logging.getLogger(log_path if log_path else "default_logger")
+    # Use um nome fixo para o logger ao invés do caminho do arquivo
+    logger_name = "app_logger" if log_path else "default_logger"
+    logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
+    
+    # Desabilita propagação para evitar duplicação com loggers pais
+    logger.propagate = False
+    
     formatter = logging.Formatter('%(levelname)s:\t%(asctime)s\t %(message)s')
     # Remove handlers duplicados
     if logger.hasHandlers():
