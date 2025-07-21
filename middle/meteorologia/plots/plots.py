@@ -585,6 +585,7 @@ class GeraCamposMeteorologicos:
                     variavel_contour='gh_500',
                     plot_bacias=False,
                     color_contour='black',
+                    shapefiles=self.shapefiles,
                     **kwargs
                 )
 
