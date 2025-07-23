@@ -89,8 +89,8 @@ def cria_diretorio(path: str) -> None:
     os.makedirs(path, exist_ok=True)
     
 def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arquivo_zip: str, arquivo_decomp: str, rev: str, dt_decomp: datetime) -> None:
-    pathOut = str(Path(output_path))
-    pathIn = str(Path(input_path))
+    pathOut = Path(output_path).as_posix()
+    pathIn = Path(input_path).as_posix()
 
     if os.path.exists(os.path.join(pathIn, arquivo_zip)):
         print(arquivo_zip + ' encontrado!')
