@@ -13,7 +13,6 @@ build/
 develop-eggs/
 dist/
 downloads/
-plots/
 eggs/
 .eggs/
 lib/
@@ -221,6 +220,6 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-
 # Arquivos netcdf
 *.nc
+data/
