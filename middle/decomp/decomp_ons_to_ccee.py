@@ -169,9 +169,9 @@ def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arq
         cria_diretorio(pathIn)
 
     else:
-        print('Arquivo ' + arqzip + ' ainda nao disponivel!')
+        print('Arquivo ' + arquivo_zip + ' ainda nao disponivel!')
         print('SAINDO')
         # quit()  # Commented to avoid exiting, raise error instead
-        raise FileNotFoundError(f"Arquivo {arqzip} nao encontrado em {pathIn}")
+        raise FileNotFoundError(f"Arquivo {arquivo_zip} nao encontrado em {pathIn}")
 
 
