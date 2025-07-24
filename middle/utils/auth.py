@@ -3,6 +3,9 @@ import json
 import time
 import base64
 import requests
+from .logger import setup_logger
+
+logger = setup_logger()
 
 
 def get_auth_header() -> str:
@@ -11,6 +14,14 @@ def get_auth_header() -> str:
                   if cache_env_path else 'token_cache.json')
     URL_COGNITO = os.getenv('URL_COGNITO')
     CONFIG_COGNITO = os.getenv('CONFIG_COGNITO')
+
+    if not URL_COGNITO:
+        logger.error("Variavel de ambiente URL_COGNITO nao definida")
+        raise Exception("Variavel de ambiente URL_COGNITO nao definida")
+
+    if not CONFIG_COGNITO:
+        logger.error("Variavel de ambiente CONFIG_COGNITO nao definida")
+        raise Exception("Variavel de ambiente CONFIG_COGNITO e obrigatoria")
 
     def is_token_valid(token: str) -> bool:
         """Verifica se o token JWT ainda é válido"""

@@ -15,8 +15,12 @@ from .logger import (
     setup_logger,
 )
 
-from .email import (
+from .html_generator import (
     gerar_tabela,
+)
+
+from .html_to_image import (
+    html_to_image,
 )
 
 __all__ = [
@@ -26,4 +30,5 @@ __all__ = [
     "get_auth_header",
     "setup_logger",
     "gerar_tabela",
+    "html_to_image",
 ]

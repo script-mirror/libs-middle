@@ -2,25 +2,44 @@ import logging
 import os
 
 
+class ColorFormatter(logging.Formatter):
+    COLORS = {
+        'DEBUG': '\033[37m',    # Branco
+        'INFO': '\033[36m',     # Ciano
+        'WARNING': '\033[33m',  # Amarelo
+        'ERROR': '\033[31m',    # Vermelho
+        'CRITICAL': '\033[41m', # Fundo vermelho
+    }
+    RESET = '\033[0m'
+
+    def format(self, record):
+        message = super().format(record)
+        color = self.COLORS.get(record.levelname, self.RESET)
+        colored_level = f"{color}{record.levelname}{self.RESET}"
+        return message.replace(record.levelname, colored_level, 1)
+
+
 def setup_logger(log_path: str = None):
-    # Use um nome fixo para o logger ao invés do caminho do arquivo
     logger_name = "app_logger" if log_path else "default_logger"
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
-    
-    # Desabilita propagação para evitar duplicação com loggers pais
     logger.propagate = False
-    
-    formatter = logging.Formatter('%(levelname)s:\t%(asctime)s\t %(message)s')
-    # Remove handlers duplicados
+
+    base_format = '%(levelname)s:\t%(asctime)s\t %(message)s'
+    plain_formatter = logging.Formatter(base_format)
+    color_formatter = ColorFormatter(base_format)
+
     if logger.hasHandlers():
         logger.handlers.clear()
+
     if log_path:
         os.makedirs(os.path.dirname(log_path), exist_ok=True)
         fh = logging.FileHandler(log_path, mode='w')
-        fh.setFormatter(formatter)
+        fh.setFormatter(plain_formatter)
         logger.addHandler(fh)
+
     sh = logging.StreamHandler()
-    sh.setFormatter(formatter)
+    sh.setFormatter(color_formatter)
     logger.addHandler(sh)
+
     return logger
