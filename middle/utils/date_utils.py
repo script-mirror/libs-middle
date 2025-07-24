@@ -89,7 +89,7 @@ class SemanaOperativa:
         elif not isinstance(date, datetime.date):
             raise TypeError("date must be a datetime.date or datetime.datetime object")
         # Convert input date to the next Saturday
-        self.date = self.get_next_saturday(date)
+        self.date = date
         self.first_day_of_month = self.get_last_saturday(datetime.date(self.date.year, self.date.month, 1))
         if self.date > self.first_day_of_month:
             date_aux = self.date + datetime.timedelta(days=6)
