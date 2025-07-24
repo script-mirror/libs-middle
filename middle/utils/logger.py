@@ -15,7 +15,8 @@ class ColorFormatter(logging.Formatter):
     def format(self, record):
         message = super().format(record)
         color = self.COLORS.get(record.levelname, self.RESET)
-        return f"{color}{message}{self.RESET}"
+        colored_level = f"{color}{record.levelname}{self.RESET}"
+        return message.replace(record.levelname, colored_level, 1)
 
 
 def setup_logger(log_path: str = None):
