@@ -19,6 +19,9 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
     headers = get_auth_header()
     files = {}
     if arquivo:
-        files = {"arquivo": (arquivo, open(arquivo, "rb"))}
+        if type(arquivo) is str:
+            files = {"arquivo": (arquivo, open(arquivo, "rb"))}
+        else:
+            files = {"arquivo": ("arquivo.jpg", arquivo)}
     response = requests.post(url, data=fields, files=files, headers=headers)
     print("Status Code:", response.status_code)
