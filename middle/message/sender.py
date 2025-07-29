@@ -64,21 +64,23 @@ def send_email_message(
                         "Utilize o load_env() para carregar as variáveis de ambiente.")
     url = f"{url}/estudos-middle/api/email/send"
 
-    payload = {
+    fields = {
         "destinatario": destinatario,
         "assunto": assunto,
         "mensagem": mensagem,
     }
     if user is not None:
-        payload["user"] = user
+        fields["user"] = user
+    files = {}
     if arquivos is not None:
-        payload["arquivos"] = arquivos if isinstance(arquivos, list) else [arquivos]
+        for i, arquivo in enumerate(arquivos if isinstance(arquivos, list) else [arquivos]):
+            files[f"arquivos_{i}"] = open(arquivo, "rb")
 
     headers = get_auth_header()
-    response = requests.post(url, json=payload, headers=headers)
+    response = requests.post(url, data=fields, files=files, headers=headers)
     logger.info(f"E-mail enviado para {destinatario} com assunto '{assunto}'. Status Code: {response.status_code}")
     if not (200 <= response.status_code < 300):
-        logger.error(f"Falha ao enviar e-mail. Payload: {payload}")
+        logger.error(f"Falha ao enviar e-mail. Campos: {fields}")
         logger.error(f"Texto da resposta: {response.text}")
 
 
