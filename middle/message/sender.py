@@ -42,21 +42,21 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
     logger.info(f"Mensagem WhatsApp enviada para {destinatario}. Status Code: {response.status_code}")
 
 def send_email_message(
-    destinatario: List[str],
-    mensagem: str,
+    user: str = constants.EMAIL_CLIME,
+    destinatario: List[str] = constants.EMAIL_MIDDLE,
+    mensagem: str = "",
+    assunto: str = "Middle",
     arquivos: list = [],
-    user: str = None,
-    assunto: str = "Middle"
     ):
     """
     Envia um e-mail para os destinatários especificados.
 
     Args:
+        user (str, optional): Usuário remetente do e-mail. Default é None.
         destinatario (List[str]): Lista de e-mails dos destinatários.
         mensagem (str): Texto da mensagem do e-mail.
-        arquivos (list, optional): Lista de arquivos para anexar. Default é None.
-        user (str, optional): Usuário remetente do e-mail. Default é None.
         assunto (str, optional): Assunto do e-mail. Default é "Middle".
+        arquivos (list, optional): Lista de arquivos para anexar. Default é None.
 
     """
     url = constants.BASE_URL
