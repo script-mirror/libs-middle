@@ -43,7 +43,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
 
 def send_email_message(
     user: str = constants.EMAIL_CLIME,
-    destinatario: List[str] = constants.EMAIL_MIDDLE,
+    destinatario: List[str] | str = constants.EMAIL_MIDDLE,
     mensagem: str = "",
     assunto: str = "Middle",
     arquivos: list = [],
@@ -65,7 +65,8 @@ def send_email_message(
         raise Exception("Arquivo .env não carregado ou BASE_URL não definida. "
                         "Utilize o load_env() para carregar as variáveis de ambiente.")
     url = f"{url}/estudos-middle/api/email/send"
-
+    if type(destinatario) is str:
+        destinatario = [destinatario]
     fields = {
         "destinatario": ",".join(destinatario),
         "assunto": assunto,
