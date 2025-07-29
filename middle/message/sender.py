@@ -46,7 +46,7 @@ def send_email_message(
     destinatario: List[str] | str = constants.EMAIL_MIDDLE,
     mensagem: str = "",
     assunto: str = "Middle",
-    arquivos: list = [],
+    arquivos:List[str] = [],
     ):
     """
     Envia um e-mail para os destinatários especificados.
