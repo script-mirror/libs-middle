@@ -1,4 +1,6 @@
 import os
+from dotenv import load_dotenv
+load_dotenv(os.path.join(os.path.abspath(os.path.expanduser("~")),'.env'))
 
 class Constants:
     @property
