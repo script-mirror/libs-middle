@@ -3,6 +3,7 @@ import requests
 from typing import List
 from ..utils.auth import get_auth_header
 from ..utils.logger import setup_logger
+from ..utils import constants
 
 logger = setup_logger()
 
@@ -19,11 +20,12 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
     Raises:
         Exception: Se a variável de ambiente BASE_URL não estiver definida.
     """
-    url = os.getenv("BASE_URL")
+    url = constants.BASE_URL
     if not url:
         logger.error("Variavel de ambiente WHATSAPP_API nao esta definida")
         raise Exception("Variavel de ambiente WHATSAPP_API nao esta definida."
                         "Utilize o load_env() para carregar as variáveis de ambiente.")
+    url = f"{url}/bot-whatsapp/whatsapp-message"
 
     fields = {
         "destinatario": destinatario,
@@ -57,7 +59,7 @@ def send_email_message(
         assunto (str, optional): Assunto do e-mail. Default é "Middle".
 
     """
-    url = os.getenv("BASE_URL")
+    url = constants.BASE_URL
     if not url:
         logger.error("Arquivo .env não carregado ou BASE_URL não definida.")
         raise Exception("Arquivo .env não carregado ou BASE_URL não definida. "

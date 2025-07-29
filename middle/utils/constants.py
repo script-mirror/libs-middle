@@ -224,6 +224,10 @@ class Constants:
         return os.getenv('NUM_TESTE')
 
     @property
+    def BASE_URL(self):
+        return "https://tradingenergiarz.com"
+
+    @property
     def WHATSAPP_PMO(self):
         return 'pmo'
 
