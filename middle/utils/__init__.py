@@ -23,6 +23,11 @@ from .html_to_image import (
     html_to_image,
 )
 
+from .constants import (
+    consts as constants,
+)
+
+constants.__init__
 __all__ = [
     "SemanaOperativa",
     "sanitize_string",
@@ -31,4 +36,5 @@ __all__ = [
     "setup_logger",
     "gerar_tabela",
     "html_to_image",
+    "constants",
 ]
