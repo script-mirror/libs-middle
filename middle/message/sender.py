@@ -43,7 +43,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
 
 def send_email_message(
     user: str = constants.EMAIL_CLIME,
-    destinatario: List[str] | str = constants.EMAIL_MIDDLE,
+    destinatario = constants.EMAIL_MIDDLE,
     mensagem: str = "",
     assunto: str = "Middle",
     arquivos = [],
