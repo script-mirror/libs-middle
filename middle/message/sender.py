@@ -65,7 +65,7 @@ def send_email_message(
     url = f"{url}/estudos-middle/api/email/send"
 
     fields = {
-        "destinatario": destinatario,
+        "destinatario": ",".join(destinatario),
         "assunto": assunto,
         "mensagem": mensagem,
     }
