@@ -37,7 +37,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
         else:
             files = {"arquivo": ("arquivo.jpg", arquivo)}
     response = requests.post(url, data=fields, files=files, headers=headers)
-    logger.info(f"WhatsApp message sent to {destinatario}. Status Code: {response.status_code}")
+    logger.info(f"Mensagem WhatsApp enviada para {destinatario}. Status Code: {response.status_code}")
 
 def send_email_message(
     destinatario: List[str],
@@ -58,6 +58,10 @@ def send_email_message(
 
     """
     url = os.getenv("BASE_URL")
+    if not url:
+        logger.error("Arquivo .env não carregado ou BASE_URL não definida.")
+        raise Exception("Arquivo .env não carregado ou BASE_URL não definida. "
+                        "Utilize o load_env() para carregar as variáveis de ambiente.")
     url = f"{url}/estudos-middle/api/email/send"
 
     payload = {
@@ -72,6 +76,9 @@ def send_email_message(
 
     headers = get_auth_header()
     response = requests.post(url, json=payload, headers=headers)
-    logger.info(f"Email sent to {destinatario} with subject '{assunto}'. Status Code: {response.status_code}")
+    logger.info(f"E-mail enviado para {destinatario} com assunto '{assunto}'. Status Code: {response.status_code}")
+    if not (200 <= response.status_code < 300):
+        logger.error(f"Falha ao enviar e-mail. Payload: {payload}")
+        logger.error(f"Texto da resposta: {response.text}")
 
 
