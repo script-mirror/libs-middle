@@ -289,7 +289,7 @@ class Constants:
     
     @property
     def EMAIL_CLIME(self):
-        return 'climenergy@climenergy.com'
+        return 'climenergy'
     
     @property
     def EMAIL_MIDDLE(self):
@@ -309,63 +309,63 @@ class Constants:
 
     @property
     def EMAIL_SST(self):
-        return "sst@climenergy.com"
+        return "sst"
 
     @property
     def EMAIL_RDH(self):
-        return "rdh@climenergy.com"
+        return "rdh"
 
     @property
     def EMAIL_CMO(self):
-        return "cmo@climenergy.com"
+        return "cmo"
 
     @property
     def EMAIL_IPDO(self):
-        return "ipdo@climenergy.com"
+        return "ipdo"
 
     @property
     def EMAIL_MAPAS(self):
-        return "mapas@climenergy.com"
+        return "mapas"
 
     @property
     def EMAIL_ACOMPH(self):
-        return "acomph@climenergy.com"
+        return "acomph"
 
     @property
     def EMAIL_DESSEM(self):
-        return "dessem@climenergy.com"
+        return "dessem"
 
     @property
     def EMAIL_RODADAS(self):
-        return "rodadas@climenergy.com"
+        return "rodadas"
 
     @property
     def EMAIL_REV_ENA(self):
-        return "rev_ena@climenergy.com"
+        return "rev_ena"
 
     @property
     def EMAIL_PROCESSOS(self):
-        return "processos@climenergy.com"
+        return "processos"
 
     @property
     def EMAIL_INFO_BBCE(self):
-        return "info_bbce@climenergy.com"
+        return "info_bbce"
 
     @property
     def EMAIL_REV_CARGA(self):
-        return "rev_carga@climenergy.com"
+        return "rev_carga"
 
     @property
     def EMAIL_PAUTA_ANEEL(self):
-        return "pauta_aneel@climenergy.com"
+        return "pauta_aneel"
 
     @property
     def EMAIL_DIFERENCA_CV(self):
-        return "diferenca_cv@climenergy.com"
+        return "diferenca_cv"
 
     @property
     def EMAIL_INTERVENCOES(self):
-        return "intervencoes@climenergy.com"
+        return "intervencoes"
     
     @property
     def PATH_ARQUIVOS(self):
