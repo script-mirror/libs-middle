@@ -44,7 +44,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
 def send_email_message(
     destinatario: List[str],
     mensagem: str,
-    arquivos: list = None,
+    arquivos: list = [],
     user: str = None,
     assunto: str = "Middle"
     ):
@@ -73,10 +73,9 @@ def send_email_message(
     }
     if user is not None:
         fields["user"] = user
-    files = {}
-    if arquivos is not None:
-        for i, arquivo in enumerate(arquivos if isinstance(arquivos, list) else [arquivos]):
-            files[f"arquivos_{i}"] = open(arquivo, "rb")
+    files = []
+    for arquivo in arquivos:
+        files.append(("arquivos", open(arquivo, "rb")))
 
     headers = get_auth_header()
     response = requests.post(url, data=fields, files=files, headers=headers)
