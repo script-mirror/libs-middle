@@ -42,12 +42,13 @@ def dadger_ons_to_ccee(dadger_in_path: Union[str, Path], dadger_out_path: Union[
     try:
         with open(dadger_in_path, 'r', encoding='utf-8') as dadger_in, open(dadger_out_path, 'w', encoding='utf-8') as dadger_out:
             for line in dadger_in:
-                if line.startswith('TE'):
-                    dadger_out.write(f"TE  {rev} - {dt_decomp.strftime('%B/%Y')} - ONS TO CCEE - RODADA AUTOMATICA \n")
-                elif line.startswith(('RE', 'FU', 'LU', 'FT', 'FI')) and line[4:7] in RESTRICTIONS:
-                    dadger_out.write(f"&{line}")
-                else:
-                    dadger_out.write(line)
+                if line != '\n':
+                    if line.startswith('TE'):
+                        dadger_out.write(f"TE  {rev} - {dt_decomp.strftime('%B/%Y')} - ONS TO CCEE - RODADA AUTOMATICA \n")
+                    elif line.startswith(('RE', 'FU', 'LU', 'FT', 'FI')) and line[4:7] in RESTRICTIONS:
+                        dadger_out.write(f"&{line}")
+                    else:
+                        dadger_out.write(line)
         logger.info(f"Successfully processed dadger file: {dadger_in_path} -> {dadger_out_path}")
     except IOError as e:
         logger.error(f"Error processing dadger file: {e}")

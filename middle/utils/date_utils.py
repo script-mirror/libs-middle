@@ -92,20 +92,20 @@ class SemanaOperativa:
         self.date = date
         self.first_day_of_month = self.get_last_saturday(datetime.date(self.date.year, self.date.month, 1))
         if self.date > self.first_day_of_month:
-            date_aux = self.date + datetime.timedelta(days=6)
-            self.first_day_of_year = self.get_last_saturday(datetime.date(date_aux.year, 1, 1))
-            self.last_day_of_year = self.get_last_friday(datetime.date(date_aux.year, 12, 31))
-            self.first_day_of_month = self.get_last_saturday(datetime.date(date_aux.year, date_aux.month, 1))
+            date_aux                      = self.date + datetime.timedelta(days=6)
+            self.first_day_of_year        = self.get_last_saturday(datetime.date(date_aux.year, 1, 1))
+            self.last_day_of_year         = self.get_last_friday(datetime.date(date_aux.year, 12, 31))
+            self.first_day_of_month       = self.get_last_saturday(datetime.date(date_aux.year, date_aux.month, 1))
         else:
-            self.first_day_of_year = self.get_last_saturday(datetime.date(self.date.year, 1, 1))
-            self.last_day_of_year = self.get_last_friday(datetime.date(self.date.year, 12, 31))
-        self.current_revision = self.get_current_revision(self.first_day_of_month, self.date)
-        self.week_start = self.first_day_of_month + datetime.timedelta(days=7 * self.current_revision)
-        self.num_weeks = self.count_elec_week(self.first_day_of_year, self.get_last_saturday(self.date)) + 1
+            self.first_day_of_year        = self.get_last_saturday(datetime.date(self.date.year, 1, 1))
+            self.last_day_of_year         = self.get_last_friday(datetime.date(self.date.year, 12, 31))
+        self.current_revision             = self.get_current_revision(self.first_day_of_month, self.date)
+        self.week_start                   = self.first_day_of_month + datetime.timedelta(days=7 * self.current_revision)
+        self.num_weeks                    = self.count_elec_week(self.first_day_of_year, self.get_last_saturday(self.date)) + 1
         self.num_weeks_first_day_of_month = self.count_elec_week(self.first_day_of_year, self.first_day_of_month) + 1
-        self.num_weeks_in_year = self.count_elec_week(self.first_day_of_year, self.last_day_of_year + datetime.timedelta(days=1))
-        self.ref_month = (self.first_day_of_month + datetime.timedelta(days=6)).month
-        self.ref_year = self.last_day_of_year.year
+        self.num_weeks_in_year            = self.count_elec_week(self.first_day_of_year, self.last_day_of_year + datetime.timedelta(days=1))
+        self.ref_month                    = (self.first_day_of_month + datetime.timedelta(days=6)).month
+        self.ref_year                     = self.last_day_of_year.year
 
     def get_week_weights(self) -> List[int]:
         return self.get_week_weights(self.first_day_of_month)
