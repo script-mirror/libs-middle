@@ -96,7 +96,6 @@ def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arq
         print(arquivo_zip + ' encontrado!')
 
         # DECOMP
-        shutil.rmtree(pathOut, ignore_errors=True)
         cria_diretorio(pathOut)
 
         try:
