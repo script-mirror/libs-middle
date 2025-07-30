@@ -24,7 +24,7 @@ RESTRICTIONS = [
     "654", "611", "612", "613", "614", "615"
 ]
 
-def validate_inputs(input_path: Union[str, Path], output_path: Union[str, Path], rev: str, dt_decomp: datetime) -> None:
+def validate_inputs(input_path: Union[str, Path], output_path: Union[str, Path], rev: str, dt_decomp) -> None:
     input_path = Path(input_path)
     output_path = Path(output_path)
 
@@ -32,10 +32,9 @@ def validate_inputs(input_path: Union[str, Path], output_path: Union[str, Path],
         raise FileNotFoundError(f"Input file not found: {input_path}")
     if not rev.strip():
         raise ValueError("Revision number cannot be empty")
-    if not isinstance(dt_decomp, datetime):
-        raise ValueError("dt_decomp must be a datetime object")
 
-def dadger_ons_to_ccee(dadger_in_path: Union[str, Path], dadger_out_path: Union[str, Path], rev: str, dt_decomp: datetime) -> None:
+
+def dadger_ons_to_ccee(dadger_in_path: Union[str, Path], dadger_out_path: Union[str, Path], rev: str, dt_decomp) -> None:
     # Process dadger file, commenting specific lines and adding a TE header.
 
     validate_inputs(dadger_in_path, dadger_out_path, rev, dt_decomp)
@@ -88,7 +87,7 @@ def dadgnl_ons_to_ccee(dadgnl_in_path: Union[str, Path], dadgnl_out_path: Union[
 def cria_diretorio(path: str) -> None:
     os.makedirs(path, exist_ok=True)
     
-def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arquivo_zip: str, arquivo_decomp: str, rev: str, dt_decomp: datetime) -> None:
+def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arquivo_zip: str, arquivo_decomp: str, rev: str, dt_decomp) -> None:
     pathOut = Path(output_path).as_posix()
     pathIn = Path(input_path).as_posix()
 
