@@ -96,6 +96,7 @@ def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arq
         print(arquivo_zip + ' encontrado!')
 
         # DECOMP
+        shutil.rmtree(pathOut, ignore_errors=True)
         cria_diretorio(pathOut)
 
         try:
@@ -161,12 +162,7 @@ def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arq
         except Exception as e:
             print("Arquivo DADGNLcp nao encontrado")
             logger.warning(f"DADGNLcp not found: {e}")
-
-        shutil.make_archive(pathOut, 'zip', pathOut)
-        # shutil.copytree(pathOut + '/DC' + dt_decomp.strftime('%Y%m') + '-' + rev, '/WX/WX2TB/Documentos/fontes/PMO/backTest_DC/input/oficial/decomp')
-        shutil.rmtree(pathIn, ignore_errors=True)
-        cria_diretorio(pathIn)
-
+       
     else:
         print('Arquivo ' + arquivo_zip + ' ainda nao disponivel!')
         print('SAINDO')
