@@ -47,7 +47,7 @@ def get_latest_webhook_product(
         headers=get_auth_header()
     )
     if res.status_code == 200:
-        return res.json()['groups']['events']
+        return res.json()['groups'][0]['events']
     else:
         raise Exception(
             f"Erro ao buscar dados: {res.status_code} - {res.text}")
