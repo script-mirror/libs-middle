@@ -11,7 +11,7 @@ def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
     auth = get_auth_header()
     
     res = requests.get(
-        f"{constants}/webhook/api/webhooks/{
+        f"{constants.BASE_URL}/webhook/api/webhooks/{
             webhook_payload['id']}/download", 
         headers=auth
     )
