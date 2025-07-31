@@ -7,12 +7,12 @@ from .utils import (
 )
 
 def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
-    filename = os.path.join(path_download, webhook_payload['filename'])
+    filename = os.path.join(path_download, webhook_payload['nome'])
     auth = get_auth_header()
     
     res = requests.get(
         f"{constants}/webhook/api/webhooks/{
-            webhook_payload['webhookId']}/download", 
+            webhook_payload['id']}/download", 
         headers=auth
     )
     if res.status_code != 200:
