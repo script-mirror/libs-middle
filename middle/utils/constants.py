@@ -402,5 +402,13 @@ class Constants:
     @property
     def WEBHOOK_DECK_DECOMP_PRELIMINAR(self):
         return 'Deck Preliminar DECOMP - Valor Esperado'
+    
+    @property
+    def WEBHOOK_DECK_NEWAVE_PRELIMINAR(self):
+        return 'Deck NEWAVE Preliminar'
+    
+    @property
+    def WEBHOOK_DECK_NEWAVE_DEFINITIVO(self):
+        return 'Deck NEWAVE Definitivo'
 # Instância global (opcional, para facilitar o uso)
 consts = Constants()
