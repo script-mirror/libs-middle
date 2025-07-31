@@ -1,6 +1,8 @@
 import os
 import requests
 import datetime
+import magic
+import mimetypes
 from .utils import (
     get_auth_header,
     constants,
@@ -11,17 +13,21 @@ def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
     auth = get_auth_header()
     
     res = requests.get(
-        f"{constants.BASE_URL}/webhook/api/webhooks/{
-            webhook_payload['id']}/download", 
+        f"{constants.BASE_URL}/webhook/api/webhooks/{webhook_payload['id']}/download", 
         headers=auth
     )
     if res.status_code != 200:
         raise Exception(f"Erro ao baixar arquivo do S3: {res.text}")
         
     file_content = requests.get(res.json()['url'])
-    with open(filename, 'wb') as f:
+
+    mime = magic.from_buffer(file_content.content, mime=True)
+    ext = mimetypes.guess_extension(mime) or ''
+    filename_with_ext = filename + ext
+
+    with open(filename_with_ext, 'wb') as f:
         f.write(file_content.content)
-    return filename
+    return filename_with_ext
 
 
 def get_latest_webhook_product(

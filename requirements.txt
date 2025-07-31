@@ -2,3 +2,4 @@
 # All required modules (re, unicodedata) are part of Python standard library
 pandas
 requests
+python-magic
