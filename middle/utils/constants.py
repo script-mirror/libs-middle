@@ -399,6 +399,8 @@ class Constants:
     def RUN_STUDY_PROSPEC(self):
         return ' . /WX/WX2TB/Documentos/fontes/PMO/scripts_unificados/env/bin/activate; python /projetos/estudos-middle/estudos_prospec/rodada_automatica_prospec/main_roda_estudos.py '
     
-
+    @property
+    def WEBHOOK_DECK_DECOMP_PRELIMINAR(self):
+        return 'Deck Preliminar DECOMP - Valor Esperado'
 # Instância global (opcional, para facilitar o uso)
 consts = Constants()
