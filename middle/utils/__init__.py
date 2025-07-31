@@ -27,7 +27,7 @@ from .constants import (
     consts as constants,
 )
 
-constants.__init__
+
 __all__ = [
     "SemanaOperativa",
     "sanitize_string",
