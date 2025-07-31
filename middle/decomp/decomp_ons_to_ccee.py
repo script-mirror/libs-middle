@@ -44,7 +44,7 @@ def dadger_ons_to_ccee(dadger_in_path: Union[str, Path], dadger_out_path: Union[
             for line in dadger_in:
                 if line != '\n':
                     if line.startswith('TE'):
-                        dadger_out.write(f"TE  {rev} - {dt_decomp.strftime('%B/%Y')} - ONS TO CCEE - RODADA AUTOMATICA \n")
+                        dadger_out.write(f"TE  {rev} - {dt_decomp.strftime('%B/%Y')} - ONS TO CCEE - (Gilseu) \n")
                     elif line.startswith(('RE', 'FU', 'LU', 'FT', 'FI')) and line[4:7] in RESTRICTIONS:
                         dadger_out.write(f"&{line}")
                     else:
