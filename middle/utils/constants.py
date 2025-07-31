@@ -409,6 +409,6 @@ class Constants:
     
     @property
     def WEBHOOK_DECK_NEWAVE_DEFINITIVO(self):
-        return 'Deck NEWAVE Definitivo'
+        return 'DECK NEWAVE DEFINITIVO'
 # Instância global (opcional, para facilitar o uso)
 consts = Constants()
