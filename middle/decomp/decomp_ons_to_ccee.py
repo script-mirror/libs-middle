@@ -66,11 +66,11 @@ def dadgnl_ons_to_ccee(dadgnl_in_path: Union[str, Path], dadgnl_out_path: Union[
                 if 'eletrica' in line.lower():
                     logger.info(f"Line {i}: Found 'eletrica': {line.strip()}")
                     flag = True
-                    dadgnl_out.write('& Bloco alterado na conversao WX\n')
+                    dadgnl_out.write('& Bloco alterado na conversao\n')
                 elif 'merito' in line.lower():
                     logger.info(f"Line {i}: Found 'merito': {line.strip()}")
                     flag = False
-                    dadgnl_out.write('& Bloco nao alterado na conversao WX\n')
+                    dadgnl_out.write('& Bloco nao alterado na conversao\n')
                 
                 if flag and not line.startswith('&'):
                     # Replace specific positions with '00.0' for columns 23-28, 38-43, 53-58
