@@ -88,85 +88,75 @@ def dadgnl_ons_to_ccee(dadgnl_in_path: Union[str, Path], dadgnl_out_path: Union[
 def cria_diretorio(path: str) -> None:
     os.makedirs(path, exist_ok=True)
     
-def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path], arquivo_zip: str, arquivo_decomp: str, rev: str, dt_decomp) -> None:
+def ons_to_ccee(input_path: Union[str, Path], output_path: Union[str, Path],  arquivo_decomp: str, rev: str, dt_decomp) -> None:
     pathOut = Path(output_path).as_posix()
-    pathIn = Path(input_path).as_posix()
+    pathIn  = Path(input_path).as_posix()
 
-    if os.path.exists(os.path.join(pathIn, arquivo_zip)):
-        print(arquivo_zip + ' encontrado!')
+    shutil.rmtree(pathOut, ignore_errors=True)
+    cria_diretorio(pathOut)
 
-        # DECOMP
-        shutil.rmtree(pathOut, ignore_errors=True)
-        cria_diretorio(pathOut)
+    try:
+        with zipfile.ZipFile(pathIn, 'r') as zip_ref:
+            zip_ref.extractall(pathIn[:-4])
+        sleep(2)
+    except Exception as e:
+        print("Nao foi possivel dezipar arquivo PMO_deck_preliminar")
+        logger.error(f"Error unzipping PMO: {e}")
 
+    try:
+        with zipfile.ZipFile(os.path.join(pathIn[:-4], arquivo_decomp), 'r') as zip_ref:
+            zip_ref.extractall(pathOut)
+        sleep(2)
+    except Exception as e:
+        print("Nao foi possivel dezipar arquivo DEC_ONS_")
+        logger.error(f"Error unzipping DEC: {e}")
+
+    dadger = None
+    dadgercp = None
+    dadgnl = None
+    dadgnlcp = None
+
+    for arquivo in os.listdir(pathOut):
+        if 'dadger' in arquivo.lower():
+            dadger = os.path.join(pathOut, arquivo)
+            dadgercp = os.path.join(pathOut, arquivo + 'cp')
+        if 'dadgnl' in arquivo.lower():
+            dadgnl = os.path.join(pathOut, arquivo)
+            dadgnlcp = os.path.join(pathOut, arquivo + 'cp')
+
+    if dadgnl:
         try:
-            with zipfile.ZipFile(os.path.join(pathIn, arquivo_zip), 'r') as zip_ref:
-                zip_ref.extractall(pathIn)
-            sleep(2)
+            shutil.copy(dadgnl, dadgnlcp)
         except Exception as e:
-            print("Nao foi possivel dezipar arquivo PMO_deck_preliminar")
-            logger.error(f"Error unzipping PMO: {e}")
+            print("Nao foi possivel fazer copia DADGNL")
+            logger.error(f"Error copying DADGNL: {e}")
 
+    if dadger:
         try:
-            with zipfile.ZipFile(os.path.join(pathIn, arquivo_decomp), 'r') as zip_ref:
-                zip_ref.extractall(pathOut)
-            sleep(2)
+            shutil.copy(dadger, dadgercp)
         except Exception as e:
-            print("Nao foi possivel dezipar arquivo DEC_ONS_")
-            logger.error(f"Error unzipping DEC: {e}")
+            print("Nao foi possivel fazer copia DADGER")
+            logger.error(f"Error copying DADGER: {e}")
 
-        dadger = None
-        dadgercp = None
-        dadgnl = None
-        dadgnlcp = None
+    # comenta dadger e dadgnl para PLD
+    if dadger and dadgercp:
+        dadger_ons_to_ccee(dadgercp, dadger, rev, dt_decomp)
 
-        for arquivo in os.listdir(pathOut):
-            if 'dadger' in arquivo.lower():
-                dadger = os.path.join(pathOut, arquivo)
-                dadgercp = os.path.join(pathOut, arquivo + 'cp')
-            if 'dadgnl' in arquivo.lower():
-                dadgnl = os.path.join(pathOut, arquivo)
-                dadgnlcp = os.path.join(pathOut, arquivo + 'cp')
+    if dadgnl and dadgnlcp:
+        dadgnl_ons_to_ccee(dadgnlcp, dadgnl)
 
-        if dadgnl:
-            try:
-                shutil.copy(dadgnl, dadgnlcp)
-            except Exception as e:
-                print("Nao foi possivel fazer copia DADGNL")
-                logger.error(f"Error copying DADGNL: {e}")
+    try:
+        if dadgercp:
+            os.remove(dadgercp)
+    except Exception as e:
+        print("Arquivo DADGERcp nao encontrado")
+        logger.warning(f"DADGERcp not found: {e}")
 
-        if dadger:
-            try:
-                shutil.copy(dadger, dadgercp)
-            except Exception as e:
-                print("Nao foi possivel fazer copia DADGER")
-                logger.error(f"Error copying DADGER: {e}")
-
-        # comenta dadger e dadgnl para PLD
-        if dadger and dadgercp:
-            dadger_ons_to_ccee(dadgercp, dadger, rev, dt_decomp)
-
-        if dadgnl and dadgnlcp:
-            dadgnl_ons_to_ccee(dadgnlcp, dadgnl)
-
-        try:
-            if dadgercp:
-                os.remove(dadgercp)
-        except Exception as e:
-            print("Arquivo DADGERcp nao encontrado")
-            logger.warning(f"DADGERcp not found: {e}")
-
-        try:
-            if dadgnlcp:
-                os.remove(dadgnlcp)
-        except Exception as e:
-            print("Arquivo DADGNLcp nao encontrado")
-            logger.warning(f"DADGNLcp not found: {e}")
-       
-    else:
-        print('Arquivo ' + arquivo_zip + ' ainda nao disponivel!')
-        print('SAINDO')
-        # quit()  # Commented to avoid exiting, raise error instead
-        raise FileNotFoundError(f"Arquivo {arquivo_zip} nao encontrado em {pathIn}")
+    try:
+        if dadgnlcp:
+            os.remove(dadgnlcp)
+    except Exception as e:
+        print("Arquivo DADGNLcp nao encontrado")
+        logger.warning(f"DADGNLcp not found: {e}")
 
 
