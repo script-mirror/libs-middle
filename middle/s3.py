@@ -1,15 +1,30 @@
 import os
 import requests
 import datetime
-import magic
-import mimetypes
 from .utils import (
     get_auth_header,
     constants,
 )
 
+
+def infer_file_extension(data: bytes) -> str:
+    signatures = [
+        (b"%PDF", "pdf"),
+        (b"\x89PNG\r\n\x1a\n", "png"),
+        (b"\xFF\xD8\xFF", "jpg"),
+        (b"GIF8", "gif"),
+        (b"\x49\x44\x33", "mp3"),
+        (b"\xFF\xFB", "mp3"),
+        (b"PK\x03\x04", "zip"),
+    ]
+
+    for sig, ext in signatures:
+        if data.startswith(sig):
+            return ext
+    return "bin"
+
+
 def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
-    filename = os.path.join(path_download, webhook_payload['nome'])
     auth = get_auth_header()
     
     res = requests.get(
@@ -20,14 +35,16 @@ def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
         raise Exception(f"Erro ao baixar arquivo do S3: {res.text}")
         
     file_content = requests.get(res.json()['url'])
-
-    mime = magic.from_buffer(file_content.content, mime=True)
-    ext = mimetypes.guess_extension(mime) or ''
-    filename_with_ext = filename + ext
-
-    with open(filename_with_ext, 'wb') as f:
-        f.write(file_content.content)
-    return filename_with_ext
+    if file_content.status_code != 200:
+        raise Exception(f"Erro ao obter conteúdo do arquivo: {file_content.text}")
+    
+    content = file_content.content
+    ext = infer_file_extension(content)
+    
+    filename = os.path.join(path_download, f"{webhook_payload['nome']}.{ext}")
+    with open(filename, 'wb') as f:
+        f.write(content)
+    return filename
 
 
 def get_latest_webhook_product(
