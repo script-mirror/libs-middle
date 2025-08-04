@@ -390,6 +390,10 @@ class Constants:
     @property
     def PATH_PREVS_INTERNO(self):
         return '/projetos/arquivos/prospec/prevs/raizen'
+    
+    @property
+    def PATH_TOKEN(self):
+        return os.path.expanduser("~")
 
     @property
     def ATIVAR_ENV(self):

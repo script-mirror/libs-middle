@@ -1,19 +1,19 @@
-import os
 import json
 import time
 import base64
 import requests
 from .logger import setup_logger
+from . import constants
 
 logger = setup_logger()
 
 
 def get_auth_header() -> str:
-    cache_env_path = os.getenv("path_token_cognito")
+    cache_env_path = constants.PATH_TOKEN
     CACHE_FILE = (f'{cache_env_path}/token_cache.json'
                   if cache_env_path else 'token_cache.json')
-    URL_COGNITO = os.getenv('URL_COGNITO')
-    CONFIG_COGNITO = os.getenv('CONFIG_COGNITO')
+    URL_COGNITO = constants.URL_COGNITO
+    CONFIG_COGNITO = constants.CONFIG_COGNITO
 
     if not URL_COGNITO:
         logger.error("Variavel de ambiente URL_COGNITO nao definida")
