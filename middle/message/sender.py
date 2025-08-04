@@ -40,6 +40,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
             files = {"arquivo": ("arquivo.jpg", arquivo)}
     response = requests.post(url, data=fields, files=files, headers=headers)
     logger.info(f"Mensagem WhatsApp enviada para {destinatario}. Status Code: {response.status_code}")
+    return response
 
 def send_email_message(
     user: str = constants.EMAIL_CLIME,
@@ -85,4 +86,4 @@ def send_email_message(
         logger.error(f"Falha ao enviar e-mail. Campos: {fields}")
         logger.error(f"Texto da resposta: {response.text}")
 
-
+    return response
