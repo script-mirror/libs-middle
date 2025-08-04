@@ -3,7 +3,7 @@ import time
 import base64
 import requests
 from .logger import setup_logger
-from utils import constants
+from ..utils import constants
 
 logger = setup_logger()
 
