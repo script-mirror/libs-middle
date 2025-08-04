@@ -205,7 +205,7 @@ class Constants:
 
     @property
     def SERVER_DEFLATE_PROSPEC(self):
-        return os.getenv('SERVER_DEFLATE_PROSPEC')
+        return 'm6i.24xlarge'
 
     @property
     def API_PLUVIA_USERNAME(self):
