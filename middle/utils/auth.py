@@ -3,9 +3,10 @@ import time
 import base64
 import requests
 from .logger import setup_logger
-from ..utils import constants
+from ..utils import Constants
 
 logger = setup_logger()
+constants = Constants()
 
 
 def get_auth_header() -> str:

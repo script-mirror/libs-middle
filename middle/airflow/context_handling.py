@@ -1,5 +1,7 @@
-from ..utils import constants
+from ..utils import Constants
 from ..message import send_whatsapp_message
+
+constants = Constants()
 
 def enviar_whatsapp_error(
     dag_id: str,

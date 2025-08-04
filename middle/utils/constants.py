@@ -418,6 +418,3 @@ class Constants:
     @property
     def WEBHOOK_NOTAS_TECNICAS(self):
         return "Notas Técnicas - Medio Prazo"
-
-# Instância global (opcional, para facilitar o uso)
-consts = Constants()

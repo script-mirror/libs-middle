@@ -3,9 +3,9 @@ import requests
 import datetime
 from .utils import (
     get_auth_header,
-    constants,
+    Constants,
 )
-
+constants = Constants()
 
 def infer_file_extension(data: bytes) -> str:
     signatures = [

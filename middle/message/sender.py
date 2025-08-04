@@ -1,7 +1,10 @@
 import requests
 from ..utils.auth import get_auth_header
 from ..utils.logger import setup_logger
-from ..utils import constants
+from ..utils import Constants
+
+constants = Constants()
+
 
 logger = setup_logger()
 

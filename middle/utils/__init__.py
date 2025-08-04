@@ -24,7 +24,7 @@ from .html_to_image import (
 )
 
 from .constants import (
-    consts as constants,
+    Constants
 )
 
 
@@ -36,5 +36,5 @@ __all__ = [
     "setup_logger",
     "gerar_tabela",
     "html_to_image",
-    "constants",
+    "Constants",
 ]
