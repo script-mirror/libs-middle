@@ -377,7 +377,7 @@ class Constants:
 
     @property
     def PATH_PROJETOS(self):
-        return '/projetos'
+        return os.getenv('PATH_PROJETOS', '/projetos')
 
     @property
     def PATH_PREVS_PROSPEC(self):
@@ -393,7 +393,7 @@ class Constants:
 
     @property
     def ATIVAR_ENV(self):
-        return " . /WX/WX2TB/Documentos/fontes/PMO/scripts_unificados/env/bin/activate;"
+        return " . /projetos/env/bin/activate;"
     
     @property
     def RUN_STUDY_PROSPEC(self):
