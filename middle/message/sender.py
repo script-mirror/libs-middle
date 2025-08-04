@@ -1,6 +1,4 @@
-import os
 import requests
-from typing import List
 from ..utils.auth import get_auth_header
 from ..utils.logger import setup_logger
 from ..utils import constants
