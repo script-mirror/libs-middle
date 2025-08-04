@@ -1,4 +1,4 @@
-name: Deploy
+name: env-deploy
 
 on:
   push:
@@ -44,12 +44,16 @@ jobs:
             
             echo "Iniciando deploy..."
             
-            ativarEnvi || exit 1
+            . /projetos/env/bin/activate || exit 1
             
             git config --local credential.helper '!f() { echo "username=${{ secrets.GIT_USERNAME }}"; echo "password=${{ secrets.GIT_TOKEN }}"; }; f'
             
             pip install --upgrade --force-reinstall git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git || exit 1
             
+            . /WX2TB/Documentos/fontes/PMO/scripts_unificados/env/bin/activate || exit 1
+
+            pip install --upgrade --force-reinstall git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git || exit 1
+
             git config --local --unset credential.helper
             
             fi

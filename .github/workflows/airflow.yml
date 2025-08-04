@@ -1,4 +1,4 @@
-name: Deploy
+name: airflow-deploy
 
 on:
   push:
@@ -44,13 +44,13 @@ jobs:
             
             echo "Iniciando deploy..."
             
-            sudo docker exec -it airflow_mysql-airflow-scheduler-1 sh || exit 1
-            
-            git config --local credential.helper '!f() { echo "username=${{ secrets.GIT_USERNAME }}"; echo "password=${{ secrets.GIT_TOKEN }}"; }; f'
-            
-            pip install --upgrade --force-reinstall git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git || exit 1
-            
-            git config --local --unset credential.helper
+            sudo docker exec airflow_mysql-airflow-scheduler-1 sh -c '
+              git config --local credential.helper "!f() { echo \"username=${{ secrets.GIT_USERNAME }}\"; echo \"password=${{ secrets.GIT_TOKEN }}\"; }; f"
+              
+              pip install --upgrade --force-reinstall git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git || exit 1
+              
+              git config --local --unset credential.helper
+            '
             
             fi
           EOF
