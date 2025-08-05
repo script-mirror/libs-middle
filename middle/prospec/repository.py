@@ -1,5 +1,5 @@
 import requests
-from utils import (
+from ..utils import (
     setup_logger, Constants, get_auth_header
 )
 
