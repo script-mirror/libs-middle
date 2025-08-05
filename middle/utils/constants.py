@@ -217,7 +217,7 @@ class Constants:
     
     @property
     def WHATSAPP_GILSEU(self):
-        return os.getenv('NUN_GILSEU')
+        return '5481442398'
 
     @property
     def WHATSAPP_TESTE(self):
