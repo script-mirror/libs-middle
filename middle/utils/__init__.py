@@ -27,6 +27,10 @@ from .constants import (
     Constants
 )
 
+from .file_manipulation import(
+    extract_zip,
+)
+
 
 __all__ = [
     "SemanaOperativa",
@@ -37,4 +41,5 @@ __all__ = [
     "gerar_tabela",
     "html_to_image",
     "Constants",
+    "extract_zip",
 ]
