@@ -8,7 +8,7 @@ with open("requirements.txt", "r", encoding="utf-8") as fh:
 
 setup(
     name="middle",
-    version="1.3.2",
+    version="1.3.3",
     author="Trading Middle",
     description="Utilities for Trading applications",
     long_description=long_description,

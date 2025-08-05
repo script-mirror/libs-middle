@@ -3,3 +3,4 @@
 pandas
 requests
 python-magic
+git+https://github.com/raizen-energy/trading-middle-newave.git
