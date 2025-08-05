@@ -380,7 +380,7 @@ def _processar_update_clast_conjuntural(
 def atualizar_cvu_clast_conjuntural(
     paths_clast: List[str],
     cvu_data: pd.DataFrame,
-) -> None:
+) -> List[str]:
     tipos_cvu = cvu_data["fonte"].str.replace(
         "ccee_", "", case=False
     ).unique().tolist()
