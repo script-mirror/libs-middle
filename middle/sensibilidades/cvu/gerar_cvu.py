@@ -1,8 +1,8 @@
 import datetime
 import requests
 import pandas as pd
-from utils import constants
-from utils.auth import get_auth_header
+from ...utils import constants
+from ...utils.auth import get_auth_header
 
 
 
