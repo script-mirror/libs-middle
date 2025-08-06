@@ -601,9 +601,9 @@ def process_decomp(
     except Exception as e:
         logger.error("Error in analysis: %s", str(e))
         raise
-    finally:
-        if params_dict.get('logger', None) is None:
-            logger = None
+    # finally:
+    #     if params_dict.get('logger', None) is None:
+    #         logger = None
 
 
 def main() -> None:
