@@ -52,7 +52,7 @@ def get_cvu_trusted(
     return df_cvu
 
 
-def update_cvu_clast_newave(fontes_to_search=None, dt_atualizacao=None, ids_to_modify=None):
+def atualizar_cvu_clast_newave(fontes_to_search=None, dt_atualizacao=None, ids_to_modify=None):
     
     for tipo_cvu in fontes_to_search:
         tipo_cvu = tipo_cvu.replace('CCEE_', '')
