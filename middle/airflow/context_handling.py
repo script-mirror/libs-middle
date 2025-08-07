@@ -3,7 +3,7 @@ from ..message import send_whatsapp_message
 
 constants = Constants()
 
-def enviar_whatsapp_error(
+def enviar_whatsapp_erro(
     dag_id: str,
     task_id: str,
     destinatario: str,
