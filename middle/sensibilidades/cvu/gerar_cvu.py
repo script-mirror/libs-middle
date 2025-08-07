@@ -6,12 +6,11 @@ import datetime
 import requests
 import pandas as pd
 from ...utils import Constants, get_auth_header, extract_zip, setup_logger
-from ...utils.auth import get_auth_header
-from ..cvu import (
+from ._gerar_cvu_newave import (
     atualizar_cvu_clast_estrutural,
     atualizar_cvu_clast_conjuntural,
-    atualizar_cvu_dadger_decomp,
 )
+
 from ...prospec import(
     get_ids_estudos,
     download_estudo,
@@ -116,5 +115,5 @@ def atualizar_cvu_clast_newave(fontes_to_search=None, dt_atualizacao=None, ids_t
                 )
 
             if paths_modified:
-                # upload_estudo(id_estudo, paths_modified, tag)
+                upload_estudo(id_estudo, paths_modified, tag)
                 os.remove(extracted_zip_estudo)
