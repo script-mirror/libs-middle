@@ -418,3 +418,11 @@ class Constants:
     @property
     def WEBHOOK_NOTAS_TECNICAS(self):
         return "Notas Técnicas - Medio Prazo"
+
+    @property
+    def WEBHOOK_NAO_CONSISTIDO(self):
+        return "Resultados preliminares não consistidos (vazões semanais - PMO)"
+
+    @property
+    def WEBHOOK_CONSISTIDO(self):
+        return "Resultados preliminares (vazões semanais - PMO)"

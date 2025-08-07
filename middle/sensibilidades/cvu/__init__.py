@@ -1,19 +1,9 @@
-from ._gerar_cvu_newave import (
-    atualizar_cvu_clast_estrutural,
-    atualizar_cvu_clast_conjuntural,
-)
-
-from ._gerar_cvu_decomp import (
-    atualizar_cvu_dadger_decomp,
-)
-
 from .gerar_cvu import (
     get_cvu_trusted,
+    atualizar_cvu_clast_newave,
 )
 
 __all__ = [
-    "atualizar_cvu_clast_estrutural",
-    "atualizar_cvu_clast_conjuntural",
-    "atualizar_cvu_dadger_decomp",
+    "atualizar_cvu_clast_newave",
     "get_cvu_trusted",
 ]

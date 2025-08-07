@@ -402,7 +402,7 @@ def adjust_pq_block(
     params: DecompParams = None
 ) -> Dict[str, pd.DataFrame]:
     global logger
-
+    params_dict = params.to_dict()
     logger.info("Manipulating PQ block")
 
     df_dadger['PQ']['sub'] = df_dadger['PQ']['sub'].astype(str).str.strip()

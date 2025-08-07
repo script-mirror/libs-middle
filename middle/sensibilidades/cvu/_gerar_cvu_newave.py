@@ -1,3 +1,4 @@
+import pdb  # noqa: F401
 from typing import List, Optional
 import datetime
 import pandas as pd
@@ -42,12 +43,13 @@ def _normalize_plant_name(text: str) -> str:
 
 
 def _gerar_comentario_conjuntural(
-    timestamp: str, changes: List,
+    timestamp: str,
+    old_cost: Optional[float],
+    new_cost: float,
+    tipo_cvu: str,
 ) -> str:
-    corpo = " | ".join(
-        f"{indice}:\t{new-old:>7.2f}\t" for indice, old, new in changes
-    )
-    return f"{timestamp}\t{corpo}"
+    diff = round(new_cost - old_cost, 2) if old_cost is not None else None
+    return f"{timestamp} {diff:>5.2} {tipo_cvu}"
 
 
 def _update_dados_cvu_estrutural(
@@ -214,15 +216,6 @@ def _update_dados_cvu_conjuntural(
         [modificacoes_filtradas, cvu_data_filtered], ignore_index=True
     )
 
-
-def _gerar_comentario_conjuntural(
-    timestamp: str,
-    old_cost: Optional[float],
-    new_cost: float,
-    tipo_cvu: str,
-) -> str:
-    diff = new_cost - old_cost if old_cost is not None else 0.00
-    return f"{timestamp} {diff:>5.2} {tipo_cvu}"
 
 
 def _gerar_comentario_atualizacao_conjuntural(
