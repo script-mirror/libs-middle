@@ -429,4 +429,4 @@ class Constants:
     
     @property 
     def WEBHOOK_TASKS_PATH(self):
-        return '/projetos/estudos-middle/webhook'
+        return '/projetos/trading-middle-tasks-webhook-ons/tasks'
