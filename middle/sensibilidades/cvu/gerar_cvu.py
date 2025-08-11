@@ -30,7 +30,7 @@ def get_cvu_trusted(
     response = requests.get(
         params = {
             'dt_atualizacao': data_atualizacao,
-            'tipo_cvu': tipo_cvu
+            'fonte': f"CCEE_{tipo_cvu}"
         },
         url = f"{URL_API_RAIZEN}/decks/cvu",
         headers=get_auth_header()
@@ -72,10 +72,14 @@ def atualizar_cvu_clast_newave(fontes_to_search=None, dt_atualizacao=None, ids_t
         
         for id_estudo in ids_to_modify:
             logger.info(f"Modificando estudo {id_estudo}")
-
-            zip_content = download_estudo(id_estudo)['content']
+            try:
+                download_response = download_estudo(id_estudo)
+            except Exception as e:
+                logger.warning(e)
+                continue        
             extracted_zip_estudo = extract_zip(
-                zip_content,
+                download_response['content'],
+                download_response['filename'],
                 "/tmp"
             )
             
