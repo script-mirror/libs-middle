@@ -426,3 +426,7 @@ class Constants:
     @property
     def WEBHOOK_CONSISTIDO(self):
         return "Resultados preliminares consistidos (vazões semanais - PMO)"
+    
+    @property 
+    def WEBHOOK_TASKS_PATH(self):
+        return '//projetos/estudos-middle/webhook'
