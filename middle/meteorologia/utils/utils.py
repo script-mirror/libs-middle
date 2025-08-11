@@ -301,6 +301,26 @@ def get_dado_cacheado(var, obj, varname=None, **kwargs):
 
 ###################################################################################################################
 
+def interpola_ds(ds_alvo, ds_referencia):
+    """
+    Interpola o dataset ds_alvo para o grid do dataset ds_referencia.
+
+    Parâmetros:
+    -----------
+    ds_alvo : xarray.Dataset
+        Dataset a ser interpolado.
+    ds_referencia : xarray.Dataset
+        Dataset de referência com o grid desejado.
+
+    Retorna:
+    --------
+    xarray.Dataset
+        Dataset interpolado.
+    """
+    return ds_alvo.interp(coords=ds_referencia.coords, method="linear")
+
+###################################################################################################################
+
 def format_intervalo(intervalo_str):
     return intervalo_str.replace(' ', '\\ ')
 

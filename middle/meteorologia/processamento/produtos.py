@@ -407,6 +407,63 @@ class ProdutosPrevisaoCurtoPrazo:
 
 ###################################################################################################################
 
+class ProdutosObservado:
+
+    def __init__(self, modelo: str, data: datetime, shapefiles=None, output_path='./tmp/downloads'):
+        self.modelo = modelo
+        self.data = data
+        self.shapefiles = shapefiles
+        self.output_path = output_path
+
+    # -- DOWNLOAD
+    def download_files(self):
+        """
+        Faz o download dos arquivos para o modelo e data especificados.
+        """
+
+        os.makedirs(self.output_path, exist_ok=True)
+
+        # Formatação do modelo e data
+        modelo_fmt = self.modelo.lower()
+
+        # Formatando a data
+        ano_fmt = self.data.strftime('%Y')
+        mes_fmt = self.data.strftime('%m')
+        dia_fmt = self.data.strftime('%d')
+            
+        if modelo_fmt == 'merge':
+            url = f'http://ftp.cptec.inpe.br/modelos/tempo/MERGE/GPM/DAILY/{ano_fmt}/{mes_fmt}/MERGE_CPTEC_{ano_fmt}{mes_fmt}{dia_fmt}.grib2'
+
+        elif modelo_fmt == 'cpc':
+            url = f'https://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT/{ano_fmt}/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{ano_fmt}{mes_fmt}{dia_fmt}.RT'
+
+        filename = url.split('/')[-1]
+        caminho_arquivo = f'{self.output_path}/{filename}'
+        print(caminho_arquivo)
+
+        while True:
+            todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+            # Baixando o dado
+            file = requests.get(url, allow_redirects=True)
+            if file.status_code == 200:
+                with open(caminho_arquivo, 'wb') as f:
+                    f.write(file.content)
+            else:
+                print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                print(url)
+                todos_sucesso = False
+                time.sleep(5)
+                break  # Sai do for e volta ao início do while   
+
+            if todos_sucesso:
+                print(f'✅ Arquivo {filename} baixado com sucesso!')
+                break     
+
+        pass
+
+###################################################################################################################
+
 # # Contando o tempo de execução
 # start_time = time.time()
 

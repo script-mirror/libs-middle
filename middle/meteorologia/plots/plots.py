@@ -279,8 +279,6 @@ def plot_campos(
 
 ###################################################################################################################
 
-# SELF PRODUTOS CONFIG
-
 class GeraCamposMeteorologicos:
 
     def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, shapefiles=None, produto_config_pl=None):
