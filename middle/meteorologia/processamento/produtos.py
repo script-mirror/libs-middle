@@ -94,8 +94,7 @@ class ProdutosPrevisaoCurtoPrazo:
                         continue
 
                     url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
-                    print(url)
-
+                    
                     if sub_region_as_gribfilter:
                         url += sub_region_as_gribfilter
 
@@ -105,6 +104,7 @@ class ProdutosPrevisaoCurtoPrazo:
                             f.write(file.content)
                     else:
                         print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                        print(url)
                         todos_sucesso = False
                         time.sleep(5)
                         break  # Sai do for e volta ao início do while
