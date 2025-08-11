@@ -861,7 +861,6 @@ class GeraCamposMeteorologicos:
 
 ###################################################################################################################
 
-
 # # --- Geração de precipitação acumulada em 24 horas ---
 # def gerar_prec24h(modelo_fmt, produto_config_sf, tp_params, shapefiles=None):
     

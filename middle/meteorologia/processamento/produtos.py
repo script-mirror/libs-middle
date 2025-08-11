@@ -94,6 +94,7 @@ class ProdutosPrevisaoCurtoPrazo:
                         continue
 
                     url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
+                    print(url)
 
                     if sub_region_as_gribfilter:
                         url += sub_region_as_gribfilter
