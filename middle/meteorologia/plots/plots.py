@@ -679,6 +679,10 @@ class GeraCamposMeteorologicos:
             us_mean = ensemble_mean(us)
             vs_mean = ensemble_mean(vs)
 
+            if us_mean.longitude.min() >= 0:
+                us_mean = us_mean.assign_coords(longitude=(((us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+                vs_mean = vs_mean.assign_coords(longitude=(((vs_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
             us_24h_850 = resample_variavel(us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
             vs_24h_850 = resample_variavel(vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
 
@@ -860,7 +864,6 @@ class GeraCamposMeteorologicos:
             print(f'Erro ao gerar IVT: {e}')
 
 ###################################################################################################################
-
 
 # # --- Geração de precipitação acumulada em 24 horas ---
 # def gerar_prec24h(modelo_fmt, produto_config_sf, tp_params, shapefiles=None):
