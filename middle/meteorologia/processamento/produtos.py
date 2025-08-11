@@ -411,7 +411,7 @@ class ProdutosObservado:
 
     def __init__(self, modelo: str, data: datetime, shapefiles=None, output_path='./tmp/downloads'):
         self.modelo = modelo
-        self.data = data
+        self.data = pd.to_datetime(data)
         self.shapefiles = shapefiles
         self.output_path = output_path
 
