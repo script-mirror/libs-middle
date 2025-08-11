@@ -446,23 +446,23 @@ class ProdutosObservado:
         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
 
         while True:
-            todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
-
-            # Baixando o dado
-            file = requests.get(url, allow_redirects=True)
-            if file.status_code == 200:
-                with open(caminho_arquivo, 'wb') as f:
-                    f.write(file.content)
-            else:
-                print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
-                print(url)
-                todos_sucesso = False
+            try:
+                # Baixando o dado
+                file = requests.get(url, allow_redirects=True, timeout=30)
+                
+                if file.status_code == 200:
+                    with open(caminho_arquivo, 'wb') as f:
+                        f.write(file.content)
+                    print(f'✅ Arquivo {filename} baixado com sucesso!')
+                    break  # Sai do while quando der certo
+                else:
+                    print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                    print(url)
+                    time.sleep(5)
+            
+            except requests.RequestException as e:
+                print(f'⚠️ Erro de conexão ao baixar {filename}: {e}, tentando novamente...')
                 time.sleep(5)
-                break  # Sai do for e volta ao início do while   
-
-            if todos_sucesso:
-                print(f'✅ Arquivo {filename} baixado com sucesso!')
-                break     
 
         pass
 
