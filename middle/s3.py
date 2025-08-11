@@ -23,12 +23,11 @@ def infer_file_extension(data: bytes) -> str:
             return ext
     return "bin"
 
-
-def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
+def download_from_s3(id_produto: str, filename: str, path_download: str) -> str:
     auth = get_auth_header()
     
     res = requests.get(
-        f"{constants.BASE_URL}/webhook/api/webhooks/{webhook_payload['id']}/download", 
+        f"{constants.BASE_URL}/webhook/api/webhooks/{id_produto}/download", 
         headers=auth
     )
     if res.status_code != 200:
@@ -41,10 +40,14 @@ def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
     content = file_content.content
     ext = infer_file_extension(content)
     
-    filename = os.path.join(path_download, f"{webhook_payload['nome']}.{ext}")
+    filename = os.path.join(path_download, f"{filename}.{ext}")
     with open(filename, 'wb') as f:
         f.write(content)
     return filename
+
+
+def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
+    return download_from_s3(webhook_payload['id'], webhook_payload['nome'], path_download)
 
 
 def get_latest_webhook_product(
