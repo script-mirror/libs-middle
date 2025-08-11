@@ -421,16 +421,21 @@ class ProdutosObservado:
         Faz o download dos arquivos para o modelo e data especificados.
         """
 
-        os.makedirs(self.output_path, exist_ok=True)
-
         # Formatação do modelo e data
         modelo_fmt = self.modelo.lower()
+
+        # Formatação do caminho
+        output_path = self.output_path
 
         # Formatando a data
         ano_fmt = self.data.strftime('%Y')
         mes_fmt = self.data.strftime('%m')
         dia_fmt = self.data.strftime('%d')
-            
+
+        # Caminho para salvar os arquivos
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}/{ano_fmt}{mes_fmt}{dia_fmt}'
+        os.makedirs(caminho_para_salvar, exist_ok=True)
+
         if modelo_fmt == 'merge':
             url = f'http://ftp.cptec.inpe.br/modelos/tempo/MERGE/GPM/DAILY/{ano_fmt}/{mes_fmt}/MERGE_CPTEC_{ano_fmt}{mes_fmt}{dia_fmt}.grib2'
 
@@ -438,8 +443,7 @@ class ProdutosObservado:
             url = f'https://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT/{ano_fmt}/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{ano_fmt}{mes_fmt}{dia_fmt}.RT'
 
         filename = url.split('/')[-1]
-        caminho_arquivo = f'{self.output_path}/{filename}'
-        print(caminho_arquivo)
+        caminho_arquivo = f'{caminho_para_salvar}/{filename}'
 
         while True:
             todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
