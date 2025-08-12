@@ -14,7 +14,8 @@ from ..utils.utils import (
     encontra_semanas_operativas,
     gerar_titulo,
     encontra_casos_frentes_xarray,
-    skip_zero_formatter
+    skip_zero_formatter,
+    interpola_ds
 )
 from ..consts.namelist import CONSTANTES
 import matplotlib
@@ -69,6 +70,19 @@ def custom_colorbar(variavel_plotagem):
             "#cc4c02",  # 5 - vermelho-laranja
         ]
         cmap = None        
+
+    elif variavel_plotagem == 'frentes_anomalia':
+        levels = [-3, -2, -1, 0, 1, 2, 3]
+        colors = [
+            "#b2182b",  # -3 - vermelho escuro
+            "#ef8a62",  # -2 - vermelho claro
+            "#ffffff",  # -1 - bege rosado
+            "#ffffff",  #  0 - branco
+            "#d1e5f0",  # +1 - azul claro
+            "#67a9cf",  # +2 - azul médio
+            "#2166ac",  # +3 - azul escuro
+        ]
+        cmap = None   
 
     elif variavel_plotagem == 'acumulado_total':
         levels = range(0, 420, 20)
@@ -233,7 +247,7 @@ def plot_campos(
 
         elif variavel_contour == 'frentes':
             contour_levels = [lvl for lvl in levels if lvl != 0]
-            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=contour_levels)
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=contour_levels, linewidths=0.5)
             plt.clabel(cf2, inline=True, fmt=mticker.FuncFormatter(lambda x, _: skip_zero_formatter(x)), fontsize=10)
 
     if ds_streamplot is not None:
@@ -1002,7 +1016,7 @@ class GeraProdutosPrevisao:
         except Exception as e:
             print(f'Erro ao gerar diferenças: {e}')
 
-    def gerar_frentes_frias(self, **kwargs):
+    def gerar_frentes_frias(self, anomalia=False, **kwargs):
 
         # try:
 
@@ -1027,6 +1041,8 @@ class GeraProdutosPrevisao:
 
         for mes in list(set(pnmm_sel.valid_time.dt.month.values)):
 
+            mes_fmt = str(mes).zfill(2)
+
             ds_mensal_slp = pnmm_sel.sel(valid_time=pnmm_sel.valid_time.dt.month == mes)
             ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
             ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
@@ -1049,6 +1065,42 @@ class GeraProdutosPrevisao:
                 shapefiles=self.shapefiles,
                 **kwargs
             )
+
+            if anomalia:
+            
+                # Agora o mapa de anomalia
+                ds_climatologia = xr.open_dataset(f'{CONSTANTES['path_reanalise_ncepI']}/diarios/dados_climatologia_frentes/climatologia_{mes_fmt}.nc')
+
+                # Renomeando lat para latitude e lon para longitude
+                ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude'})
+                ds_climatologia = ds_climatologia.rename({'__xarray_dataarray_variable__':'climatologia'})
+
+                # Transformando a longitude para 0 e 360 se necessário
+                if (casos.longitude < 0).any():
+                    casos = casos.assign_coords(longitude=(casos.longitude % 360)).sortby('longitude').sortby('latitude')
+
+                # Interpolando
+                ds_climatologia = interpola_ds(ds_climatologia, ds_frentes)
+
+                # Calculando a anomalia
+                anomalia = ds_frentes - (ds_climatologia['climatologia']/30)*len(ds_mensal_slp.valid_time)          
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Anomalia de frentes frias', cond_ini=cond_ini,
+                    data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                )
+
+                plot_campos(
+                    ds=anomalia,
+                    variavel_plotagem='anomalia_frentes',
+                    title=titulo,
+                    filename=f'anomalia_frentes_{self.modelo_fmt}',
+                    ds_contour=anomalia,
+                    variavel_contour='anomalia_frentes',
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
 
         # except Exception as e:
         #     print(f'Erro ao gerar frentes frias: {e}')

@@ -18,11 +18,14 @@ CONSTANTES = {
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
         '[°C]': ['temp850', 't2m', '2t'],
-        '[kg*m-1*s-1]': ['ivt']
-        
+        '[kg*m-1*s-1]': ['ivt'],
+        '[Anomalia de frentes frias]': ['anomalia_frentes'],
+        '[Número de eventos]': ['frentes']  
     },
 
     'path_save_netcdf': './data', # '/WX2TB/Documentos/saidas-modelos-novo'
+
+    'path_reanalise_ncepI': './data', #'/WX2TB/Documentos/dados/reanI-ncep',
 
 }
 
