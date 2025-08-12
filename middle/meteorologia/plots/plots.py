@@ -887,57 +887,57 @@ class GeraProdutosPrevisao:
 
     def gerar_diferencas(self, timedelta=1, variavel='tp', dif_total=True,**kwargs):
 
-        try:
+        # try:
 
-            print('Gerando mapa de diferença total ...')
+        print('Gerando mapa de diferença total ...')
 
-            # Arquivo atual
-            ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
-            ds_mean = ensemble_mean(ds)
-            cond_ini = get_inicializacao_fmt(ds_mean)
+        # Arquivo atual
+        ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
+        ds_mean = ensemble_mean(ds)
+        cond_ini = get_inicializacao_fmt(ds_mean)
 
-            # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
-            data_anterior = ds_mean.time.values - pd.Timedelta(days=timedelta)
-            data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
-            ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
+        # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
+        data_anterior = pd.to_datetime(ds_mean.time.values) - pd.Timedelta(days=timedelta)
+        data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
+        ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
 
-            # Listas para plot
-            difs = []
-            dates = []
+        # Listas para plot
+        difs = []
+        dates = []
 
-            if dif_total:
-                # Diferença total
-                ti = ds_mean['valid_time'].values[1]
-                tf = ds_anterior['valid_time'].values[-1]
+        if dif_total:
+            # Diferença total
+            ti = ds_mean['valid_time'].values[1]
+            tf = ds_anterior['valid_time'].values[-1]
 
-                # Acumulando
-                ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
-                ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+            # Acumulando
+            ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+            ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
 
-                # Ds diferença
-                ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
-                difs.append(ds_diferenca)
-                dates.append([ti, tf])
+            # Ds diferença
+            ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+            difs.append(ds_diferenca)
+            dates.append([ti, tf])
 
-            for dif, date in zip(difs, dates):
+        for dif, date in zip(difs, dates):
 
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
-                    dataini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    datafim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                )
+            titulo = gerar_titulo(
+                modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
+                dataini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                datafim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+            )
 
-                plot_campos(
-                    ds=dif,
-                    variavel_plotagem='chuva_ons',
-                    tile=titulo,
-                    shapefiles=self.shapefiles,
-                    filename=f'dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}.nc',
-                    **kwargs
-                )
+            plot_campos(
+                ds=dif,
+                variavel_plotagem='chuva_ons',
+                tile=titulo,
+                shapefiles=self.shapefiles,
+                filename=f'dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}.nc',
+                **kwargs
+            )
 
-        except Exception as e:
-            print(f'Erro ao gerar diferenças: {e}')
+        #except Exception as e:
+        #    print(f'Erro ao gerar diferenças: {e}')
 
 ###################################################################################################################
 
