@@ -917,7 +917,7 @@ class GeraProdutosPrevisao:
             # Ds diferença
             ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
             difs.append(ds_diferenca)
-            dates.append([ti, tf])
+            dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
 
         for dif, date in zip(difs, dates):
 
