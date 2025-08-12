@@ -1003,55 +1003,55 @@ class GeraProdutosPrevisao:
 
     def gerar_frentes_frias(self, **kwargs):
 
-        try:
+        # try:
 
-            # Abrindo arquivo pnmm
-            varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
-            pnmm = get_dado_cacheado(varname, self.produto_config_sf)
-            pnmm_mean = ensemble_mean(pnmm)
-            cond_ini = get_inicializacao_fmt(pnmm_mean)
+        # Abrindo arquivo pnmm
+        varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
+        pnmm = get_dado_cacheado(varname, self.produto_config_sf)
+        pnmm_mean = ensemble_mean(pnmm)
+        cond_ini = get_inicializacao_fmt(pnmm_mean)
 
-            # Abrindo arquivo vwnd
-            vs = get_dado_cacheado('v', self.produto_config_pl)
-            vs_mean = ensemble_mean(vs)       
+        # Abrindo arquivo vwnd
+        vs = get_dado_cacheado('v', self.produto_config_pl)
+        vs_mean = ensemble_mean(vs)       
 
-            # Abrindo arquivo de tmp
-            t = get_dado_cacheado('t', self.produto_config_pl)
-            t_mean = ensemble_mean(t)                 
+        # Abrindo arquivo de tmp
+        t = get_dado_cacheado('t', self.produto_config_pl)
+        t_mean = ensemble_mean(t)                 
 
-            # Gerando mapas das frente frias previstas
-            pnmm_sel = pnmm_mean.sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')
-            vwnd_sel = vs_mean.sel(isobaricInhPa=925).sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')
-            air_sel = t_mean.sel(isobaricInhPa=925).sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')           
+        # Gerando mapas das frente frias previstas
+        pnmm_sel = pnmm_mean.sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')
+        vwnd_sel = vs_mean.sel(isobaricInhPa=925).sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')
+        air_sel = t_mean.sel(isobaricInhPa=925).sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')           
 
-            for mes in list(set(pnmm_sel.valid_time.dt.month.values)):
+        for mes in list(set(pnmm_sel.valid_time.dt.month.values)):
 
-                ds_mensal_slp = pnmm_sel.sel(valid_time=pnmm_sel.valid_time.dt.month == mes)
-                ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
-                ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
+            ds_mensal_slp = pnmm_sel.sel(valid_time=pnmm_sel.valid_time.dt.month == mes)
+            ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
+            ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
 
-                ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air)
+            ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air)
 
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Casos de frentes frias', cond_ini=cond_ini,
-                    data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                )
+            titulo = gerar_titulo(
+                modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Casos de frentes frias', cond_ini=cond_ini,
+                data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+            )
 
-                plot_campos(
-                    ds=ds_frentes,
-                    variavel_plotagem='frentes',
-                    title=titulo,
-                    filename=f'frentes_{self.modelo_fmt}',
-                    ds_contour=ds_frentes,
-                    variavel_contour='frentes',
-                    shapefiles=self.shapefiles,
-                    **kwargs
-                )
+            plot_campos(
+                ds=ds_frentes,
+                variavel_plotagem='frentes',
+                title=titulo,
+                filename=f'frentes_{self.modelo_fmt}',
+                ds_contour=ds_frentes,
+                variavel_contour='frentes',
+                shapefiles=self.shapefiles,
+                **kwargs
+            )
 
 
-        except Exception as e:
-            print(f'Erro ao gerar frentes frias: {e}')
+        # except Exception as e:
+        #     print(f'Erro ao gerar frentes frias: {e}')
 
 ###################################################################################################################
 
