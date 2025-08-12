@@ -897,7 +897,7 @@ class GeraProdutosPrevisao:
             cond_ini = get_inicializacao_fmt(ds_mean)
 
             # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
-            data_anterior = cond_ini - pd.Timedelta(days=timedelta)
+            data_anterior = ds_mean.time.values - pd.Timedelta(days=timedelta)
             data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
             ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
 
