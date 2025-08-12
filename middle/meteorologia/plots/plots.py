@@ -142,6 +142,16 @@ def custom_colorbar(variavel_plotagem):
                 '#D75C12', '#BF0411']
         cmap = None
 
+    elif variavel_plotagem == 'diferenca':
+        levels = range(-100, 110, 10)
+        colors = ['mediumvioletred', 'maroon', 'firebrick', 
+                  'red', 'chocolate', 'orange', 'gold', 
+                  'yellow', 'white', 'white', 'aquamarine', 
+                  'mediumturquoise', 'cyan', 'lightblue', 'blue', 
+                  'purple', 'mediumpurple', 'blueviolet']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        
     return levels, colors, cmap
 
 ###################################################################################################################
@@ -907,7 +917,7 @@ class GeraProdutosPrevisao:
 
         if dif_total:
             # Diferença total
-            ti = ds_mean['valid_time'].values[1]
+            ti = ds_mean['valid_time'].values[0]
             tf = ds_anterior['valid_time'].values[-1]
 
             # Acumulando
@@ -921,11 +931,9 @@ class GeraProdutosPrevisao:
 
         for dif, date in zip(difs, dates):
 
-            date_ini = ajustar_hora_utc(date[0])
-
             titulo = gerar_titulo(
                 modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
-                data_ini=date_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                 data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
 
@@ -933,8 +941,8 @@ class GeraProdutosPrevisao:
 
             plot_campos(
                 ds=dif,
-                variavel_plotagem='chuva_ons',
-                tile=titulo,
+                variavel_plotagem='diferenca',
+                title=titulo,
                 shapefiles=self.shapefiles,
                 filename=f'dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}.nc',
                 **kwargs
