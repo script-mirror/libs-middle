@@ -929,6 +929,8 @@ class GeraProdutosPrevisao:
                 data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
 
+            print(titulo)
+
             plot_campos(
                 ds=dif,
                 variavel_plotagem='chuva_ons',
