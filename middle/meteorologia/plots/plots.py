@@ -923,8 +923,8 @@ class GeraProdutosPrevisao:
 
             titulo = gerar_titulo(
                 modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
-                dataini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                datafim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
 
             plot_campos(
