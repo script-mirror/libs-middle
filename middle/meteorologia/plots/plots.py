@@ -332,6 +332,7 @@ class GeraProdutosPrevisao:
                     shapefiles=self.shapefiles,
                     **kwargs
                 )
+
         except Exception as e:
             print(f'Erro ao gerar prec24h: {e}')
 
@@ -864,35 +865,76 @@ class GeraProdutosPrevisao:
 
     def salva_netcdf(self, variavel: str, ensemble=True):
 
-        # try:
+        try:
 
-        print(f'Salvando NetCDF para {self.modelo_fmt}...')
+            print(f'Salvando NetCDF para {self.modelo_fmt}...')
 
-        if variavel == 'tp':
-            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
-            ds = ensemble_mean(tp) if ensemble else tp.copy()
+            if variavel == 'tp':
+                tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+                ds = ensemble_mean(tp) if ensemble else tp.copy()
 
-        # Salvando o dataset como NetCDF
-        os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
-        ds[variavel].to_netcdf(f'{CONSTANTES["path_save_netcdf"]}/{variavel}_{self.modelo_fmt}_{variavel}.nc')
+            else:
+                print('Ainda implementando')
+                return
 
-        # except Exception as e:
-        #    print(f'Erro ao salvar NetCDF: {e}')
+            # Salvando o dataset como NetCDF
+            os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
+            cond_ini = get_inicializacao_fmt(ds, format='%Y%m%d%H')
+            ds[variavel].to_netcdf(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{cond_ini}.nc')
 
-    def gerar_diferencas(self, timedelta=1, **kwargs):
+        except Exception as e:
+           print(f'Erro ao salvar NetCDF: {e}')
+
+    def gerar_diferencas(self, timedelta=1, variavel='tp', dif_total=True,**kwargs):
 
         try:
 
             print('Gerando mapa de diferença total ...')
-            ds = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+
+            # Arquivo atual
+            ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
             ds_mean = ensemble_mean(ds)
             cond_ini = get_inicializacao_fmt(ds_mean)
 
             # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
-            path_save_netcdf = CONSTANTES['path_save_netcdf']
             data_anterior = cond_ini - pd.Timedelta(days=timedelta)
             data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
-            ds_anterior = xr.open_dataset(f'{path_save_netcdf}/prec_{self.modelo.upper()}_{data_anterior_fmt}.nc')
+            ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
+
+            # Listas para plot
+            difs = []
+            dates = []
+
+            if dif_total:
+                # Diferença total
+                ti = ds_mean['valid_time'].values[1]
+                tf = ds_anterior['valid_time'].values[-1]
+
+                # Acumulando
+                ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                # Ds diferença
+                ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                difs.append(ds_diferenca)
+                dates.append([ti, tf])
+
+            for dif, date in zip(difs, dates):
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
+                    dataini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    datafim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                )
+
+                plot_campos(
+                    ds=dif,
+                    variavel_plotagem='chuva_ons',
+                    tile=titulo,
+                    shapefiles=self.shapefiles,
+                    filename=f'dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}.nc',
+                    **kwargs
+                )
 
         except Exception as e:
             print(f'Erro ao gerar diferenças: {e}')

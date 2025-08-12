@@ -5,6 +5,7 @@ import time
 import pandas as pd
 from ..utils.utils import abrir_modelo_sem_vazios
 from ..consts.namelist import CONSTANTES
+from ..plots.plots import GeraProdutosPrevisao
 
 ###################################################################################################################
 
@@ -467,11 +468,6 @@ class ProdutosObservado:
         pass
 
 ###################################################################################################################
-
-# # Contando o tempo de execução
-# start_time = time.time()
-
-# ###################################################################################################################
 
 # # Datas e parâmetros
 # modelo = 'ecmwf-ens'
