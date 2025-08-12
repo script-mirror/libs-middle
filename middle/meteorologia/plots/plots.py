@@ -1020,9 +1020,9 @@ class GeraProdutosPrevisao:
         t_mean = ensemble_mean(t)                 
 
         # Gerando mapas das frente frias previstas
-        pnmm_sel = pnmm_mean.sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')
-        vwnd_sel = vs_mean.sel(isobaricInhPa=925).sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')
-        air_sel = t_mean.sel(isobaricInhPa=925).sel(latitude=slice(0, -90)).resample(valid_time='D').mean(dim='valid_time')           
+        pnmm_sel = pnmm_mean.sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
+        vwnd_sel = vs_mean.sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
+        air_sel = t_mean.sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')           
 
         for mes in list(set(pnmm_sel.valid_time.dt.month.values)):
 
