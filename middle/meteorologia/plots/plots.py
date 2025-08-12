@@ -921,9 +921,11 @@ class GeraProdutosPrevisao:
 
         for dif, date in zip(difs, dates):
 
+            date_ini = ajustar_hora_utc(date[0])
+
             titulo = gerar_titulo(
                 modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
-                data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_ini=date_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                 data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
 
