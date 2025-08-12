@@ -14,6 +14,7 @@ from ..utils.utils import (
     encontra_semanas_operativas,
     gerar_titulo
 )
+from ..consts.namelist import CONSTANTES
 import matplotlib
 matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
 import matplotlib.pyplot as plt
@@ -279,7 +280,7 @@ def plot_campos(
 
 ###################################################################################################################
 
-class GeraCamposMeteorologicos:
+class GeraProdutosPrevisao:
 
     def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, shapefiles=None, produto_config_pl=None):
 
@@ -321,8 +322,8 @@ class GeraCamposMeteorologicos:
                 tp_plot = tp_24h.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
-
                 titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, cond_ini)
+
                 plot_campos(
                     ds=tp_plot['tp'],
                     variavel_plotagem='chuva_ons',
@@ -860,6 +861,51 @@ class GeraCamposMeteorologicos:
 
         except Exception as e:
             print(f'Erro ao gerar IVT: {e}')
+
+    def salva_netcdf(self, variavel: str, ensemble_mean=True):
+
+        try:
+
+            print(f'Salvando NetCDF para {self.modelo_fmt}...')
+
+            if variavel == 'tp':
+                tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+                ds = ensemble_mean(tp) if ensemble_mean else tp.copy()
+
+            # Salvando o dataset como NetCDF
+            os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
+            ds[variavel].to_netcdf(f'{CONSTANTES["path_save_netcdf"]}/{variavel}_{self.modelo_fmt}_{variavel}.nc')
+
+        except Exception as e:
+            print(f'Erro ao salvar NetCDF: {e}')
+
+    def gerar_diferencas(self, timedelta=1, **kwargs):
+
+        try:
+
+            print('Gerando mapa de diferença total ...')
+            ds = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+            ds_mean = ensemble_mean(ds)
+            cond_ini = get_inicializacao_fmt(ds_mean)
+
+            # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
+            path_save_netcdf = CONSTANTES['path_save_netcdf']
+            data_anterior = cond_ini - pd.Timedelta(days=timedelta)
+            data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
+            ds_anterior = xr.open_dataset(f'{path_save_netcdf}/prec_{self.modelo.upper()}_{data_anterior_fmt}.nc')
+
+        except Exception as e:
+            print(f'Erro ao gerar diferenças: {e}')
+
+###################################################################################################################
+
+class GeraProdutosObservacao:
+
+    def __init__(self, modelo_fmt, produto_config, shapefiles=None):
+
+        self.modelo_fmt = modelo_fmt
+        self.produto_config = produto_config
+        self.shapefiles = shapefiles
 
 ###################################################################################################################
 

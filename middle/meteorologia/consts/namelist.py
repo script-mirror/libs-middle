@@ -20,6 +20,9 @@ CONSTANTES = {
         '[°C]': ['temp850', 't2m', '2t'],
         '[kg*m-1*s-1]': ['ivt']
         
-    }
+    },
+
+    'path_save_netcdf': './data', # '/WX2TB/Documentos/saidas-modelos-novo'
+
 }
 
