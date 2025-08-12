@@ -1076,8 +1076,8 @@ class GeraProdutosPrevisao:
                 ds_climatologia = ds_climatologia.rename({'__xarray_dataarray_variable__':'climatologia'})
 
                 # Transformando a longitude para 0 e 360 se necessário
-                if (casos.longitude < 0).any():
-                    casos = casos.assign_coords(longitude=(casos.longitude % 360)).sortby('longitude').sortby('latitude')
+                if (ds_climatologia.longitude < 0).any():
+                    ds_climatologia = ds_climatologia.assign_coords(longitude=(ds_climatologia.longitude % 360)).sortby('longitude').sortby('latitude')
 
                 # Interpolando
                 ds_climatologia = interpola_ds(ds_climatologia, ds_frentes)
