@@ -1030,13 +1030,17 @@ class GeraProdutosPrevisao:
             ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
             ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
 
-            ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air)
+            ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air, varname=varname)
 
             titulo = gerar_titulo(
                 modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Casos de frentes frias', cond_ini=cond_ini,
                 data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                 data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
+
+            print(titulo)
+            print('#########################')
+            print(ds_frentes)
 
             plot_campos(
                 ds=ds_frentes,
@@ -1048,7 +1052,6 @@ class GeraProdutosPrevisao:
                 shapefiles=self.shapefiles,
                 **kwargs
             )
-
 
         # except Exception as e:
         #     print(f'Erro ao gerar frentes frias: {e}')
