@@ -232,7 +232,8 @@ def plot_campos(
             plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)
 
         elif variavel_contour == 'frentes':
-            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=levels)
+            contour_levels = [lvl for lvl in levels if lvl != 0]
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=contour_levels)
             plt.clabel(cf2, inline=True, fmt=mticker.FuncFormatter(lambda x, _: skip_zero_formatter(x)), fontsize=10)
 
     if ds_streamplot is not None:
@@ -1037,10 +1038,6 @@ class GeraProdutosPrevisao:
                 data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                 data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
-
-            print(titulo)
-            print('#########################')
-            print(ds_frentes)
 
             plot_campos(
                 ds=ds_frentes,
