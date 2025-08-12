@@ -864,20 +864,20 @@ class GeraProdutosPrevisao:
 
     def salva_netcdf(self, variavel: str, ensemble_mean=True):
 
-        try:
+        # try:
 
-            print(f'Salvando NetCDF para {self.modelo_fmt}...')
+        print(f'Salvando NetCDF para {self.modelo_fmt}...')
 
-            if variavel == 'tp':
-                tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
-                ds = ensemble_mean(tp) if ensemble_mean else tp.copy()
+        if variavel == 'tp':
+            tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+            ds = ensemble_mean(tp) if ensemble_mean else tp.copy()
 
-            # Salvando o dataset como NetCDF
-            os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
-            ds[variavel].to_netcdf(f'{CONSTANTES["path_save_netcdf"]}/{variavel}_{self.modelo_fmt}_{variavel}.nc')
+        # Salvando o dataset como NetCDF
+        os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
+        ds[variavel].to_netcdf(f'{CONSTANTES["path_save_netcdf"]}/{variavel}_{self.modelo_fmt}_{variavel}.nc')
 
-        except Exception as e:
-            print(f'Erro ao salvar NetCDF: {e}')
+        # except Exception as e:
+        #    print(f'Erro ao salvar NetCDF: {e}')
 
     def gerar_diferencas(self, timedelta=1, **kwargs):
 
