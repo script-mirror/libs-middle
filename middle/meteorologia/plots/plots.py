@@ -1072,8 +1072,7 @@ class GeraProdutosPrevisao:
                 ds_climatologia = xr.open_dataset(f'{CONSTANTES["path_reanalise_ncepI"]}/climatologia_{mes_fmt}.nc')
 
                 # Renomeando lat para latitude e lon para longitude
-                ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude'})
-                ds_climatologia = ds_climatologia.rename({'__xarray_dataarray_variable__':'climatologia'})
+                ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude', '__xarray_dataarray_variable__':'climatologia'})
 
                 # Transformando a longitude para 0 e 360 se necessário
                 if (ds_climatologia.longitude < 0).any():

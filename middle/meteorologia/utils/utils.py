@@ -317,7 +317,7 @@ def interpola_ds(ds_alvo, ds_referencia):
     xarray.Dataset
         Dataset interpolado.
     """
-    return ds_alvo.interp(coords=ds_referencia.coords, method="linear")
+    return ds_alvo.interp(latitude=ds_referencia.latitude, longitude=ds_referencia.longitude)
 
 ###################################################################################################################
 
