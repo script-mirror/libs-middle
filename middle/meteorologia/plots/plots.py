@@ -1069,7 +1069,7 @@ class GeraProdutosPrevisao:
             if anomalia:
             
                 # Agora o mapa de anomalia
-                ds_climatologia = xr.open_dataset(f'{CONSTANTES["path_reanalise_ncepI"]}/diarios/dados_climatologia_frentes/climatologia_{mes_fmt}.nc')
+                ds_climatologia = xr.open_dataset(f'{CONSTANTES["path_reanalise_ncepI"]}/climatologia_{mes_fmt}.nc')
 
                 # Renomeando lat para latitude e lon para longitude
                 ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude'})
