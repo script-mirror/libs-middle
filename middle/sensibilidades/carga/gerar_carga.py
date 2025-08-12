@@ -6,12 +6,13 @@ from middle.utils import (
 logger = setup_logger()
 constants = Constants()
 
-def get_carga(data_produto: datetime.date):
+def get_carga_decomp(data_produto: datetime.date | None = None):
+    params = {}
+    if data_produto:
+        params['dataProduto'] = data_produto.strftime('%Y-%m-%d')
     res = requests.get(
-        constants.BASE_URL + '/api/v2/decks/carga-patamar',
-        params={
-            'dataProduto': data_produto.strftime('%Y-%m-%d')
-            },
+        constants.BASE_URL + '/api/v2/decks/carga-decomp',
+        params=params,
         headers=get_auth_header()
     )
     if res.status_code != 200:

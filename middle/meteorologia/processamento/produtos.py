@@ -5,6 +5,7 @@ import time
 import pandas as pd
 from ..utils.utils import abrir_modelo_sem_vazios
 from ..consts.namelist import CONSTANTES
+from ..plots.plots import GeraProdutosPrevisao
 
 ###################################################################################################################
 
@@ -94,7 +95,7 @@ class ProdutosPrevisaoCurtoPrazo:
                         continue
 
                     url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
-
+                    
                     if sub_region_as_gribfilter:
                         url += sub_region_as_gribfilter
 
@@ -104,6 +105,7 @@ class ProdutosPrevisaoCurtoPrazo:
                             f.write(file.content)
                     else:
                         print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                        print(url)
                         todos_sucesso = False
                         time.sleep(5)
                         break  # Sai do for e volta ao início do while
@@ -406,10 +408,66 @@ class ProdutosPrevisaoCurtoPrazo:
 
 ###################################################################################################################
 
-# # Contando o tempo de execução
-# start_time = time.time()
+class ProdutosObservado:
 
-# ###################################################################################################################
+    def __init__(self, modelo: str, data: datetime, shapefiles=None, output_path='./tmp/downloads'):
+        self.modelo = modelo
+        self.data = pd.to_datetime(data)
+        self.shapefiles = shapefiles
+        self.output_path = output_path
+
+    # -- DOWNLOAD
+    def download_files(self):
+        """
+        Faz o download dos arquivos para o modelo e data especificados.
+        """
+
+        # Formatação do modelo e data
+        modelo_fmt = self.modelo.lower()
+
+        # Formatação do caminho
+        output_path = self.output_path
+
+        # Formatando a data
+        ano_fmt = self.data.strftime('%Y')
+        mes_fmt = self.data.strftime('%m')
+        dia_fmt = self.data.strftime('%d')
+
+        # Caminho para salvar os arquivos
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}/{ano_fmt}{mes_fmt}{dia_fmt}'
+        os.makedirs(caminho_para_salvar, exist_ok=True)
+
+        if modelo_fmt == 'merge':
+            url = f'http://ftp.cptec.inpe.br/modelos/tempo/MERGE/GPM/DAILY/{ano_fmt}/{mes_fmt}/MERGE_CPTEC_{ano_fmt}{mes_fmt}{dia_fmt}.grib2'
+
+        elif modelo_fmt == 'cpc':
+            url = f'https://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT/{ano_fmt}/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{ano_fmt}{mes_fmt}{dia_fmt}.RT'
+
+        filename = url.split('/')[-1]
+        caminho_arquivo = f'{caminho_para_salvar}/{filename}'
+
+        while True:
+            try:
+                # Baixando o dado
+                file = requests.get(url, allow_redirects=True, timeout=30)
+                
+                if file.status_code == 200:
+                    with open(caminho_arquivo, 'wb') as f:
+                        f.write(file.content)
+                    print(f'✅ Arquivo {filename} baixado com sucesso!')
+                    break  # Sai do while quando der certo
+                else:
+                    print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                    print(url)
+                    time.sleep(5)
+            
+            except requests.RequestException as e:
+                print(f'⚠️ Erro de conexão ao baixar {filename}: {e}, tentando novamente...')
+                time.sleep(5)
+
+        pass
+
+###################################################################################################################
 
 # # Datas e parâmetros
 # modelo = 'ecmwf-ens'

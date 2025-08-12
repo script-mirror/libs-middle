@@ -14,6 +14,7 @@ from ..utils.utils import (
     encontra_semanas_operativas,
     gerar_titulo
 )
+from ..consts.namelist import CONSTANTES
 import matplotlib
 matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
 import matplotlib.pyplot as plt
@@ -141,6 +142,16 @@ def custom_colorbar(variavel_plotagem):
                 '#D75C12', '#BF0411']
         cmap = None
 
+    elif variavel_plotagem == 'diferenca':
+        levels = range(-100, 110, 10)
+        colors = ['mediumvioletred', 'maroon', 'firebrick', 
+                  'red', 'chocolate', 'orange', 'gold', 
+                  'yellow', 'white', 'white', 'aquamarine', 
+                  'mediumturquoise', 'cyan', 'lightblue', 'blue', 
+                  'purple', 'mediumpurple', 'blueviolet']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        
     return levels, colors, cmap
 
 ###################################################################################################################
@@ -279,9 +290,7 @@ def plot_campos(
 
 ###################################################################################################################
 
-# SELF PRODUTOS CONFIG
-
-class GeraCamposMeteorologicos:
+class GeraProdutosPrevisao:
 
     def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, shapefiles=None, produto_config_pl=None):
 
@@ -323,8 +332,8 @@ class GeraCamposMeteorologicos:
                 tp_plot = tp_24h.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(tp.time.values), tempo_ini)[0]
-
                 titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, cond_ini)
+
                 plot_campos(
                     ds=tp_plot['tp'],
                     variavel_plotagem='chuva_ons',
@@ -333,6 +342,7 @@ class GeraCamposMeteorologicos:
                     shapefiles=self.shapefiles,
                     **kwargs
                 )
+
         except Exception as e:
             print(f'Erro ao gerar prec24h: {e}')
 
@@ -679,6 +689,10 @@ class GeraCamposMeteorologicos:
             us_mean = ensemble_mean(us)
             vs_mean = ensemble_mean(vs)
 
+            if us_mean.longitude.min() >= 0:
+                us_mean = us_mean.assign_coords(longitude=(((us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+                vs_mean = vs_mean.assign_coords(longitude=(((vs_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
             us_24h_850 = resample_variavel(us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
             vs_24h_850 = resample_variavel(vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
 
@@ -859,8 +873,95 @@ class GeraCamposMeteorologicos:
         except Exception as e:
             print(f'Erro ao gerar IVT: {e}')
 
+    def salva_netcdf(self, variavel: str, ensemble=True):
+
+        try:
+
+            print(f'Salvando NetCDF para {self.modelo_fmt}...')
+
+            if variavel == 'tp':
+                tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+                ds = ensemble_mean(tp) if ensemble else tp.copy()
+
+            else:
+                print('Ainda implementando')
+                return
+
+            # Salvando o dataset como NetCDF
+            os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
+            cond_ini = get_inicializacao_fmt(ds, format='%Y%m%d%H')
+            ds[variavel].to_netcdf(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{cond_ini}.nc')
+
+        except Exception as e:
+           print(f'Erro ao salvar NetCDF: {e}')
+
+    def gerar_diferencas(self, timedelta=1, variavel='tp', dif_total=True,**kwargs):
+
+        # try:
+
+        print('Gerando mapa de diferença total ...')
+
+        # Arquivo atual
+        ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
+        ds_mean = ensemble_mean(ds)
+        cond_ini = get_inicializacao_fmt(ds_mean)
+
+        # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
+        data_anterior = pd.to_datetime(ds_mean.time.values) - pd.Timedelta(days=timedelta)
+        data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
+        ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
+
+        # Listas para plot
+        difs = []
+        dates = []
+
+        if dif_total:
+            # Diferença total
+            ti = ds_mean['valid_time'].values[0]
+            tf = ds_anterior['valid_time'].values[-1]
+
+            # Acumulando
+            ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+            ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+            # Ds diferença
+            ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+            difs.append(ds_diferenca)
+            dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+
+        for dif, date in zip(difs, dates):
+
+            titulo = gerar_titulo(
+                modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
+                data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+            )
+
+            print(titulo)
+
+            plot_campos(
+                ds=dif,
+                variavel_plotagem='diferenca',
+                title=titulo,
+                shapefiles=self.shapefiles,
+                filename=f'dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}.nc',
+                **kwargs
+            )
+
+        #except Exception as e:
+        #    print(f'Erro ao gerar diferenças: {e}')
+
 ###################################################################################################################
 
+class GeraProdutosObservacao:
+
+    def __init__(self, modelo_fmt, produto_config, shapefiles=None):
+
+        self.modelo_fmt = modelo_fmt
+        self.produto_config = produto_config
+        self.shapefiles = shapefiles
+
+###################################################################################################################
 
 # # --- Geração de precipitação acumulada em 24 horas ---
 # def gerar_prec24h(modelo_fmt, produto_config_sf, tp_params, shapefiles=None):
