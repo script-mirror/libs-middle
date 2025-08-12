@@ -862,7 +862,7 @@ class GeraProdutosPrevisao:
         except Exception as e:
             print(f'Erro ao gerar IVT: {e}')
 
-    def salva_netcdf(self, variavel: str, ensemble_mean=True):
+    def salva_netcdf(self, variavel: str, ensemble=True):
 
         # try:
 
@@ -870,7 +870,7 @@ class GeraProdutosPrevisao:
 
         if variavel == 'tp':
             tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
-            ds = ensemble_mean(tp) if ensemble_mean else tp.copy()
+            ds = ensemble_mean(tp) if ensemble else tp.copy()
 
         # Salvando o dataset como NetCDF
         os.makedirs(f'{CONSTANTES["path_save_netcdf"]}', exist_ok=True)
