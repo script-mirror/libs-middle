@@ -13,7 +13,7 @@ CONSTANTES = {
 
     'labels_variaveis': {
 
-        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop'],
+        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop', 'diferenca'],
         '[m/s]': ['wind200'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
