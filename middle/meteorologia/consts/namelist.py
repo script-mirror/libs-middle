@@ -19,7 +19,7 @@ CONSTANTES = {
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
         '[°C]': ['temp850', 't2m', '2t'],
         '[kg*m-1*s-1]': ['ivt'],
-        '[Anomalia de frentes frias]': ['anomalia_frentes'],
+        '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes']  
     },
 

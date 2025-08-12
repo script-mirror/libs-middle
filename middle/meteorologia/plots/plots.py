@@ -1092,11 +1092,11 @@ class GeraProdutosPrevisao:
 
                 plot_campos(
                     ds=anomalia,
-                    variavel_plotagem='anomalia_frentes',
+                    variavel_plotagem='frentes_anomalia',
                     title=titulo,
                     filename=f'anomalia_frentes_{self.modelo_fmt}',
                     ds_contour=anomalia,
-                    variavel_contour='anomalia_frentes',
+                    variavel_contour='frentes_anomalia',
                     shapefiles=self.shapefiles,
                     **kwargs
                 )
