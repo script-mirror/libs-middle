@@ -105,7 +105,9 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
     if freq == '24h':
 
         dataini = ds[coluna_prev].valid_time[0].values
-        datafim = ds[coluna_prev].valid_time[-1].values
+        times = ds.valid_time 
+        times_12h = times.sel(valid_time=times.dt.hour == 12) 
+        datafim = pd.to_datetime(times_12h.valid_time[-2].values)
         intervals = []
 
         for day in pd.date_range(start=dataini, end=datafim, freq='D'):
@@ -380,5 +382,57 @@ def encontra_casos_frentes_xarray(ds_slp, ds_vwnd, ds_air, varname='prmsl'):
 
 def skip_zero_formatter(x):
     return '' if x == 0 else f'{x:.0f}'
+
+###################################################################################################################
+
+def get_lat_lon_from_df(row, df):
+    latitude = df[df['cod_psat'] == row]['vl_lat'].values[0]
+    longitude = df[df['cod_psat'] == row]['vl_lon'].values[0]
+    
+    return latitude, longitude
+
+###################################################################################################################
+
+def calcula_media_bacia(dataset, lat, lon, bacia, codigo, shp):
+
+    import regionmask
+
+    if shp[shp['nome'] == bacia].geometry.values[0] is None:
+        print(f'Não há pontos na bacia {bacia}. Código {codigo}. Pegando o mais próximo')
+        media = dataset.sel(latitude=lat, longitude=lon, method='nearest')
+        media = media.drop_vars(['latitude', 'longitude'])
+    else:
+        bacia_mask = regionmask.Regions(shp[shp['nome'] == bacia].geometry)
+        mask = bacia_mask.mask(dataset.longitude, dataset.latitude)
+        chuva_mask = dataset.where(mask == 0)
+        media = chuva_mask.mean(('latitude', 'longitude'))
+
+        if pd.isna(media['tp'].values.mean()):
+            print(f'Não há pontos na bacia {bacia}. Código {codigo}. Pegando o mais próximo')
+            media = dataset.sel(latitude=lat, longitude=lon, method='nearest')
+            media = media.drop_vars(['latitude', 'longitude'])
+
+    return media.expand_dims({'id': [codigo]})
+
+###################################################################################################################
+
+def converter_psat_para_cd_subbacia(df:pd.DataFrame):
+
+    import requests
+    from middle.utils import get_auth_header
+   
+    df_subbacias = requests.get("https://tradingenergiarz.com/api/v2/rodadas/subbacias", verify=False, headers=get_auth_header())
+    df_subbacias = pd.DataFrame(df_subbacias.json()).rename(columns={"nome":"cod_psat"})[["cod_psat", "id"]]
+
+    if 'cd_psat' in df_subbacias.columns:
+        df_subbacias = df_subbacias.rename(columns={"cd_psat":"cod_psat"})
+
+    if 'cd_psat' in df.columns:
+        df = df.rename(columns={"cd_psat":"cod_psat"})
+
+    merge = df.merge(df_subbacias, on='cod_psat')
+    merge = merge.rename(columns={"id":"cd_subbacia"})
+
+    return merge
 
 ###################################################################################################################
