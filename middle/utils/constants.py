@@ -92,6 +92,10 @@ class Constants:
         return os.getenv('API_URL_AIRFLOW')
 
     @property
+    def API_URL_APIV2(self):
+        return os.getenv('URL_API_V2')
+
+    @property
     def USER_BBCE(self):
         return os.getenv('USER_BBCE')
 
@@ -430,3 +434,12 @@ class Constants:
     @property 
     def WEBHOOK_TASKS_PATH(self):
         return '/projetos/trading-middle-tasks-webhook-ons/tasks'
+
+    @property 
+    def LOGO_RAIZEN(self):
+        return './tmp/raizen-logo.png'
+
+    @property 
+    def PATH_SUBBACIAS_JSON(self):
+        return './tmp/subbacias.json'
+

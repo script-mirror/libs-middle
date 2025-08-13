@@ -4,7 +4,7 @@ import os
 import time
 import pandas as pd
 from ..utils.utils import abrir_modelo_sem_vazios
-from ..consts.namelist import CONSTANTES
+from ..consts.constants import CONSTANTES
 from ..plots.plots import GeraProdutosPrevisao
 
 ###################################################################################################################
