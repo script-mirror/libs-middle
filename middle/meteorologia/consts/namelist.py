@@ -13,16 +13,19 @@ CONSTANTES = {
 
     'labels_variaveis': {
 
-        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop'],
+        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop', 'diferenca'],
         '[m/s]': ['wind200'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
         '[°C]': ['temp850', 't2m', '2t'],
-        '[kg*m-1*s-1]': ['ivt']
-        
+        '[kg*m-1*s-1]': ['ivt'],
+        '[Anomalia de frentes frias]': ['frentes_anomalia'],
+        '[Número de eventos]': ['frentes']  
     },
 
     'path_save_netcdf': './data', # '/WX2TB/Documentos/saidas-modelos-novo'
+
+    'path_reanalise_ncepI': './data', #'/WX2TB/Documentos/dados/reanI-ncep',
 
 }
 

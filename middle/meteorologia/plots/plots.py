@@ -12,7 +12,10 @@ from ..utils.utils import (
     get_inicializacao_fmt,
     ajustar_hora_utc,
     encontra_semanas_operativas,
-    gerar_titulo
+    gerar_titulo,
+    encontra_casos_frentes_xarray,
+    skip_zero_formatter,
+    interpola_ds
 )
 from ..consts.namelist import CONSTANTES
 import matplotlib
@@ -22,6 +25,7 @@ import geopandas as gpd
 import cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.colors import LinearSegmentedColormap
+import matplotlib.ticker as mticker
 import os
 
 ###################################################################################################################
@@ -54,6 +58,31 @@ def custom_colorbar(variavel_plotagem):
         levels = [0, 1 ,5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
         colors = ['#ffffff', '#e1ffff', '#b3f0fb','#95d2f9','#2585f0','#0c68ce','#73fd8b','#39d52b','#3ba933','#ffe67b','#ffbd4a','#fd5c22','#b91d22','#f7596f','#a9a9a9']
         cmap = None
+
+    elif variavel_plotagem == 'frentes':
+        levels = list(range(0, 6))
+        colors = [
+            "#ffffff",  # 0 - branco
+            "#fee391",  # 1 - amarelo claro
+            "#fec44f",  # 2 - laranja claro
+            "#fe9929",  # 3 - laranja médio
+            "#ec7014",  # 4 - laranja escuro
+            "#cc4c02",  # 5 - vermelho-laranja
+        ]
+        cmap = None        
+
+    elif variavel_plotagem == 'frentes_anomalia':
+        levels = [-3, -2, -1, 0, 1, 2, 3]
+        colors = [
+            "#b2182b",  # -3 - vermelho escuro
+            "#ef8a62",  # -2 - vermelho claro
+            "#ffffff",  # -1 - bege rosado
+            "#ffffff",  #  0 - branco
+            "#d1e5f0",  # +1 - azul claro
+            "#67a9cf",  # +2 - azul médio
+            "#2166ac",  # +3 - azul escuro
+        ]
+        cmap = None   
 
     elif variavel_plotagem == 'acumulado_total':
         levels = range(0, 420, 20)
@@ -215,6 +244,11 @@ def plot_campos(
         elif variavel_contour == 'gh_700':
             cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(286, 324, 4))
             plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)
+
+        elif variavel_contour == 'frentes':
+            contour_levels = [lvl for lvl in levels if lvl != 0]
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=contour_levels, linewidths=0.5)
+            plt.clabel(cf2, inline=True, fmt=mticker.FuncFormatter(lambda x, _: skip_zero_formatter(x)), fontsize=10)
 
     if ds_streamplot is not None:
 
@@ -477,6 +511,7 @@ class GeraProdutosPrevisao:
                     shapefiles=self.shapefiles,
                     **kwargs
                 )
+
         except Exception as e:
             print(f'Erro ao gerar prec24hr_pnmm: {e}')
 
@@ -895,61 +930,179 @@ class GeraProdutosPrevisao:
         except Exception as e:
            print(f'Erro ao salvar NetCDF: {e}')
 
-    def gerar_diferencas(self, timedelta=1, variavel='tp', dif_total=True,**kwargs):
+    def gerar_diferencas(self, timedelta=1, variavel='tp', dif_total=True, dif_01_15d=False, dif_15_final=False, **kwargs):
+
+        try:
+
+            print('Gerando mapa de diferença total ...')
+
+            # Arquivo atual
+            ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
+            ds_mean = ensemble_mean(ds)
+            cond_ini = get_inicializacao_fmt(ds_mean)
+
+            # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
+            data_anterior = pd.to_datetime(ds_mean.time.values) - pd.Timedelta(days=timedelta)
+            data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
+            ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
+
+            # Listas para plot
+            difs = []
+            dates = []
+            tipos_dif = []
+
+            if dif_total:
+                # Diferença total
+                ti = ds_mean['valid_time'].values[0]
+                tf = ds_anterior['valid_time'].values[-1]
+
+                # Acumulando
+                ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                # Ds diferença
+                ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                difs.append(ds_diferenca)
+                dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                tipos_dif.append('Total')
+
+            if dif_01_15d:
+                # Diferença dos dias 1 ao 15
+                ti = ds_mean['valid_time'].values[0]
+                tf = pd.to_datetime(ti) + pd.Timedelta(days=15)
+
+                # Acumulando
+                ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                # Ds diferença
+                ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                difs.append(ds_diferenca)
+                dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                tipos_dif.append('15D')
+
+            if dif_15_final:
+                # Diferença dos dias 15 ao restante
+                ti = pd.to_datetime(ds_mean['valid_time'].values[0]) + pd.Timedelta(days=15)
+                tf = ds_anterior['valid_time'].values[-1]
+
+                # Acumulando
+                ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                # Ds diferença
+                ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                difs.append(ds_diferenca)
+                dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                tipos_dif.append('15D-Final')
+
+            for index, (dif, date, tipo_dif) in enumerate(zip(difs, dates, tipos_dif)):
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Diferença {tipo_dif}', cond_ini=cond_ini,
+                    data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                )
+
+                plot_campos(
+                    ds=dif,
+                    variavel_plotagem='diferenca',
+                    title=titulo,
+                    shapefiles=self.shapefiles,
+                    filename=f'{index}_dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}_{tipo_dif}',
+                    **kwargs
+                )
+
+        except Exception as e:
+            print(f'Erro ao gerar diferenças: {e}')
+
+    def gerar_frentes_frias(self, anomalia=False, **kwargs):
 
         # try:
 
-        print('Gerando mapa de diferença total ...')
+        # Abrindo arquivo pnmm
+        varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
+        pnmm = get_dado_cacheado(varname, self.produto_config_sf)
+        pnmm_mean = ensemble_mean(pnmm)
+        cond_ini = get_inicializacao_fmt(pnmm_mean)
 
-        # Arquivo atual
-        ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
-        ds_mean = ensemble_mean(ds)
-        cond_ini = get_inicializacao_fmt(ds_mean)
+        # Abrindo arquivo vwnd
+        vs = get_dado_cacheado('v', self.produto_config_pl)
+        vs_mean = ensemble_mean(vs)       
 
-        # Abrindo o arquivo anterior (precisa ter sido previamente salvo)
-        data_anterior = pd.to_datetime(ds_mean.time.values) - pd.Timedelta(days=timedelta)
-        data_anterior_fmt = data_anterior.strftime('%Y%m%d%H')
-        ds_anterior = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{self.modelo_fmt}_{variavel}_{data_anterior_fmt}.nc')
+        # Abrindo arquivo de tmp
+        t = get_dado_cacheado('t', self.produto_config_pl)
+        t_mean = ensemble_mean(t)                 
 
-        # Listas para plot
-        difs = []
-        dates = []
+        # Gerando mapas das frente frias previstas
+        pnmm_sel = pnmm_mean.sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
+        vwnd_sel = vs_mean.sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
+        air_sel = t_mean.sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')           
 
-        if dif_total:
-            # Diferença total
-            ti = ds_mean['valid_time'].values[0]
-            tf = ds_anterior['valid_time'].values[-1]
+        for mes in list(set(pnmm_sel.valid_time.dt.month.values)):
 
-            # Acumulando
-            ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
-            ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+            mes_fmt = str(mes).zfill(2)
 
-            # Ds diferença
-            ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
-            difs.append(ds_diferenca)
-            dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+            ds_mensal_slp = pnmm_sel.sel(valid_time=pnmm_sel.valid_time.dt.month == mes)
+            ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
+            ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
 
-        for dif, date in zip(difs, dates):
+            ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air, varname=varname)
 
             titulo = gerar_titulo(
-                modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo='Diferença', cond_ini=cond_ini,
-                data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Casos de frentes frias', cond_ini=cond_ini,
+                data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
             )
 
-            print(titulo)
-
             plot_campos(
-                ds=dif,
-                variavel_plotagem='diferenca',
+                ds=ds_frentes,
+                variavel_plotagem='frentes',
                 title=titulo,
+                filename=f'frentes_{self.modelo_fmt}',
+                ds_contour=ds_frentes,
+                variavel_contour='frentes',
                 shapefiles=self.shapefiles,
-                filename=f'dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}.nc',
                 **kwargs
             )
 
-        #except Exception as e:
-        #    print(f'Erro ao gerar diferenças: {e}')
+            if anomalia:
+            
+                # Agora o mapa de anomalia
+                ds_climatologia = xr.open_dataset(f'{CONSTANTES["path_reanalise_ncepI"]}/climatologia_{mes_fmt}.nc')
+
+                # Renomeando lat para latitude e lon para longitude
+                ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude', '__xarray_dataarray_variable__':'climatologia'})
+
+                # Transformando a longitude para 0 e 360 se necessário
+                if (ds_climatologia.longitude < 0).any():
+                    ds_climatologia = ds_climatologia.assign_coords(longitude=(ds_climatologia.longitude % 360)).sortby('longitude').sortby('latitude')
+
+                # Interpolando
+                ds_climatologia = interpola_ds(ds_climatologia, ds_frentes)
+
+                # Calculando a anomalia
+                anomalia = ds_frentes - (ds_climatologia['climatologia']/30)*len(ds_mensal_slp.valid_time)          
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Anomalia de frentes frias', cond_ini=cond_ini,
+                    data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                )
+
+                plot_campos(
+                    ds=anomalia,
+                    variavel_plotagem='frentes_anomalia',
+                    title=titulo,
+                    filename=f'anomalia_frentes_{self.modelo_fmt}',
+                    ds_contour=anomalia,
+                    variavel_contour='frentes_anomalia',
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
+
+        # except Exception as e:
+        #     print(f'Erro ao gerar frentes frias: {e}')
 
 ###################################################################################################################
 
