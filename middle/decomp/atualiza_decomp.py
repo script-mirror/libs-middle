@@ -76,9 +76,8 @@ def retrieve_dadger_metadata(
     df_dadger['DP']['id'] = df_dadger['DP']['id'].astype(int)
     expected_stages = list(range(1, df_dadger['DP']['id'].max() + 1))
     logger.info("Deck date=%s, stages=%s", deck_date, expected_stages)
-    power_plants = df_dadger['CT'][
-        ['id', 'nome']
-    ].drop_duplicates().to_dict('records')
+    df_dadger['CT']['id'] = df_dadger['CT']['id'].astype(int)
+    power_plants = sorted(df_dadger['CT']['id'].drop_duplicates().to_list())
     uh = df_dadger['UH'][['id', 'ree']].to_dict('records')
     
     return {
@@ -87,7 +86,6 @@ def retrieve_dadger_metadata(
         "power_plants": power_plants,
         "uh": uh,
     }
-
 
 def retrieve_load_levels(
     df_dadger: Dict[str, pd.DataFrame],
