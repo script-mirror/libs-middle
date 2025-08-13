@@ -301,6 +301,26 @@ def get_dado_cacheado(var, obj, varname=None, **kwargs):
 
 ###################################################################################################################
 
+def interpola_ds(ds_alvo, ds_referencia):
+    """
+    Interpola o dataset ds_alvo para o grid do dataset ds_referencia.
+
+    Parâmetros:
+    -----------
+    ds_alvo : xarray.Dataset
+        Dataset a ser interpolado.
+    ds_referencia : xarray.Dataset
+        Dataset de referência com o grid desejado.
+
+    Retorna:
+    --------
+    xarray.Dataset
+        Dataset interpolado.
+    """
+    return ds_alvo.interp(latitude=ds_referencia.latitude, longitude=ds_referencia.longitude)
+
+###################################################################################################################
+
 def format_intervalo(intervalo_str):
     return intervalo_str.replace(' ', '\\ ')
 
@@ -344,5 +364,21 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
         )
 
     return titulo
+
+###################################################################################################################
+
+def encontra_casos_frentes_xarray(ds_slp, ds_vwnd, ds_air, varname='prmsl'):
+
+    cond1 = ds_slp[varname].diff(dim='valid_time') > 0  # Aumento da pressão
+    cond2 = (ds_vwnd["v"].shift(valid_time=1) < 0) & (ds_vwnd["v"] > 0)
+    cond3 = ds_air["t"].diff(dim='valid_time') < 0  # Temperatura diminuindo
+    cond_total = cond1 & cond2 & cond3
+
+    return cond_total.sum(dim='valid_time')
+
+###################################################################################################################
+
+def skip_zero_formatter(x):
+    return '' if x == 0 else f'{x:.0f}'
 
 ###################################################################################################################

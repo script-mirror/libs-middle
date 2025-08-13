@@ -46,8 +46,8 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
     )
     result = {}
     if start_date.month == end_date.month:
-        result[1] = 0
-        result[2] = 7
+        result[1] = 7
+        result[2] = 0
         logger.debug("Same month, returning %s", result)
         return result
     result[1] = min(
