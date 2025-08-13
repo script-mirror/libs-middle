@@ -442,4 +442,15 @@ class Constants:
     @property 
     def PATH_SUBBACIAS_JSON(self):
         return './tmp/subbacias.json'
+    
+    @property 
+    def PATH_HINDCAST_ECMWF_EST(self):
+        return './tmp/data'
 
+    @property 
+    def PATH_HINDCAST_GEFS_EST(self):
+        return './tmp/data'
+    
+    @property 
+    def PATH_FTP_ECMWF(self):
+        return './tmp/data' # '/ftp/files_sftp/ECMWF'

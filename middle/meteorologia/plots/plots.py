@@ -66,6 +66,12 @@ def custom_colorbar(variavel_plotagem):
         colors = ['#ffffff', '#e1ffff', '#b3f0fb','#95d2f9','#2585f0','#0c68ce','#73fd8b','#39d52b','#3ba933','#ffe67b','#ffbd4a','#fd5c22','#b91d22','#f7596f','#a9a9a9']
         cmap = None
 
+    elif variavel_plotagem in ['tp_anomalia']:
+        colors = ['mediumvioletred', 'maroon', 'firebrick', 'red', 'chocolate', 'orange', 'gold', 'yellow', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
+        levels = range(-150, 155, 5)
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+
     elif variavel_plotagem == 'frentes':
         levels = list(range(0, 6))
         colors = [
@@ -569,7 +575,7 @@ class GeraProdutosPrevisao:
 
     ###################################################################################################################
 
-    def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, salva_db=True, modelo_obs='merge', limiares_prob=[5], freq_prob='sop', timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, **kwargs):
+    def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, salva_db=True, modelo_obs='merge', limiares_prob=[5], freq_prob='sop', timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False, **kwargs):
         
         """
         modo: 24h, total, semanas_operativas, bacias_smap, probabilidade_limiar, diferenca, prec_pnmm'
@@ -581,7 +587,7 @@ class GeraProdutosPrevisao:
 
              # Carrega e processa dado
             if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
+               self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -668,9 +674,8 @@ class GeraProdutosPrevisao:
 
             elif modo == 'semanas_operativas':
 
-                pdb.set_trace()
+                tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=6)
 
-                tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', qtdade_max_semanas=3)
                 for n_semana in tp_sop.num_semana:
 
                     print(f'Processando semana {n_semana.item()}...')
@@ -687,14 +692,13 @@ class GeraProdutosPrevisao:
                         )
 
                         plot_campos(
-                            ds=tp_plot['tp'],
-                            variavel_plotagem='chuva_ons',
+                            ds=tp_plot['tp'] if not anomalia_sop else tp_plot,
+                            variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia',
                             title=titulo,
-                            filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}',
+                            filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}' if not anomalia_sop else f'tp_sop_{self.modelo_fmt}_anomalia_semana{n_semana.item()}',
                             shapefiles=self.shapefiles,
                             **kwargs
                         )
-
 
                     else:
 

@@ -4,6 +4,9 @@ import xarray as xr
 import numpy as np
 import pendulum
 import locale
+import os
+import pdb
+from middle.utils.constants import Constants
 
 ###################################################################################################################
 
@@ -92,7 +95,18 @@ def encontra_semanas_operativas(inicializacao, data, qtdade_max_semanas=6, date_
 
 ###################################################################################################################
 
-def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=6, modo_agrupador='sum'):
+def extrair_data_hindcast(nome_arquivo):
+
+    data = nome_arquivo.split('_')[-1].split('pmais1')[-1].split('.nc')[0].split('A1H')[-1][0:4]
+    data = pd.to_datetime(data, format='%m%d').strftime('%m%d')
+
+    return int(data) # Retornar a data como xum número inteiro no formato MMDD
+
+###################################################################################################################
+
+def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=3, modo_agrupador='sum', anomalia_sop=False):
+
+    import pdb
 
     # Condição inicial do dataset
     inicializacao = pd.to_datetime(ds.time.data)
@@ -174,14 +188,63 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
 
-            if modo_agrupador == 'sum':
-                # Seleciona e soma o intervalo de tempo
-                ds_sel = ds.sel(valid_time=slice(inicio, fim)).sum(dim='valid_time')
+            # Selecionando os tempos das SOP
+            ds_sel = ds.sel(valid_time=slice(inicio, fim))
 
-            elif modo_agrupador == 'mean':
-                # Seleciona e calcula a média do intervalo de tempo
-                ds_sel = ds.sel(valid_time=slice(inicio, fim)).mean(dim='valid_time')
-            
+            if anomalia_sop:
+
+                # if modelo.lower() == 'ecmwf-ens-estendido':
+
+                #     # Definindo qual arquivo de climatologia vou usar
+                #     path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
+                #     files_clim = os.listdir(path_clim)
+
+                #     # Pegando a última climatologia
+                #     files_clim = sorted([x for x in files_clim if 'tp' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                
+                # elif modelo.lower() == 'gefs-estendido':
+
+                #     # Definindo qual arquivo de climatologia vou usar
+                #     path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
+                #     mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
+                    
+                #     # Pegando a última climatologia
+                #     files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
+
+                # # Abre o arquivo de climatologia
+                # ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+                
+                ds_clim = xr.open_dataset(f'{Constants().PATH_HINDCAST_ECMWF_EST}/tp_hindcast_pmenos2A1H08090000_pmenos1A1H08070000_p0A1H08110000_pmais2A1H08130000_pmais1A1H08150000.nc')
+
+                # Anos iniciais e finais da climatologia
+                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+
+                # Pegando o ano inicial da previsao (ds_sel)
+                ano_prev_1 = inicio.split('-')[0]
+                ano_prev_2 = fim.split('-')[0]
+
+                if int(ano_prev_1) == int(ano_prev_2):
+                    intervalo1 = inicio.replace(inicio[:4], ano_ini)
+                    intervalo2 = fim.replace(inicio[:4], ano_ini)
+
+                else:
+                    intervalo1 = inicio.replace(inicio[:4], ano_ini)
+                    intervalo2 = fim.replace(inicio[:4], ano_fim)          
+
+                # Sel nos tempos encontrados
+                ds_clim_sel = ds_clim.sel(alvo_previsao=slice(intervalo1, intervalo2))
+
+                # Calcula a anomalia
+                if modo_agrupador == 'sum':
+                    ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
+
+                else:
+                    ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
+
+            else:
+                ds_sel = ds_sel.sum(dim='valid_time') if modo_agrupador == 'sum' else ds_sel.mean(dim='valid_time')
+
             # Cria o rótulo do intervalo
             inicio = pd.to_datetime(inicio) - pd.Timedelta(hours=6)  # Ajusta para o início do dia
             fim = pd.to_datetime(fim)
@@ -191,7 +254,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             ds_sel = ds_sel.expand_dims({'num_semana': [semana]})
             ds_sel = ds_sel.assign_coords(intervalo=intervalo_str)
             ds_sel = ds_sel.assign_coords(days_of_weeks=day_of_weeks)
-
+            
             lista_acumulados.append(ds_sel)
 
         # Concatena ao longo da nova dimensão
@@ -239,49 +302,75 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 ###################################################################################################################
 
 def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time'):
-    """
-    Abre múltiplos arquivos GRIB ignorando os que estão vazios ou corrompidos.
 
-    Parâmetros:
-    -----------
-    files : list
-        Lista de caminhos para arquivos GRIB.
-    backend_kwargs : dict, opcional
-        Argumentos adicionais para o backend 'cfgrib'.
-    concat_dim : str, opcional
-        Nome da dimensão de concatenação (padrão: 'valid_time').
-
-    Retorna:
-    --------
-    xarray.Dataset
-        Dataset combinado com arquivos válidos.
-    """
     backend_kwargs = backend_kwargs or {}
-    arquivos_validos = []
+    datasets = []
 
     for f in files:
         try:
-            ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True,)
+            ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
+            if 'step' in ds.dims:
+                ds = ds.swap_dims({'step': 'valid_time'})
             if ds.variables:
-                arquivos_validos.append(f)
+                datasets.append(ds)
             else:
                 print(f'Arquivo ignorado (sem variáveis): {f}')
         except Exception as e:
             print(f'Erro ao abrir {f}: {e}')
 
-    if not arquivos_validos:
+    if not datasets:
         raise ValueError("Nenhum arquivo válido encontrado.")
 
-    ds_final = xr.open_mfdataset(
-        arquivos_validos,
-        engine='cfgrib',
-        backend_kwargs=backend_kwargs,
-        combine='nested',
-        concat_dim=concat_dim,
-        decode_timedelta=True,
-    )
+    return xr.concat(datasets, dim=concat_dim)
 
-    return ds_final
+    # """
+    # Abre múltiplos arquivos GRIB ignorando os que estão vazios ou corrompidos.
+
+    # Parâmetros:
+    # -----------
+    # files : list
+    #     Lista de caminhos para arquivos GRIB.
+    # backend_kwargs : dict, opcional
+    #     Argumentos adicionais para o backend 'cfgrib'.
+    # concat_dim : str, opcional
+    #     Nome da dimensão de concatenação (padrão: 'valid_time').
+
+    # Retorna:
+    # --------
+    # xarray.Dataset
+    #     Dataset combinado com arquivos válidos.
+    # """
+    # backend_kwargs = backend_kwargs or {}
+    # arquivos_validos = []
+
+    # for f in files:
+    #     try:
+
+    #         ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True,)
+    #         if ds.variables:
+    #             arquivos_validos.append(f)
+    #         else:
+    #             print(f'Arquivo ignorado (sem variáveis): {f}')
+
+    #     except Exception as e:
+    #         print(f'Erro ao abrir {f}: {e}')
+
+    # if not arquivos_validos:
+    #     raise ValueError("Nenhum arquivo válido encontrado.")
+
+    # pdb.set_trace()
+
+    # ds_final = xr.open_mfdataset(
+    #     arquivos_validos,
+    #     engine='cfgrib',
+    #     backend_kwargs=backend_kwargs,
+    #     combine='nested',
+    #     concat_dim=concat_dim,
+    #     decode_timedelta=True,
+    #     drop_variables=['valid_time'],
+    # )
+
+    # return ds_final
 
 ###################################################################################################################
 
