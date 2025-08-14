@@ -947,7 +947,6 @@ class HtmlBuilder:
 
         return html_completo
 
-
     def _gerar_tabela_resultados_prospec(self, dados) -> str:
         """
         Gera um documento HTML completo contendo todas as tabelas de resultados de prospecção
