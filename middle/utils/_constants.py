@@ -378,6 +378,10 @@ class Constants:
     @property
     def PATH_ARQUIVOS(self):
         return '/projetos/arquivos'
+    
+    @property
+    def PATH_ARQUIVOS_TEMP(self):
+        return self.PATH_ARQUIVOS + '/temp'
 
     @property
     def PATH_PROJETO(self):
