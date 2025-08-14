@@ -1,5 +1,6 @@
 from .string import (
     sanitize_string,
+    extrair_mes_ano,
 )
 from .dataframe import (
     convert_date_columns,
@@ -42,4 +43,5 @@ __all__ = [
     "html_to_image",
     "Constants",
     "extract_zip",
+    "extrair_mes_ano",
 ]

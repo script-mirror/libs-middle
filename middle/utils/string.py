@@ -2,7 +2,24 @@
 
 import re
 import unicodedata
+from .logger import setup_logger
+import datetime
 
+logger = setup_logger()
+MESES = {
+    'janeiro': 1,
+    'fevereiro': 2,
+    'marco': 3,
+    'abril': 4,
+    'maio': 5,
+    'junho': 6,
+    'julho': 7,
+    'agosto': 8,
+    'setembro': 9,
+    'outubro': 10,
+    'novembro': 11,
+    'dezembro': 12
+}
 
 def sanitize_string(text, custom_chars=""):
     """
@@ -36,3 +53,23 @@ def sanitize_string(text, custom_chars=""):
     text = text.strip('_')
 
     return text
+
+
+def extrair_mes_ano(texto: str) -> datetime.date:
+    """
+    Extrai padrão mês/ano de uma string
+    """
+    pattern = r'(janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)\/\d{4}'
+    
+    match = re.search(pattern, texto.replace('ç', 'c'), re.IGNORECASE)
+    
+    if match:
+        MESES
+        mes_ano = match.group(0).split('/')
+        return datetime.date(
+            year=int(mes_ano[1]),
+            month=MESES[mes_ano[0].lower()],
+            day=1
+        )
+        
+    return None
