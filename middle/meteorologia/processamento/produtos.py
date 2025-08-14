@@ -4,8 +4,9 @@ import os
 import time
 import pandas as pd
 from ..utils.utils import abrir_modelo_sem_vazios
-from ..consts.namelist import CONSTANTES
-from ..plots.plots import GeraProdutosPrevisao
+from ..consts.constants import CONSTANTES
+from middle.utils.constants import Constants
+import shutil
 
 ###################################################################################################################
 
@@ -131,61 +132,85 @@ class ProdutosPrevisaoCurtoPrazo:
 
         elif 'ecmwf' in modelo_fmt:
 
-            from ecmwf.opendata import Client
-            client = Client(provedor_ecmwf_opendata, model=model_ecmwf_opendata, resol=resolucao) 
+            if modelo_fmt == 'ecmwf-ens-estendido':
 
-            while True:
-                todos_sucesso = True  # Flag para checar se todos os steps deram certo
+                ftp_dir = Constants().PATH_FTP_ECMWF
+                dia_mes_ini = self.data.strftime('%m%d')
+                datafinal = self.data + pd.Timedelta(days=45)
+                date_range = pd.date_range(self.data, datafinal.strftime('%Y%m%d'), freq='D')
+                
+                for fcst_fmt, dates in enumerate(date_range):
 
-                for step in steps:
+                    fcst_fmt = str(fcst_fmt + 1).zfill(2)
 
-                    caminho_arquivo = f'{caminho_para_salvar}/{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
+                    while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
 
-                    if self.name_prefix:
-                        caminho_arquivo = f'{caminho_para_salvar}/{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
+                        dia_mes_prev = dates.strftime('%m%d')
 
-                    if os.path.exists(caminho_arquivo):
-                        print(f'✅ Arquivo {caminho_arquivo} já existe, pulando download...')
-                        continue
+                        try:
+                            shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
+   
+                        except:
+                            print('tentando')
+                            time.sleep(10)
 
-                    if levlist_ecmwf_opendata:
-                        retrive = {
-                            'date': data_fmt,
-                            'time': self.inicializacao,
-                            'step': step,
-                            'stream': stream_ecmwf_opendata,
-                            'type': type_ecmwf_opendata,
-                            'levtype': levtype_ecmwf_opendata,
-                            'levelist': levlist_ecmwf_opendata,
-                            'param': variables,
-                            'target': caminho_arquivo,
-                        }
+            else:
 
-                    else:
-                        retrive = {
-                            'date': data_fmt,
-                            'time': self.inicializacao,
-                            'step': step,
-                            'stream': stream_ecmwf_opendata,
-                            'type': type_ecmwf_opendata,
-                            'levtype': levtype_ecmwf_opendata,
-                            'param': variables,
-                            'target': caminho_arquivo,
-                        }
+                from ecmwf.opendata import Client
+                client = Client(provedor_ecmwf_opendata, model=model_ecmwf_opendata, resol=resolucao) 
 
-                    try:
-                        client.retrieve(**retrive)
+                while True:
+                    todos_sucesso = True  # Flag para checar se todos os steps deram certo
 
-                    except Exception as e:
-                        print(f'❌ Erro ao baixar ECMWF: {e}, tentando novamente...')
-                        todos_sucesso = False
-                        time.sleep(5)
-                        break  # Sai do for e tenta novamente o while
+                    for step in steps:
 
-                    print(f'✅ Arquivo {caminho_arquivo} baixado com sucesso!')
+                        caminho_arquivo = f'{caminho_para_salvar}/{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
 
-                if todos_sucesso:
-                    break  # Sai do while se tudo deu certo
+                        if self.name_prefix:
+                            caminho_arquivo = f'{caminho_para_salvar}/{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
+
+                        if os.path.exists(caminho_arquivo):
+                            print(f'✅ Arquivo {caminho_arquivo} já existe, pulando download...')
+                            continue
+
+                        if levlist_ecmwf_opendata:
+                            retrive = {
+                                'date': data_fmt,
+                                'time': self.inicializacao,
+                                'step': step,
+                                'stream': stream_ecmwf_opendata,
+                                'type': type_ecmwf_opendata,
+                                'levtype': levtype_ecmwf_opendata,
+                                'levelist': levlist_ecmwf_opendata,
+                                'param': variables,
+                                'target': caminho_arquivo,
+                            }
+
+                        else:
+                            retrive = {
+                                'date': data_fmt,
+                                'time': self.inicializacao,
+                                'step': step,
+                                'stream': stream_ecmwf_opendata,
+                                'type': type_ecmwf_opendata,
+                                'levtype': levtype_ecmwf_opendata,
+                                'param': variables,
+                                'target': caminho_arquivo,
+                            }
+
+                        try:
+                            client.retrieve(**retrive)
+
+                        except Exception as e:
+                            print(f'❌ Erro ao baixar ECMWF: {e}, tentando novamente...')
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break  # Sai do for e tenta novamente o while
+
+                        print(f'✅ Arquivo {caminho_arquivo} baixado com sucesso!')
+
+                    if todos_sucesso:
+                        break  # Sai do while se tudo deu certo
 
         elif modelo_fmt == 'gefs-membros':
             prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
@@ -242,10 +267,10 @@ class ProdutosPrevisaoCurtoPrazo:
                     break  # Sai do while quando tudo estiver certo
 
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True):
+    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
-        
+        import pdb
         import xarray as xr
 
         # Importando os tipos de variáveis do arquivo de constantes
@@ -297,7 +322,7 @@ class ProdutosPrevisaoCurtoPrazo:
             elif variavel in nominalTop:
                 backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop', 'dataType': 'pf'}, "indexpath": ""}
                 backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop', 'dataType': 'cf'}, "indexpath": ""}
-                files = files[1:] # Remove o primeiro arquivo
+                files = files[1:]
                 
             else:
                 raise ValueError(f'Variável {variavel} não reconhecida ou não implementada para ensemble model.')
@@ -351,7 +376,7 @@ class ProdutosPrevisaoCurtoPrazo:
             else:
 
                 ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs)
-        
+
         # Renomeando lat para latitude e lon para longitude
         if 'lat' in ds.dims:
             ds = ds.rename({'lat': 'latitude'})
@@ -362,6 +387,10 @@ class ProdutosPrevisaoCurtoPrazo:
         # Se step estiver nas dimensions, renomeia para valid_time
         if 'step' in ds.dims:
             ds = ds.swap_dims({'step': 'valid_time'})
+
+        # Pega apenas a hora das 12z
+        if sel_12z:
+            ds = ds.isel(valid_time=ds.valid_time.dt.hour == 12)
 
         # Ajustando a longitude para 0 a 360
         if 'longitude' in ds.dims and ajusta_longitude:

@@ -78,6 +78,7 @@ Thumbs.db
 
 # Temporary files
 ./tmp
+tmp
 
 # Django stuff:
 *.log
@@ -223,3 +224,7 @@ __marimo__/
 # Arquivos netcdf
 *.nc
 data/
+
+# Arquivos teste
+teste.py
+teste.ipynb

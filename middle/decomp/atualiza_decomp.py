@@ -60,6 +60,7 @@ def days_per_month(start_date: datetime, end_date: datetime) -> Dict[int, int]:
     return result
 
 
+
 def retrieve_dadger_metadata(
     dadger_path: str,
     **kwargs: dict
@@ -74,11 +75,12 @@ def retrieve_dadger_metadata(
         int(df_dadger['DT']['dia'].iloc[0])
     )
     df_dadger['DP']['id'] = df_dadger['DP']['id'].astype(int)
+    df_dadger['CT']['id'] = df_dadger['CT']['id'].astype(int)
+    df_dadger['RE']['id'] = df_dadger['RE']['id'].astype(int)
     expected_stages = list(range(1, df_dadger['DP']['id'].max() + 1))
-    logger.info("Deck date=%s, stages=%s", deck_date, expected_stages)
-    power_plants = df_dadger['CT'][
-        ['id', 'nome']
-    ].drop_duplicates().to_dict('records')
+    logger.info("Deck date=%s, stages=%s", deck_date, expected_stages)    
+    power_plants = sorted(df_dadger['CT']['id'].drop_duplicates().to_list())
+    re_ids = sorted(df_dadger['RE']['id'].drop_duplicates().to_list())
     uh = df_dadger['UH'][['id', 'ree']].to_dict('records')
     
     return {
@@ -86,6 +88,7 @@ def retrieve_dadger_metadata(
         "stages": expected_stages,
         "power_plants": power_plants,
         "uh": uh,
+        "re": re_ids,
     }
 
 
@@ -529,6 +532,7 @@ def process_decomp(
     params: DecompParams,
     sensitivity_df: Dict[str, Dict[str, Dict]],
 ) -> None:
+    global logger
     params_dict = params.to_dict()
     if params_dict.get('logger', None) is None:
         output_path = getattr(params, 'output_path', None) if params else None
