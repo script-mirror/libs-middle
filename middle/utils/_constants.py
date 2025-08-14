@@ -436,8 +436,8 @@ class Constants:
         return "Resultados preliminares consistidos (vazões semanais - PMO)"
     
     @property 
-    def WEBHOOK_TASKS_PATH(self):
-        return '/projetos/trading-middle-tasks-webhook-ons/tasks'
+    def WEBHOOK_CARGA_PATAMAR(self):
+        return "Carga por patamar - DECOMP"
 
     @property 
     def LOGO_RAIZEN(self):
