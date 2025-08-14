@@ -440,7 +440,7 @@ class Constants:
         return "Resultados preliminares consistidos (vazões semanais - PMO)"
     
     @property 
-    def WEBHOOK_CARGA_PATAMAR(self):
+    def WEBHOOK_CARGA_DECOMP(self):
         return "Carga por patamar - DECOMP"
 
     @property 
