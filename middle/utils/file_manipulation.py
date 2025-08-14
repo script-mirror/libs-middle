@@ -36,3 +36,4 @@ def extract_zip(
     except FileNotFoundError:
         logger.error(f"O arquivo '{zip_file}' nao foi encontrado.")
         raise FileNotFoundError(f"O arquivo '{zip_file}' nao foi encontrado.")
+    
