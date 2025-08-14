@@ -222,7 +222,11 @@ class Constants:
     @property
     def WHATSAPP_GILSEU(self):
         return '5481442398'
-
+    
+    @property
+    def WHATSAPP_DECKS(self):
+        return 'decks'
+    
     @property
     def WHATSAPP_TESTE(self):
         return os.getenv('NUM_TESTE')
