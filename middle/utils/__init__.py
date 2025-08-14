@@ -23,7 +23,7 @@ from .html_to_image import (
     html_to_image,
 )
 
-from .constants import (
+from ._constants import (
     Constants
 )
 
