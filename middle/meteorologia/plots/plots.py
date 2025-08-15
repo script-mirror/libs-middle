@@ -588,7 +588,7 @@ class GeraProdutosPrevisao:
         return t, t_mean, cond_ini
 
     def _carregar_t2m_mean(self):
-        t = get_dado_cacheado('t', self.produto_config_sf, **self.pl_params)
+        t = get_dado_cacheado('2t', self.produto_config_sf, **self.pl_params)
         t_mean = ensemble_mean(t)
         cond_ini = get_inicializacao_fmt(t_mean)
 
@@ -1142,8 +1142,6 @@ class GeraProdutosPrevisao:
                     ds_anterior = ds_anterior.swap_dims({'step': 'valid_time'})
 
                 ds_anterior = ajusta_acumulado_ds(ds_anterior, m_to_mm=True)
-
-                pdb.set_trace()
 
                 # Listas para plot
                 difs = []
@@ -1815,7 +1813,7 @@ class GeraProdutosPrevisao:
                     titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
                 
                     plot_campos(
-                        ds=(-1)*t2m_24h_plot['t']/10,
+                        ds=(-1)*t2m_24h_plot['t2m']/10,
                         variavel_plotagem='geada',
                         title=titulo,
                         filename=f'geada_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
@@ -1823,7 +1821,6 @@ class GeraProdutosPrevisao:
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
-
 
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
@@ -1880,6 +1877,9 @@ class GeraProdutosPrevisao:
 
     def gerar_psi(self, **kwargs):
         self._processar_varsdinamicas('psi', **kwargs)
+
+    def gerar_geada(self, **kwargs):
+        self._processar_varsdinamicas('geada', **kwargs)
 
     ###################################################################################################################
 
