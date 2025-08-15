@@ -5,7 +5,7 @@ import time
 import pandas as pd
 from ..utils.utils import abrir_modelo_sem_vazios, ajusta_lon_0_360
 from ..consts.constants import CONSTANTES
-from middle.utils.constants import Constants
+from middle.utils._constants import Constants
 import shutil
 
 ###################################################################################################################
