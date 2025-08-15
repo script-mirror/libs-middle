@@ -1,4 +1,4 @@
-info_blocos = {
+regex_blocos = {
     'TE': {
         'campos': ['mnemonico', 'comentario'],
         'regex': r'(.{2})  (.*)(.*)',
@@ -108,10 +108,10 @@ info_blocos = {
         'campos': ['mnemonico', 'id', 'estagio', 'vmin_p1', 'vmax_p1', 'vmin_p2', 'vmax_p2', 'vmin_p3', 'vmax_p3'],
         'regex': r'(.{2})  (.{4}) (.{2})   (.{10})(.{10})(.{10})(.{10})(.{0,10})(.{0,10})(.*)',
         'formatacao': '{:>2}  {:<4} {:>2}   {:>10}{:>10}{:>10}{:>10}{:>10}{:>10}'
-    },
+    },                
     'FU': {
         'campos': ['mnemonico', 'id', 'estagio', 'uh', 'fator', 'freq_itaipu'],
-        'regex': r'(.{2})  (.{4}) (.{2})   (.{3})  (.{10}) {0,1}(.{0,2})(.*)',
+        'regex':    r'(.{2})  (.{4}) (.{2})   (.{3})  (.{10}) {0,1}(.{0,2})(.*)',
         'formatacao': '{:>2}  {:<4} {:>2}   {:>3}  {:>10} {:>2}'
     },
     'FT': {
