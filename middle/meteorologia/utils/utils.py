@@ -7,7 +7,7 @@ from scipy.fft import fft2, ifft2, fftfreq
 import locale
 import os
 import pdb
-from middle.utils._constants import Constants
+from middle.utils import Constants
 
 ###################################################################################################################
 
@@ -114,6 +114,44 @@ def ajusta_lon_0_360(ds, var='longitude'):
 
 ###################################################################################################################
 
+def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().PATH_HINDCAST_ECMWF_EST, inicio_mes=False):
+
+    from datetime import datetime
+
+    # Pegando a última climatologia
+    files_clim = os.listdir(path_clim)
+    files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)
+
+    if inicio_mes:
+        files_clim_mes1 = None
+        tempoinicial_mes1 = pd.to_datetime(datetime(datetime.now().year, datetime.now().month, 1))
+        tempoinicial_mes1_comparar = pd.to_datetime(pd.to_datetime(tempoinicial_mes1).strftime('%Y-%m-%d')).strftime('%m-%d')
+        # Se o tempo inicial for menor que tempo inicial (começo do mes1), pega o hindcast com o mes completo
+        for file_clim in files_clim[-30:]:
+
+            ds_temp = xr.open_dataset(f'{path_clim}/{file_clim}')
+            tempo_temp = pd.to_datetime(pd.to_datetime(ds_temp['alvo_previsao'][0].values).strftime('%Y-%m-%d')).strftime('%m-%d')
+
+            if pd.to_datetime(tempo_temp, format='%m-%d') <= pd.to_datetime(tempoinicial_mes1_comparar, format='%m-%d'):
+                files_clim_mes1 = file_clim
+
+    else:
+        files_clim_mes1 = files_clim[-1]
+
+    # Abre o arquivo de climatologia
+    ds_clim = xr.open_dataset(f'{path_clim}/{files_clim_mes1}')
+
+    # Ajustando longitude
+    ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+
+    # Selando o level, se existir
+    if 'isobaricInhPa' in ds_clim.dims and level_anomalia is not None:
+        ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
+
+    return ds_clim
+
+###################################################################################################################
+
 def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=3, modo_agrupador='sum', anomalia_sop=False, var_anomalia='tp', level_anomalia=200):
 
     # Condição inicial do dataset
@@ -165,7 +203,15 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
         for interval_start, interval_end in intervals:
             filtered_ds = ds.sel(valid_time=slice(interval_start, interval_end))
-            daily_sum = filtered_ds[coluna_prev].sum(dim='valid_time') if modo_agrupador == 'sum' else filtered_ds[coluna_prev].mean(dim='valid_time')
+
+            if modo_agrupador == 'sum':
+                daily_sum = filtered_ds[coluna_prev].sum(dim='valid_time')
+            elif modo_agrupador == 'mean':
+                daily_sum = filtered_ds[coluna_prev].mean(dim='valid_time')
+            elif modo_agrupador == 'min':
+                daily_sum = filtered_ds[coluna_prev].min(dim='valid_time')
+            elif modo_agrupador == 'max':
+                daily_sum = filtered_ds[coluna_prev].max(dim='valid_time')
 
             data_inicial.append(interval_start)
             data_final.append(interval_end)
@@ -219,18 +265,21 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                     files_clim = os.listdir(path_clim)
 
                     if var_anomalia not in ['psi', 'chi']:
-                        # Pegando a última climatologia
-                        files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
 
-                        # Abre o arquivo de climatologia
-                        ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+                        # # Pegando a última climatologia
+                        # files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
 
-                        # Ajustando longitude
-                        ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+                        # # Abre o arquivo de climatologia
+                        # ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
 
-                        # Selando o level, se existir
-                        if 'isobaricInhPa' in ds_clim.dims:
-                            ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
+                        # # Ajustando longitude
+                        # ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+
+                        # # Selando o level, se existir
+                        # if 'isobaricInhPa' in ds_clim.dims:
+                        #     ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
+
+                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
 
                     else:
                         # Pegando a última climatologia
@@ -365,55 +414,6 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time')
 
     return xr.concat(datasets, dim=concat_dim)
 
-    # """
-    # Abre múltiplos arquivos GRIB ignorando os que estão vazios ou corrompidos.
-
-    # Parâmetros:
-    # -----------
-    # files : list
-    #     Lista de caminhos para arquivos GRIB.
-    # backend_kwargs : dict, opcional
-    #     Argumentos adicionais para o backend 'cfgrib'.
-    # concat_dim : str, opcional
-    #     Nome da dimensão de concatenação (padrão: 'valid_time').
-
-    # Retorna:
-    # --------
-    # xarray.Dataset
-    #     Dataset combinado com arquivos válidos.
-    # """
-    # backend_kwargs = backend_kwargs or {}
-    # arquivos_validos = []
-
-    # for f in files:
-    #     try:
-
-    #         ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True,)
-    #         if ds.variables:
-    #             arquivos_validos.append(f)
-    #         else:
-    #             print(f'Arquivo ignorado (sem variáveis): {f}')
-
-    #     except Exception as e:
-    #         print(f'Erro ao abrir {f}: {e}')
-
-    # if not arquivos_validos:
-    #     raise ValueError("Nenhum arquivo válido encontrado.")
-
-    # pdb.set_trace()
-
-    # ds_final = xr.open_mfdataset(
-    #     arquivos_validos,
-    #     engine='cfgrib',
-    #     backend_kwargs=backend_kwargs,
-    #     combine='nested',
-    #     concat_dim=concat_dim,
-    #     decode_timedelta=True,
-    #     drop_variables=['valid_time'],
-    # )
-
-    # return ds_final
-
 ###################################################################################################################
 
 def ensemble_mean(data):
@@ -465,6 +465,8 @@ def ajustar_hora_utc(dt):
 ###################################################################################################################
 
 def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False):
+
+    modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est')
 
     if semana_operativa:
 
@@ -653,3 +655,24 @@ def calcula_psi_chi(u: xr.DataArray, v: xr.DataArray, dim_laco='valid_time', lev
 
 ###################################################################################################################
 
+def ajusta_acumulado_ds(ds: xr.Dataset, m_to_mm=True):
+
+    variaveis_com_valid_time = [v for v in ds.data_vars if 'valid_time' in ds[v].dims]
+
+    ds_diff = xr.Dataset()
+
+    for var in variaveis_com_valid_time:
+        primeiro = ds[var].isel(valid_time=0)
+        dif = ds[var].diff(dim='valid_time')
+        dif_completo = xr.concat([primeiro, dif], dim='valid_time')
+        ds_diff[var] = dif_completo
+
+    ds_diff['valid_time'] = ds['valid_time']
+    ds = ds_diff
+
+    if m_to_mm:
+        ds = ds * 1000  # Convertendo de metros para milímetros
+
+    return ds
+
+###################################################################################################################

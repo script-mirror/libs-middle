@@ -69,7 +69,25 @@ CONSTANTES = {
             'lat': -51.77,
             'lon': -3.13,
         },
-    ]
+    ],
+
+    'semanas_operativas': {
+
+        'gfs': 3,
+        'ecmwf': 3,
+        'gefs': 3,
+        'ecmwf-ens': 3,
+        'ecmwf-aifs': 3,
+        'ecmwf-aifs-ens': 3,
+        'gefs-estendido': 6,
+        'gefs-membros': 3,
+        'gefs-membros-estendido': 6,
+        'ecmwf-ens-membros': 3,
+        'ecmwf-ens-estendido': 7,
+        'ecmwf-ens-membros-estendido': 7
+
+
+    }
 
 }
 

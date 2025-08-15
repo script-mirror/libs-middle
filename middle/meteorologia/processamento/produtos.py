@@ -3,9 +3,9 @@ import requests
 import os
 import time
 import pandas as pd
-from ..utils.utils import abrir_modelo_sem_vazios, ajusta_lon_0_360
+from ..utils.utils import abrir_modelo_sem_vazios, ajusta_lon_0_360, ajusta_acumulado_ds
 from ..consts.constants import CONSTANTES
-from middle.utils._constants import Constants
+from middle.utils import Constants
 import shutil
 
 ###################################################################################################################
@@ -410,19 +410,7 @@ class ProdutosPrevisaoCurtoPrazo:
 
         # Ajusta acumulado de precipitação (nao necessariamente precisa ser feito, mas é uma opção geralmente apenas para o ECMWF)
         if ajusta_acumulado:
-
-            variaveis_com_valid_time = [v for v in ds.data_vars if 'valid_time' in ds[v].dims]
-
-            ds_diff = xr.Dataset()
-
-            for var in variaveis_com_valid_time:
-                primeiro = ds[var].isel(valid_time=0)
-                dif = ds[var].diff(dim='valid_time')
-                dif_completo = xr.concat([primeiro, dif], dim='valid_time')
-                ds_diff[var] = dif_completo
-
-            ds_diff['valid_time'] = ds['valid_time']
-            ds = ds_diff
+            ds = ajusta_acumulado_ds(ds, m_to_mm=False)
 
         # Ajusta a unidade de medida
         if m_to_mm and variavel == 'tp':
@@ -468,7 +456,7 @@ class ProdutosObservado:
         dia_fmt = self.data.strftime('%d')
 
         # Caminho para salvar os arquivos
-        caminho_para_salvar = f'{output_path}/{modelo_fmt}/{ano_fmt}{mes_fmt}{dia_fmt}'
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}/'
         os.makedirs(caminho_para_salvar, exist_ok=True)
 
         if modelo_fmt == 'merge':
@@ -498,6 +486,12 @@ class ProdutosObservado:
             except requests.RequestException as e:
                 print(f'⚠️ Erro de conexão ao baixar {filename}: {e}, tentando novamente...')
                 time.sleep(5)
+
+        pass
+
+    # --- ABERTURA DOS DADOS ---
+    def open_files(self):
+
 
         pass
 
