@@ -7,19 +7,19 @@ Libs Middle
 Instalação HTTPS
 
 ```bash
-pip install --upgrade --force-reinstall git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git
+pip install --upgrade --force-reinstall git+https://github.com/wx-middle/libs-middle.git
 ```
 
 Instalação SSH
 
 ```bash
-pip install --upgrade --force-reinstall git+ssh://git@github.com/raizen-energy/raizen-power-trading-libs-middle.git
+pip install --upgrade --force-reinstall git+ssh://git@github.com:wx-middle/libs-middle.git
 ```
 
 Instalação branch especifica:
 
 ```bash
-pip install git+https://github.com/raizen-energy/raizen-power-trading-libs-middle.git@main
+pip install git+https://github.com/wx-middle/libs-middle.gitt@main
 ```
 
 ## Exemplo de Uso: Atualização do DECOMP
