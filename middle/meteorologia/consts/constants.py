@@ -22,6 +22,7 @@ CONSTANTES = {
         '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes'],
         '[%]': ['probabilidade'],
+        '[agdp]': ['geop_500_anomalia']
     },
 
     'path_save_netcdf': './tmp/data', # '/WX2TB/Documentos/saidas-modelos-novo'

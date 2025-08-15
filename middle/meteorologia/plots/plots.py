@@ -19,7 +19,8 @@ from ..utils.utils import (
     interpola_ds,
     get_lat_lon_from_df,
     calcula_media_bacia,
-    converter_psat_para_cd_subbacia
+    converter_psat_para_cd_subbacia,
+    calcula_psi_chi
 )
 from ..consts.constants import CONSTANTES
 import matplotlib
@@ -71,6 +72,18 @@ def custom_colorbar(variavel_plotagem):
         levels = range(-150, 155, 5)
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+
+    elif variavel_plotagem in ['psi']:
+        levels = np.arange(-30, 30.2, 0.2)
+        colors = ['maroon', 'darkred', 'red', 'orange', 'yellow', 'white', 'cyan', 'dodgerblue', 'blue', 'darkblue', 'indigo']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+
+    elif variavel_plotagem in ['geop_500_anomalia']:
+        levels = range(-40, 42, 2)
+        colors = ['darkblue', 'blue', 'white', 'red', 'darkred']
+        cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(cmap, len(levels))         
 
     elif variavel_plotagem == 'frentes':
         levels = list(range(0, 6))
@@ -273,6 +286,10 @@ def plot_campos(
             cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=contour_levels, linewidths=0.5)
             plt.clabel(cf2, inline=True, fmt=mticker.FuncFormatter(lambda x, _: skip_zero_formatter(x)), fontsize=10)
 
+        elif variavel_contour == 'psi':
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(-4, 14, 2))
+            plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)            
+
     if ds_streamplot is not None:
 
         if variavel_streamplot == 'wind200':
@@ -471,11 +488,12 @@ def plot_chuva_acumulada(
 
 class GeraProdutosPrevisao:
 
-    def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, shapefiles=None, produto_config_pl=None):
+    def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
 
         self.modelo_fmt = modelo_fmt
         self.produto_config_sf = produto_config_sf
         self.tp_params = tp_params or {}
+        self.pl_params = pl_params or {}
         self.shapefiles = shapefiles
         self.produto_config_pl = produto_config_pl
 
@@ -494,6 +512,18 @@ class GeraProdutosPrevisao:
         self.pnmm_mean = None
         self.q_mean = None
         self.q = None
+
+        self.freqs_map = {
+            'sop': {
+                'prefix_filename': 'semana',
+                'prefix_title': 'Semana' 
+            },
+
+            '24h': {
+                'prefix_filename': 'tempo',
+                'prefix_title': ''
+            }
+        }
 
     ###################################################################################################################
 
@@ -526,8 +556,8 @@ class GeraProdutosPrevisao:
     def _carregar_uv_mean(self):
 
         ''' Carrega e processa os campos u e v apenas uma vez. '''
-        us = get_dado_cacheado('u', self.produto_config_pl)
-        vs = get_dado_cacheado('v', self.produto_config_pl)
+        us = get_dado_cacheado('u', self.produto_config_pl, **self.pl_params)
+        vs = get_dado_cacheado('v', self.produto_config_pl, **self.pl_params)
         us_mean = ensemble_mean(us)
         vs_mean = ensemble_mean(vs)
         cond_ini = get_inicializacao_fmt(us_mean)
@@ -539,7 +569,7 @@ class GeraProdutosPrevisao:
         return us, vs, us_mean, vs_mean, cond_ini
 
     def _carregar_t_mean(self):
-        t = get_dado_cacheado('t', self.produto_config_pl)
+        t = get_dado_cacheado('t', self.produto_config_pl, **self.pl_params)
         t_mean = ensemble_mean(t)
         cond_ini = get_inicializacao_fmt(t_mean)
 
@@ -549,7 +579,7 @@ class GeraProdutosPrevisao:
         return t, t_mean, cond_ini
 
     def _carregar_gh_mean(self):
-        gh = get_dado_cacheado('gh', self.produto_config_pl)
+        gh = get_dado_cacheado('gh', self.produto_config_pl, **self.pl_params)
         gh_mean = ensemble_mean(gh)
         cond_ini = get_inicializacao_fmt(gh_mean)
         return gh, gh_mean, cond_ini
@@ -564,7 +594,7 @@ class GeraProdutosPrevisao:
 
     def _carregar_q_mean(self):
 
-        q = get_dado_cacheado('q', self.produto_config_pl)
+        q = get_dado_cacheado('q', self.produto_config_pl, **self.pl_params)
         q_mean = ensemble_mean(q)
         cond_ini = get_inicializacao_fmt(q_mean)
 
@@ -575,7 +605,11 @@ class GeraProdutosPrevisao:
 
     ###################################################################################################################
 
-    def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, salva_db=True, modelo_obs='merge', limiares_prob=[5], freq_prob='sop', timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False, **kwargs):
+    def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, 
+                                salva_db=True, modelo_obs='merge', limiares_prob=[5], freq_prob='sop', 
+                                timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False, qtdade_max_semanas=3, 
+                                var_anomalia='tp', level_anomalia=200,
+                                **kwargs):
         
         """
         modo: 24h, total, semanas_operativas, bacias_smap, probabilidade_limiar, diferenca, prec_pnmm'
@@ -587,7 +621,7 @@ class GeraProdutosPrevisao:
 
              # Carrega e processa dado
             if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-               self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
+               self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -674,12 +708,12 @@ class GeraProdutosPrevisao:
 
             elif modo == 'semanas_operativas':
 
-                tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=6)
+                tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=qtdade_max_semanas, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
 
-                for n_semana in tp_sop.num_semana:
+                for n_semana in tp_sop.tempo:
 
                     print(f'Processando semana {n_semana.item()}...')
-                    tp_plot = tp_sop.sel(num_semana=n_semana)
+                    tp_plot = tp_sop.sel(tempo=n_semana)
                     intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
                     days_of_week = tp_plot.days_of_weeks.item()
 
@@ -692,7 +726,7 @@ class GeraProdutosPrevisao:
                         )
 
                         plot_campos(
-                            ds=tp_plot['tp'] if not anomalia_sop else tp_plot,
+                            ds=tp_plot['tp'],
                             variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia',
                             title=titulo,
                             filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}' if not anomalia_sop else f'tp_sop_{self.modelo_fmt}_anomalia_semana{n_semana.item()}',
@@ -928,20 +962,14 @@ class GeraProdutosPrevisao:
 
             elif modo == 'probabilidade_limiar':
 
-                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=3)
-
-                if freq_prob == 'sop':
-                    index = 'num_semana'
-
-                elif freq_prob == '24h':
-                    index = 'tempo' # Ainda precisa implementar direito, mas nao usa mto
+                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
 
                 for limiar in limiares_prob:
 
-                    for n in tp_sop[index]:
+                    for n in tp_sop['tempo']:
 
                         print(f'Processando {n.item()}...')
-                        tp_plot = tp_sop.sel(num_semana=n)
+                        tp_plot = tp_sop.sel(tempo=n)
                         intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = tp_plot.days_of_weeks.item()
 
@@ -952,7 +980,7 @@ class GeraProdutosPrevisao:
                         tp_plot = tp_plot*100
 
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()} Prob. > {limiar} mm',
+                            modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} Prob. > {limiar} mm',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                         )
@@ -961,7 +989,7 @@ class GeraProdutosPrevisao:
                             ds=tp_plot,
                             variavel_plotagem='probabilidade',
                             title=titulo,
-                            filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}_probabilidade_{limiar}',
+                            filename=f'tp_{freq_prob}_{self.modelo_fmt}_{self.freqs_map[freq_prob]["prefix_filename"]}{n.item()}_probabilidade_{limiar}',
                             shapefiles=self.shapefiles,
                             **kwargs
                         )
@@ -1046,17 +1074,17 @@ class GeraProdutosPrevisao:
 
             elif modo == 'desvpad':
 
-                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob)
+                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
 
-                for n in tp_sop['num_semana']:
+                for n in tp_sop['tempo']:
 
                     print(f'Processando {n.item()}...')
-                    tp_plot = tp_sop.sel(num_semana=n).std(dim='number')
+                    tp_plot = tp_sop.sel(tempo=n).std(dim='number')
                     intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
                     days_of_week = tp_plot.days_of_weeks.item()
 
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()} Desvio Padrão',
+                        modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} Desvio Padrão',
                         cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                         semana_operativa=True
                     )
@@ -1065,7 +1093,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot,
                         variavel_plotagem='desvpad',
                         title=titulo,
-                        filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}_desvpad_{limiar}',
+                        filename=f'tp_{freq_prob}_{self.modelo_fmt}_{self.freqs_map[freq_prob]["prefix_filename"]}{n.item()}_desvpad_{limiar}',
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
@@ -1073,7 +1101,7 @@ class GeraProdutosPrevisao:
         except Exception as e:
             print(f'Erro ao gerar precipitação ({modo}): {e}') 
 
-    def _processar_varsdinamicas(self, modo, anomalia_frentes=False, **kwargs):
+    def _processar_varsdinamicas(self, modo, anomalia_frentes=False, resample_freq='24h', qtdade_max_semanas=3, anomalia_sop=False, var_anomalia='gh', level_anomalia=500, **kwargs):
 
         """
         modo: jato_div200, vento_temp850, geop_vort500, frentes_frias, geop500, ivt, vento_div850,  chuva_geop500_vento850
@@ -1090,8 +1118,10 @@ class GeraProdutosPrevisao:
 
                 level_divergencia = 200
 
-                us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
-                vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
+                us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+
+                pdb.set_trace()
 
                 for n_24h in us_24h.tempo:
 
@@ -1108,18 +1138,28 @@ class GeraProdutosPrevisao:
                         'jato': vento_jato
                     })
 
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini)[0]
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini)[0]
 
-                    titulo = self._ajustar_tempo_e_titulo(
-                        us_plot, f'Vento e Jato {level_divergencia}hPa', semana, self.cond_ini,
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Jato {level_divergencia}hPa', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
                     )
 
                     plot_campos(
                         ds=ds_streamplot['jato'],
                         variavel_plotagem='wind200',
                         title=titulo,
-                        filename=f'vento_jato_div{level_divergencia}_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=f'vento_jato_div{level_divergencia}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         ds_streamplot=ds_streamplot,
                         variavel_streamplot='wind200',
                         plot_bacias=False,
@@ -1137,9 +1177,9 @@ class GeraProdutosPrevisao:
                 
                 level_temp = 850
                 
-                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
-                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
-                t850_24h = resample_variavel(self.t_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 't', '24h', modo_agrupador='mean')
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                t850_24h = resample_variavel(self.t_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 't', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
 
                 for n_24h in us_24h_850.tempo:
 
@@ -1154,16 +1194,28 @@ class GeraProdutosPrevisao:
                         't850': t850_plot['t']
                     })
 
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini)[0]
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini)[0]
 
-                    titulo = self._ajustar_tempo_e_titulo(t850_plot, f'Vento e Temp. em {level_temp}hPa', semana, self.cond_ini)
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Temp. em {level_temp}hPa', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
 
                     plot_campos(
                         ds=ds_quiver['t850'] - 273.15,  # Kelvin para Celsius
                         variavel_plotagem='temp850',
                         title=titulo,
-                        filename=f'vento_temp{level_temp}_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=f'vento_temp{level_temp}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         ds_quiver=ds_quiver,
                         variavel_quiver='wind850',
                         plot_bacias=False,
@@ -1182,17 +1234,14 @@ class GeraProdutosPrevisao:
                 level_geop = 500
 
                 # Resample para 24 horas
-                us_24h_500 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
-                vs_24h_500 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
-                geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean')
-                
+                us_24h_500 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_500 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+
                 for n_24h in geop_500.tempo:
 
                     print(f'Processando {n_24h.item()}...')
                     geop_ = geop_500.sel(tempo=n_24h)
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini)[0]
-
                     geop_plot = nd.gaussian_filter(geop_['gh'], sigma=3)
                     u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
                     v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
@@ -1206,13 +1255,25 @@ class GeraProdutosPrevisao:
                         'v': v_plot['v']
                     })
 
-                    titulo = self._ajustar_tempo_e_titulo(geop_, f'Vort. e Geop. em {level_geop}hPa', semana, self.cond_ini)
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini)[0]
+                        titulo = self._ajustar_tempo_e_titulo(geop_, f'{self.freqs_map[resample_freq]["prefix_title"]}Vort. e Geop. {level_geop}hPa', semana, self.cond_ini )
+
+                    else:
+                        intervalo = geop_.intervalo.item().replace(' ', '\ ')
+                        days_of_week = geop_.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
 
                     plot_campos(
                         ds=ds_plot['vorticidade'],
                         variavel_plotagem='vorticidade',
                         title=titulo,
-                        filename=f'geop_vorticidade_{level_geop}_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=f'geop_vorticidade_{level_geop}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         ds_contour=ds_plot['gh']/10,
                         variavel_contour='gh_500',
                         plot_bacias=False,
@@ -1303,23 +1364,45 @@ class GeraProdutosPrevisao:
                     self.geop, self.geop_mean, self.cond_ini = self._carregar_gh_mean()
 
                 level_geop = 500
-                geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean')
+
+                if not anomalia_sop:
+                    geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
+
+                else:
+                    geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
+                    geop_500_contour = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=False, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
 
                 for n_24h in geop_500.tempo:
                     print(f'Processando {n_24h.item()}...')
                     geop_plot = geop_500.sel(tempo=n_24h)
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini)[0]
 
-                    titulo = self._ajustar_tempo_e_titulo(geop_plot, f'Geopotencial {level_geop}hPa', semana, self.cond_ini)
+                    if anomalia_sop:
+                        geop_plot_contour = geop_500_contour.sel(tempo=n_24h)
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini)[0]
+                        titulo = self._ajustar_tempo_e_titulo(
+                            geop_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geopotencial {level_geop}hPa', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = geop_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = geop_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
 
                     plot_campos(
-                        ds=geop_plot['gh'] / 10,
-                        variavel_plotagem='geop_500',
+                        ds=geop_plot['gh']/10,
+                        variavel_plotagem='geop_500' if not anomalia_sop else 'geop_500_anomalia',
                         title=titulo,
-                        filename=f'geopotencial_{level_geop}_{self.modelo_fmt}_{n_24h.item()}',
-                        ds_contour=geop_plot['gh'] / 10,
+                        filename=f'geopotencial_{level_geop}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}' if not anomalia_sop else f'geopotencial_{level_geop}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}_anomalia',
+                        ds_contour=geop_plot['gh']/10 if not anomalia_sop else geop_plot_contour['gh']/10,
                         variavel_contour='gh_500',
+                        color_contour='black' if anomalia_sop else 'white',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         **kwargs
@@ -1337,10 +1420,10 @@ class GeraProdutosPrevisao:
                     self.q, self.q_mean, _ = self._carregar_q_mean()
 
                 # Resample para 24 horas
-                gh_24h = resample_variavel(self.geop_mean.sel(isobaricInhPa=700), self.modelo_fmt, 'gh', '24h', modo_agrupador='mean')
-                qs_24h = resample_variavel(self.q_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'q', '24h', modo_agrupador='mean')
-                us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
-                vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
+                gh_24h = resample_variavel(self.geop_mean.sel(isobaricInhPa=700), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                qs_24h = resample_variavel(self.q_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'q', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
 
                 # Calculando o fluxo zonal e meridional de umidade espec
                 qu = qs_24h['q'] * us_24h['u']
@@ -1375,22 +1458,42 @@ class GeraProdutosPrevisao:
                         'gh_700': gh_plot['gh']/10  # Convertendo de m para dam
                     })
 
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
-                    tempo_fim = pd.to_datetime(gh_plot.data_final.item())
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini)[0]
+                    # tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
+                    # tempo_fim = pd.to_datetime(gh_plot.data_final.item())
+                    # semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini)[0]
 
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV (1000-300)', cond_ini=self.cond_ini,
-                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        semana=semana
+                    # titulo = gerar_titulo(
+                    #     modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV (1000-300)', cond_ini=self.cond_ini,
+                    #     data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    #     data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    #     semana=semana
+                    # )
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
+                        tempo_fim = pd.to_datetime(gh_plot.data_final.item())
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini)[0]
+                        titulo = gerar_titulo(
+                                modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV (1000-300)', cond_ini=self.cond_ini,
+                                data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                semana=semana
+                            )
+
+                    else:
+                        intervalo = gh_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = gh_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
                     )
 
                     plot_campos(
                         ds=ds_quiver['ivt']*100,
                         variavel_plotagem='ivt',
                         title=titulo,
-                        filename=f'ivt_geop700_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=f'ivt_geop700_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         ds_quiver=ds_quiver,
                         variavel_quiver='ivt',
                         ds_contour=ds_quiver['gh_700'],
@@ -1408,8 +1511,8 @@ class GeraProdutosPrevisao:
                 if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
                     self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', '24h', modo_agrupador='mean')
-                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', '24h', modo_agrupador='mean')
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
 
                 for n_24h in us_24h_850.tempo:
 
@@ -1424,16 +1527,27 @@ class GeraProdutosPrevisao:
                         'divergencia': divergencia
                     })
 
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini)[0]
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini)[0]
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Divergência {level_divergencia}hPa', semana, self.cond_ini,
+                    )
 
-                    titulo = self._ajustar_tempo_e_titulo(us_plot, f'Vento e Divergência {level_divergencia}hPa', semana, self.cond_ini)
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
 
                     plot_campos(
                         ds=ds_streamplot['divergencia'],
                         variavel_plotagem='divergencia850',
                         title=titulo,
-                        filename=f'vento_div{level_divergencia}_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=f'vento_div{level_divergencia}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         ds_streamplot=ds_streamplot,
                         variavel_streamplot='wind850',
                         plot_bacias=False,
@@ -1493,6 +1607,58 @@ class GeraProdutosPrevisao:
                                 **kwargs
                                 )
 
+            elif modo == 'psi':
+
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                psi200, chi200 = calcula_psi_chi(self.us_mean, self.vs_mean, dim_laco='valid_time', level=200)
+                psi850, chi850 = calcula_psi_chi(self.us_mean, self.vs_mean, dim_laco='valid_time', level=850)
+                psi200 = resample_variavel(psi200, self.modelo_fmt, 'psi', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, level_anomalia=200, var_anomalia='psi', anomalia_sop=anomalia_sop)
+                psi850 = resample_variavel(psi850, self.modelo_fmt, 'psi', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, level_anomalia=850, var_anomalia='psi', anomalia_sop=anomalia_sop)
+
+                for n_24h in psi200.tempo:
+
+                    print(f'Processando {n_24h.item()}...')
+                    psi_plot = psi200.sel(tempo=n_24h)
+                    psi_850_plot = psi850.sel(tempo=n_24h)
+
+                    pdb.set_trace()
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(psi_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(psi200.time.values), tempo_ini)[0]
+                        titulo = self._ajustar_tempo_e_titulo(
+                            psi_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PSI 200hPa', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = psi_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = psi_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    psi_plot = psi_plot*(-1)
+                    
+                    plot_campos(
+                        ds=psi_plot['psi']/1e6 if not anomalia_sop else psi_plot/1e6,
+                        variavel_plotagem='psi',
+                        title=titulo,
+                        filename=f'psi_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}' if not anomalia_sop else f'psi_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}_anomalia',
+                        ds_contour=psi_850_plot['psi']/1e6 if not anomalia_sop else psi_850_plot/1e6,
+                        variavel_contour='psi',
+                        color_contour='black' if anomalia_sop else 'white',
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        **kwargs
+                    )
+
+            elif modo == '':
+                pass
+
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -1545,6 +1711,9 @@ class GeraProdutosPrevisao:
 
     def gerar_chuva_geop500_vento850(self, **kwargs):
         self._processar_varsdinamicas('chuva_geop500_vento850', **kwargs)
+
+    def gerar_psi(self, **kwargs):
+        self._processar_varsdinamicas('psi', **kwargs)
 
     ###################################################################################################################
 
