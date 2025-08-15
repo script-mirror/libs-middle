@@ -3,9 +3,9 @@ import requests
 import os
 import time
 import pandas as pd
-from ..utils.utils import abrir_modelo_sem_vazios
+from ..utils.utils import abrir_modelo_sem_vazios, ajusta_lon_0_360
 from ..consts.constants import CONSTANTES
-from middle.utils.constants import Constants
+from middle.utils._constants import Constants
 import shutil
 
 ###################################################################################################################
@@ -29,7 +29,7 @@ class ProdutosPrevisaoCurtoPrazo:
             self.data = pd.to_datetime(data)
 
     # --- DOWNLOAD ---
-    def download_files_models(self, variables: str | list, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
+    def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None,
                                type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False) -> None:
 
@@ -267,11 +267,11 @@ class ProdutosPrevisaoCurtoPrazo:
                     break  # Sai do while quando tudo estiver certo
 
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False):
+    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
-        import pdb
         import xarray as xr
+        import pdb
 
         # Importando os tipos de variáveis do arquivo de constantes
         surface = CONSTANTES['tipos_variaveis']['surface']
@@ -376,7 +376,7 @@ class ProdutosPrevisaoCurtoPrazo:
             else:
 
                 ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs)
-
+        
         # Renomeando lat para latitude e lon para longitude
         if 'lat' in ds.dims:
             ds = ds.rename({'lat': 'latitude'})
@@ -394,7 +394,7 @@ class ProdutosPrevisaoCurtoPrazo:
 
         # Ajustando a longitude para 0 a 360
         if 'longitude' in ds.dims and ajusta_longitude:
-            ds['longitude'] = (ds['longitude'] + 360) % 360
+           ds = ajusta_lon_0_360(ds)
 
         # Sortando as coordenadas
         ds = ds.sortby(['valid_time', 'latitude', 'longitude'])
@@ -428,6 +428,11 @@ class ProdutosPrevisaoCurtoPrazo:
         if m_to_mm and variavel == 'tp':
             # Converte de metros para milímetros
             ds['tp'] = ds['tp'] * 1000
+
+        # torna isobaricHpa em dimensaon
+        if expand_isobaric_dims:
+            if "isobaricInhPa" not in ds.dims:
+                ds = ds.expand_dims({"isobaricInhPa": [ds.isobaricInhPa.item()]})
 
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')

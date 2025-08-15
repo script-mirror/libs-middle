@@ -3,10 +3,11 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 import pendulum
+from scipy.fft import fft2, ifft2, fftfreq
 import locale
 import os
 import pdb
-from middle.utils.constants import Constants
+from middle.utils._constants import Constants
 
 ###################################################################################################################
 
@@ -104,9 +105,16 @@ def extrair_data_hindcast(nome_arquivo):
 
 ###################################################################################################################
 
-def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=3, modo_agrupador='sum', anomalia_sop=False):
+def ajusta_lon_0_360(ds, var='longitude'):
 
-    import pdb
+    if var in ds.dims:
+        ds[var] = (ds[var] + 360) % 360
+
+    return ds
+
+###################################################################################################################
+
+def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=3, modo_agrupador='sum', anomalia_sop=False, var_anomalia='tp', level_anomalia=200):
 
     # Condição inicial do dataset
     inicializacao = pd.to_datetime(ds.time.data)
@@ -188,33 +196,64 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
 
+            # Ajustando o texto do título
+            if modelo not in ['ecmwf-ens-estendido']:
+                hours_timedelta = 6
+
+            else:
+                if semana == 1:
+                    hours_timedelta = 6
+
+                else:
+                    hours_timedelta = 30
+
             # Selecionando os tempos das SOP
             ds_sel = ds.sel(valid_time=slice(inicio, fim))
 
             if anomalia_sop:
 
-                # if modelo.lower() == 'ecmwf-ens-estendido':
+                if modelo.lower() == 'ecmwf-ens-estendido':
 
-                #     # Definindo qual arquivo de climatologia vou usar
-                #     path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
-                #     files_clim = os.listdir(path_clim)
+                    # Definindo qual arquivo de climatologia vou usar
+                    path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
+                    files_clim = os.listdir(path_clim)
 
-                #     # Pegando a última climatologia
-                #     files_clim = sorted([x for x in files_clim if 'tp' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                    if var_anomalia not in ['psi', 'chi']:
+                        # Pegando a última climatologia
+                        files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+
+                        # Abre o arquivo de climatologia
+                        ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+
+                        # Ajustando longitude
+                        ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+
+                        # Selando o level, se existir
+                        if 'isobaricInhPa' in ds_clim.dims:
+                            ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
+
+                    else:
+                        # Pegando a última climatologia
+                        files_clim_u = sorted([x for x in files_clim if 'u' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                        files_clim_v = sorted([x for x in files_clim if 'v' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                        
+                        # Arquivos climatologia
+                        ds_clim_u = xr.open_dataset(f'{path_clim}/{files_clim_u}')
+                        ds_clim_v = xr.open_dataset(f'{path_clim}/{files_clim_v}')
+
+                        ds_clim = calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='alvo_previsao', level=level_anomalia)[0] if var_anomalia == 'psi' else calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='valid_time', level=level_anomalia)[1]      
                 
-                # elif modelo.lower() == 'gefs-estendido':
+                elif modelo.lower() == 'gefs-estendido':
 
-                #     # Definindo qual arquivo de climatologia vou usar
-                #     path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
-                #     mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
+                    # Definindo qual arquivo de climatologia vou usar
+                    path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
+                    mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
                     
-                #     # Pegando a última climatologia
-                #     files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
+                    # Pegando a última climatologia
+                    files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
 
-                # # Abre o arquivo de climatologia
-                # ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
-                
-                ds_clim = xr.open_dataset(f'{Constants().PATH_HINDCAST_ECMWF_EST}/tp_hindcast_pmenos2A1H08090000_pmenos1A1H08070000_p0A1H08110000_pmais2A1H08130000_pmais1A1H08150000.nc')
+                    # Abre o arquivo de climatologia
+                    ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
 
                 # Anos iniciais e finais da climatologia
                 ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
@@ -246,22 +285,25 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                 ds_sel = ds_sel.sum(dim='valid_time') if modo_agrupador == 'sum' else ds_sel.mean(dim='valid_time')
 
             # Cria o rótulo do intervalo
-            inicio = pd.to_datetime(inicio) - pd.Timedelta(hours=6)  # Ajusta para o início do dia
+            inicio = pd.to_datetime(inicio) - pd.Timedelta(hours=hours_timedelta)  # Ajusta para o início do dia
             fim = pd.to_datetime(fim)
             intervalo_str = f"{inicio.strftime('%d/%m/%Y %H UTC')} até {fim.strftime('%d/%m/%Y %H UTC')}"
             
             # Adiciona nova coordenada para a semana e o intervalo
-            ds_sel = ds_sel.expand_dims({'num_semana': [semana]})
+            ds_sel = ds_sel.expand_dims({'tempo': [semana]})
             ds_sel = ds_sel.assign_coords(intervalo=intervalo_str)
             ds_sel = ds_sel.assign_coords(days_of_weeks=day_of_weeks)
+
+            if isinstance(ds_sel, xr.DataArray):
+                ds_sel = ds_sel.to_dataset()
             
             lista_acumulados.append(ds_sel)
 
         # Concatena ao longo da nova dimensão
-        final_ds = xr.concat(lista_acumulados, dim='num_semana')
+        final_ds = xr.concat(lista_acumulados, dim='tempo')
 
         # A coordenada 'intervalo' está repetida para cada semana, mas pode ser alinhada
-        final_ds = final_ds.assign_coords(intervalo=("num_semana", intervalo_labels or final_ds['intervalo'].values))
+        final_ds = final_ds.assign_coords(intervalo=("tempo", intervalo_labels or final_ds['intervalo'].values))
 
     elif freq == 'pentada':
 
@@ -387,7 +429,7 @@ def get_inicializacao_fmt(data, format='%d/%m/%Y %H UTC'):
 def get_dado_cacheado(var, obj, varname=None, **kwargs):
     varname = varname or var
     if varname not in globals():
-        globals()[varname] = obj.open_model_file(variavel=varname, sel_area=True, **kwargs).load()
+        globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
     return globals()[varname]
 
 ###################################################################################################################
@@ -525,3 +567,89 @@ def converter_psat_para_cd_subbacia(df:pd.DataFrame):
     return merge
 
 ###################################################################################################################
+
+def calcula_psi_chi(u: xr.DataArray, v: xr.DataArray, dim_laco='valid_time', level=200):
+
+    def ddx(f, dx):
+        """Derivada em x"""
+        return np.gradient(f, dx, axis=-1)
+
+    def ddy(f, dy):
+        """Derivada em y"""
+        return np.gradient(f, dy, axis=-2)
+
+    def poisson_solve(rhs, dx, dy):
+        """Resolve a equação de Poisson ∇²φ = rhs usando FFT (condições periódicas)"""
+        ny, nx = rhs.shape
+        kx = 2 * np.pi * fftfreq(nx, dx)
+        ky = 2 * np.pi * fftfreq(ny, dy)
+        kx2, ky2 = np.meshgrid(kx**2, ky**2)
+        denom = kx2 + ky2
+        denom[0, 0] = 1  # evitar divisão por zero
+
+        rhs_hat = fft2(rhs)
+        sol_hat = -rhs_hat / denom
+        sol_hat[0, 0] = 0  # constante arbitrária
+        return np.real(ifft2(sol_hat))
+
+    Re = 6.371e6  # raio da Terra (m)
+    lat_rad = np.deg2rad(u.latitude)
+    dx = (2 * np.pi * Re * np.cos(lat_rad.mean()) / u.sizes['longitude'])
+    dy = (2 * np.pi * Re / 360) * (u.latitude[1] - u.latitude[0])
+    coords = u.sel(isobaricInhPa=level).isel({dim_laco: 0}).coords
+
+    chis = []
+    psis = []
+
+    for tempo in u[dim_laco]:
+        du_dx = ddx(u.sel(isobaricInhPa=level)['u'].sel({dim_laco: tempo}).values, dx.values)
+        dv_dy = ddy(v.sel(isobaricInhPa=level)['v'].sel({dim_laco: tempo}).values, dy.values)
+        du_dy = ddy(u.sel(isobaricInhPa=level)['u'].sel({dim_laco: tempo}).values, dy.values)
+        dv_dx = ddx(v.sel(isobaricInhPa=level)['v'].sel({dim_laco: tempo}).values, dx.values)
+
+        # Divergência e vorticidade
+        div = du_dx + dv_dy
+        vor = dv_dx - du_dy
+
+        # Resolver para chi e psi
+        chi = poisson_solve(div, dx.values, dy.values)
+        psi = poisson_solve(-vor, dx.values, dy.values)
+
+        # Transformando em um xarray
+        chi = xr.DataArray(chi, coords=coords, name="chi")
+        psi = xr.DataArray(psi, coords=coords, name="psi")
+
+        # Atribuindo a variavel tempo ao novo DataArray
+        chi[dim_laco] = tempo
+        psi[dim_laco] = tempo
+
+        chis.append(chi)
+        psis.append(psi)
+
+    # Junto tudo 
+    chi_total = xr.concat(chis, dim=dim_laco)
+    psi_total = xr.concat(psis, dim=dim_laco)
+
+    # Removendo a media zonal
+    chi_total = chi_total - chi_total.mean(dim='latitude').mean(dim='longitude')
+    chi_total = chi_total - chi_total.mean(dim='longitude')
+
+    psi_total = psi_total - psi_total.mean(dim='latitude').mean(dim='longitude')
+    psi_total = psi_total - psi_total.mean(dim='longitude')
+
+    # anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
+    # anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
+
+    # anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
+    # anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
+
+    # anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
+    # anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
+
+    # anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
+    # anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
+
+    return psi_total.to_dataset(), chi_total.to_dataset()
+
+###################################################################################################################
+
