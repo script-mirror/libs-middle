@@ -1,5 +1,6 @@
 from .string import (
     sanitize_string,
+    extrair_mes_ano,
 )
 from .dataframe import (
     convert_date_columns,
@@ -16,14 +17,14 @@ from .logger import (
 )
 
 from .html_generator import (
-    gerar_tabela,
+    HtmlBuilder
 )
 
 from .html_to_image import (
     html_to_image,
 )
 
-from .constants import (
+from ._constants import (
     Constants
 )
 
@@ -38,8 +39,9 @@ __all__ = [
     "convert_date_columns",
     "get_auth_header",
     "setup_logger",
-    "gerar_tabela",
+    "HtmlBuilder",
     "html_to_image",
     "Constants",
     "extract_zip",
+    "extrair_mes_ano",
 ]

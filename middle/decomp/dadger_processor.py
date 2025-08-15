@@ -4,7 +4,7 @@ import codecs
 import datetime
 import pandas as pd
 from typing import Dict, List, Tuple, Any, IO
-from .constants import info_blocos
+from .constants import regex_blocos
 from middle.utils import setup_logger
 
 BASE_PATH = os.path.dirname(os.path.abspath(__file__))
@@ -42,12 +42,12 @@ def leitura_dadger(
             continue
         else:
             mnemonico = line.split()[0]
-            if mnemonico not in info_blocos:
+            if mnemonico not in regex_blocos:
                 error_msg = f"Unknown mnemonic {mnemonico} at line {i_line}"
                 logger.error(error_msg)
                 raise ValueError(error_msg)
 
-            infos_linha = re.split(info_blocos[mnemonico]['regex'], line)
+            infos_linha = re.split(regex_blocos[mnemonico]['regex'], line)
             if len(infos_linha) < 2:
                 error_msg = (f"Invalid line format for mnemonic {mnemonico} at"
                              f" line {i_line}")
@@ -76,7 +76,7 @@ def leitura_dadger(
     for mnemonico in blocos:
         try:
             df_dadger[mnemonico] = pd.DataFrame(
-                blocos[mnemonico], columns=info_blocos[mnemonico]['campos'])
+                blocos[mnemonico], columns=regex_blocos[mnemonico]['campos'])
             logger.debug(f"Created DataFrame for mnemonic {mnemonico} "
                          f"with {len(df_dadger[mnemonico])} rows")
         except Exception as e:
@@ -108,7 +108,7 @@ def escrever_bloco_restricoes(
                         logger.debug(
                             f"Writing comment for HE at index {index}")
                 file_out.write('{}\n'.format(
-                    info_blocos[mnemonico_restricao]['formatacao'].format(
+                    regex_blocos[mnemonico_restricao]['formatacao'].format(
                         *row.values).strip()))
                 logger.debug(f"Writing HE row at index {index}")
 
@@ -128,7 +128,7 @@ def escrever_bloco_restricoes(
                                     logger.debug(
                                         "Writing comment for CM "
                                         f"at index {index}")
-                            formatacao = info_blocos[mnemon]['formatacao']
+                            formatacao = regex_blocos[mnemon]['formatacao']
                             linha = formatacao.format(*row.values).strip()
                             file_out.write('{}\n'.format(linha))
                             logger.debug(f"Writing CM row at index {index}")
@@ -147,7 +147,7 @@ def escrever_bloco_restricoes(
                         logger.debug("Writing comment for "
                                      f"{mnemonico_restricao} at index {index}")
                 file_out.write('{}\n'.format(
-                    info_blocos[mnemonico_restricao]['formatacao'].format(
+                    regex_blocos[mnemonico_restricao]['formatacao'].format(
                         *row.values).strip()))
                 logger.debug(
                     f"Writing {mnemonico_restricao} row at index {index}")
@@ -165,7 +165,7 @@ def escrever_bloco_restricoes(
                                 logger.debug("Writing comment for "
                                              f"{mnemon} at index {index}")
                         file_out.write('{}\n'.format(
-                            info_blocos[mnemon]['formatacao'].format(
+                            regex_blocos[mnemon]['formatacao'].format(
                                 *row.values).strip()))
                         logger.debug(f"Writing {mnemon} row at index {index}")
     except Exception as e:
@@ -217,7 +217,7 @@ def escrever_dadger(
                             file_out.write(coment)
                             logger.debug(f"Writing comment for {mnemonico} "
                                          f"at index {index}")
-                    formatacao = info_blocos[mnemonico]['formatacao']
+                    formatacao = regex_blocos[mnemonico]['formatacao']
                     linha = formatacao.format(*row.values).strip()
                     file_out.write('{}\n'.format(linha))
                     logger.debug(f"Writing {mnemonico} row at index {index}")
@@ -241,7 +241,7 @@ def escrever_dadger(
                                             f"Writing comment for dependent "
                                             f"{dep} at index {index}"
                                         )
-                                formatacao = info_blocos[dep]['formatacao']
+                                formatacao = regex_blocos[dep]['formatacao']
                                 linha = formatacao.format(*row.values).strip()
                                 file_out.write('{}\n'.format(linha))
                                 logger.debug(

@@ -222,7 +222,11 @@ class Constants:
     @property
     def WHATSAPP_GILSEU(self):
         return '5481442398'
-
+    
+    @property
+    def WHATSAPP_DECKS(self):
+        return 'decks'
+    
     @property
     def WHATSAPP_TESTE(self):
         return os.getenv('NUM_TESTE')
@@ -374,6 +378,10 @@ class Constants:
     @property
     def PATH_ARQUIVOS(self):
         return '/projetos/arquivos'
+    
+    @property
+    def PATH_ARQUIVOS_TEMP(self):
+        return self.PATH_ARQUIVOS + '/temp'
 
     @property
     def PATH_PROJETO(self):
@@ -432,8 +440,8 @@ class Constants:
         return "Resultados preliminares consistidos (vazões semanais - PMO)"
     
     @property 
-    def WEBHOOK_TASKS_PATH(self):
-        return '/projetos/trading-middle-tasks-webhook-ons/tasks'
+    def WEBHOOK_CARGA_DECOMP(self):
+        return "Carga por patamar - DECOMP"
 
     @property 
     def LOGO_RAIZEN(self):
