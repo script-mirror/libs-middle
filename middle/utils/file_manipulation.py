@@ -2,6 +2,7 @@ import pdb  # noqa: F401
 import os
 import io
 import zipfile
+import shutil
 from .logger import setup_logger
 
 logger = setup_logger()
@@ -26,6 +27,13 @@ def extract_zip(
         folder_name = os.path.splitext(nome_zip)[0]
         extract_path = os.path.join(zip_directory, folder_name)
 
+        shutil.rmtree(extract_path, ignore_errors=True)
+        if os.path.exists: 
+            try: 
+                os.remove(extract_path)
+            except: 
+                pass   
+                 
         if not os.path.exists(extract_path):
             os.makedirs(extract_path)
         with zipfile.ZipFile(zip_file, 'r') as zip_ref:
