@@ -338,7 +338,13 @@ class ProdutosPrevisaoCurtoPrazo:
                 backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface'}, "indexpath": ""}
             
             elif variavel in height_above_ground:
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'heightAboveGround'}, "indexpath": ""}
+
+                if variavel in ['u100', 'v100']:
+                    name = 'cfVarName'
+                else:
+                    name = 'shortName'
+
+                backend_kwargs = {"filter_by_keys": {name: variavel, 'typeOfLevel': 'heightAboveGround'}, "indexpath": ""}
 
             elif variavel in isobaric_inhPa:  # variaveis isobaricas
                 backend_kwargs = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa'}, "indexpath": ""}
@@ -432,10 +438,10 @@ class ProdutosPrevisaoCurtoPrazo:
 
 class ProdutosObservado:
 
-    def __init__(self, modelo: str, data: datetime, shapefiles=None, output_path='./tmp/downloads'):
+    def __init__(self, modelo: str, data: datetime, output_path='./tmp/downloads'):
+        
         self.modelo = modelo
         self.data = pd.to_datetime(data)
-        self.shapefiles = shapefiles
         self.output_path = output_path
 
     # -- DOWNLOAD
@@ -465,7 +471,7 @@ class ProdutosObservado:
         elif modelo_fmt == 'cpc':
             url = f'https://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT/{ano_fmt}/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{ano_fmt}{mes_fmt}{dia_fmt}.RT'
 
-        filename = url.split('/')[-1]
+        filename = f'{modelo_fmt}_{ano_fmt}{mes_fmt}{dia_fmt}.grib2'
         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
 
         while True:
@@ -490,10 +496,59 @@ class ProdutosObservado:
         pass
 
     # --- ABERTURA DOS DADOS ---
-    def open_files(self):
+    def open_model_file(self, todo_dir=False, unico=True, ajusta_nome=True, ajusta_longitude=True, apenas_mes_atual=False):
 
+        import xarray as xr
 
-        pass
+        print(f'\n************* ABRINDO DADOS DO MODELO {self.modelo.upper()} *************\n')
+        output_path = self.output_path
+
+        # Formatando modelo
+        modelo_fmt = self.modelo.lower()
+
+        # Caminho para salvar os arquivos
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}'
+        files = os.listdir(caminho_para_salvar)
+
+        if apenas_mes_atual:
+            # Data
+            data = self.data
+            data_fmt = data.strftime('%Y%m')
+
+            # Filtrando arquivos pela data
+            files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f]
+            ds = xr.open_mfdataset(files, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
+
+            # Troca time por valid_time
+            ds = ds.swap_dims({'time': 'valid_time'})
+
+        if todo_dir:
+            
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith('.grib2')]
+            ds = xr.open_mfdataset(files, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
+
+            # Troca time por valid_time
+            ds = ds.swap_dims({'time': 'valid_time'})
+
+        if unico:
+            data_fmt = self.data.strftime('%Y%m%d')
+            ds = xr.open_dataset(f'{caminho_para_salvar}/{modelo_fmt}_{data_fmt}.grib2', engine='cfgrib', backend_kwargs={"indexpath": ""})
+
+            # Cria dim valid_time e atribui o valor do time
+            ds = ds.assign_coords(valid_time=ds.time)
+            ds = ds.expand_dims('valid_time')
+
+        if ajusta_nome:
+            ds = ds.rename({'rdp': 'tp'})
+
+            if 'lon' in ds.dims:
+                ds = ds.rename({'lon': 'longitude', 'lat': 'latitude'})
+
+        # Ajustando a longitude para 0 a 360
+        if 'longitude' in ds.dims and ajusta_longitude:
+           ds = ajusta_lon_0_360(ds)
+
+        return ds
 
 ###################################################################################################################
 

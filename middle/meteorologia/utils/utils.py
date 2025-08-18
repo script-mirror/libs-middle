@@ -426,10 +426,38 @@ def get_inicializacao_fmt(data, format='%d/%m/%Y %H UTC'):
 
 ###################################################################################################################
 
-def get_dado_cacheado(var, obj, varname=None, **kwargs):
+# def get_dado_cacheado(var, obj, varname=None, **kwargs):
+#     varname = varname or var
+#     if varname not in globals():
+#         globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
+#     return globals()[varname]
+
+###################################################################################################################
+
+def get_dado_cacheado(var, obj, varname=None, usa_variavel=True, **kwargs):
+    """
+    Carrega e cacheia dados de modelo ou observação.
+
+    Parâmetros
+    ----------
+    var : str
+        Nome da variável (pode ser ignorado se usa_variavel=False).
+    obj : objeto
+        Objeto com método `open_model_file`.
+    varname : str, opcional
+        Nome usado no cache (default = var).
+    usa_variavel : bool, opcional
+        Se True, passa `variavel=varname` para open_model_file (modelo).
+        Se False, não passa (observação).
+    **kwargs : dict
+        Argumentos extras para open_model_file.
+    """
     varname = varname or var
     if varname not in globals():
-        globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
+        if usa_variavel:
+            globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
+        else:
+            globals()[varname] = obj.open_model_file(**kwargs).load()
     return globals()[varname]
 
 ###################################################################################################################
@@ -464,21 +492,21 @@ def ajustar_hora_utc(dt):
 
 ###################################################################################################################
 
-def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False):
+def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial'):
 
     modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est')
 
     if semana_operativa:
 
         titulo = (f'{modelo.upper()} - {tipo} \u2022 '
-                f'Condição Inicial: {cond_ini}\n'
+                f'{condicao_inicial}: {cond_ini}\n'
                 f'$\mathbf{{Válido\ de\ {intervalo}\ \u2022\ {days_of_week}}}$')
         
     elif sem_intervalo_semana:
 
         titulo = (
             f'{modelo.upper()} - {tipo} \u2022 '
-            f'Condição Inicial: {cond_ini}\n'
+            f'{condicao_inicial}: {cond_ini}\n'
             f'$\\mathbf{{Válido\ de\ {data_ini}\ a\ {data_fim}}}$'
         )
 
@@ -486,7 +514,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
 
         titulo = (
             f'{modelo.upper()} - {tipo} \u2022 '
-            f'Condição Inicial: {cond_ini}\n'
+            f'{condicao_inicial}: {cond_ini}\n'
             f'$\\mathbf{{Válido\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
         )
 
@@ -494,7 +522,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
 
         titulo = (
             f'{modelo.upper()} - {tipo} \u2022 '
-            f'Condição Inicial: {cond_ini}\n'
+            f'{condicao_inicial}: {cond_ini}\n'
             f'$\\mathbf{{Válido\\ de\\ {data_ini}\\ a\\ {data_fim}\\ \u2022\\ S{semana}}}$'
         )
 

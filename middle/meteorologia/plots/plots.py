@@ -69,24 +69,28 @@ def custom_colorbar(variavel_plotagem):
         levels = [0, 1 ,5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
         colors = ['#ffffff', '#e1ffff', '#b3f0fb','#95d2f9','#2585f0','#0c68ce','#73fd8b','#39d52b','#3ba933','#ffe67b','#ffbd4a','#fd5c22','#b91d22','#f7596f','#a9a9a9']
         cmap = None
+        cbar_ticks = None
 
     elif variavel_plotagem in ['tp_anomalia']:
         colors = ['mediumvioletred', 'maroon', 'firebrick', 'red', 'chocolate', 'orange', 'gold', 'yellow', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
         levels = range(-150, 155, 5)
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = [-150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150]
 
     elif variavel_plotagem in ['psi']:
         levels = np.arange(-30, 30.2, 0.2)
         colors = ['maroon', 'darkred', 'red', 'orange', 'yellow', 'white', 'cyan', 'dodgerblue', 'blue', 'darkblue', 'indigo']
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = None
 
     elif variavel_plotagem in ['geop_500_anomalia']:
         levels = range(-40, 42, 2)
         colors = ['darkblue', 'blue', 'white', 'red', 'darkred']
         cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
-        cmap = plt.get_cmap(cmap, len(levels))         
+        cmap = plt.get_cmap(cmap, len(levels))    
+        cbar_ticks = None     
 
     elif variavel_plotagem == 'frentes':
         levels = list(range(0, 6))
@@ -98,7 +102,8 @@ def custom_colorbar(variavel_plotagem):
             "#ec7014",  # 4 - laranja escuro
             "#cc4c02",  # 5 - vermelho-laranja
         ]
-        cmap = None        
+        cmap = None       
+        cbar_ticks = None 
 
     elif variavel_plotagem == 'frentes_anomalia':
         levels = [-3, -2, -1, 0, 1, 2, 3]
@@ -112,6 +117,7 @@ def custom_colorbar(variavel_plotagem):
             "#2166ac",  # +3 - azul escuro
         ]
         cmap = None   
+        cbar_ticks = None
 
     elif variavel_plotagem == 'acumulado_total':
         levels = range(0, 420, 20)
@@ -149,12 +155,14 @@ def custom_colorbar(variavel_plotagem):
             '#FFFF9F',
         ]
         cmap = None
+        cbar_ticks = None
 
     elif variavel_plotagem == 'wind200':
         colors = ['#FFFFFF','#FFFFC1','#EBFF51','#ACFE53','#5AFD5B','#54FCD2','#54DBF5','#54ACFC', '#4364FC','#2F29ED','#3304BC','#440499']
         levels = np.arange(40, 85, 2)
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
+        cbar_ticks = None
 
     elif variavel_plotagem == 'geop_500':
         levels = range(450, 605, 5)
@@ -166,11 +174,13 @@ def custom_colorbar(variavel_plotagem):
                 '#E0C5BE', '#DFABAD', '#E26863', '#C83A36', '#8F1E1A', '#6A0606']
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = None
 
     elif variavel_plotagem == 'vorticidade':
         levels = range(-100, 110, 10)
         colors = None
         cmap = plt.get_cmap('RdBu_r', len(levels)  + 1)
+        cbar_ticks = None
 
     elif variavel_plotagem == 'temp850':
         levels = np.arange(-14, 34, 1)
@@ -178,17 +188,20 @@ def custom_colorbar(variavel_plotagem):
         '#F23B39', '#C41111', '#8D0A0A']
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
+        cbar_ticks = None
 
     elif variavel_plotagem == 'divergencia850':
         levels = np.arange(-5, 6, 1)
         colors = None
         cmap = plt.get_cmap('RdBu_r', len(levels)  + 1)
+        cbar_ticks = None
 
     elif variavel_plotagem == 'ivt':
         colors = ['white', 'yellow', 'orange', 'red', 'gray']
         levels = np.arange(250, 1650, 50)
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = None
 
     elif variavel_plotagem == 'wind_prec_geop':
         levels = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 35]
@@ -199,6 +212,7 @@ def custom_colorbar(variavel_plotagem):
                 '#F5C96C', '#EFB73F', '#EA7B32',
                 '#D75C12', '#BF0411']
         cmap = None
+        cbar_ticks = None
 
     elif variavel_plotagem == 'diferenca':
         levels = range(-100, 110, 10)
@@ -209,21 +223,41 @@ def custom_colorbar(variavel_plotagem):
                   'purple', 'mediumpurple', 'blueviolet']
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = None
 
     elif variavel_plotagem in ['probabilidade', 'desvpad']:
-
         levels = range(0, 110, 10)
         colors = ['white', 'yellow', 'lightgreen', 'green', 'blue', 'purple']
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = None
 
-    elif variavel_plotagem == 'geada':
-
+    elif variavel_plotagem == 'geada-inmet':
         levels = [-100, -8, -3, -1, 100]
         colors = ['#FFFFFF','#D2CBEB','#6D55BF','#343396']
         cmap = None
+        cbar_ticks = None
 
-    return levels, colors, cmap
+    elif variavel_plotagem == 'geada-cana':
+        levels = [-100, -5, -3.5, -2, 100]
+        colors = ['#FFFFFF','#D2CBEB','#6D55BF','#343396']
+        cmap = None
+        cbar_ticks = None
+
+    elif variavel_plotagem == 'olr':
+        levels = range(200, 410, 10)
+        colors = None
+        cmap = 'plasma' 
+        cbar_ticks = None       
+
+    elif variavel_plotagem == 'mag_vento100':
+        levels = np.arange(1, 20, 1)
+        colors = ['#FFFFFF','#FFFFC1','#EBFF51','#ACFE53','#5AFD5B','#54FCD2','#54DBF5','#54ACFC', '#4364FC','#2F29ED','#3304BC','#440499']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
+        cbar_ticks = None
+
+    return levels, colors, cmap, cbar_ticks
 
 ###################################################################################################################
 
@@ -262,7 +296,7 @@ def plot_campos(
     extent = tuple(extent)
     figsize = tuple(figsize)
     fig, ax = get_base_ax(extent=extent, figsize=figsize, central_longitude=central_longitude)
-    levels, colors, cmap = custom_colorbar(variavel_plotagem)
+    levels, colors, cmap, cbar_ticks = custom_colorbar(variavel_plotagem)
 
     # Se colors e cmap nao forem None, seta levels para None
     if colors is not None and cmap is not None:
@@ -297,6 +331,10 @@ def plot_campos(
 
         elif variavel_contour == 'psi':
             cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(-4, 14, 2))
+            plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)            
+
+        elif variavel_contour == 'olr':
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(220, 250, 10))
             plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)            
 
     if ds_streamplot is not None:
@@ -349,11 +387,28 @@ def plot_campos(
 
     if posicao_colorbar == 'vertical':
         axins = inset_axes(ax, width="3%", height="100%", loc='right', borderpad=-2.7)
-        fig.colorbar(cf, cax=axins, orientation='vertical', label=label, ticks=levels, extendrect=True)
+        cb = fig.colorbar(cf, cax=axins, orientation='vertical', label=label, ticks=levels, extendrect=True)
 
     elif posicao_colorbar == 'horizontal':
         axins = inset_axes(ax, width="95%", height="2%", loc='lower center', borderpad=-3.6)
-        fig.colorbar(cf, cax=axins, orientation='horizontal', ticks=levels if len(levels)<=26 else levels[::2], extendrect=True, label=label)
+        cb = fig.colorbar(cf, cax=axins, orientation='horizontal', ticks=levels if len(levels)<=26 else levels[::2], extendrect=True, label=label)
+
+    if cbar_ticks is not None:
+        cb.set_ticks(cbar_ticks)
+
+    # Apenas para geada
+    if variavel_plotagem == 'geada':
+        midpoints = [(levels[j] + levels[j + 1]) / 2 for j in range(len(levels) - 1)]
+        cb.set_ticks(midpoints)
+        cb.set_ticklabels(['Sem risco', 'Fraca', 'Moderada', 'Forte'])
+
+        # Polos de Biomassa        
+        la = [-21.21,-21.77,-22.66,-22.35,-17.84,-22.36,-22.63,-22.73,-21.18]
+        lo = [-50.43, -48.18,-50.4, -48.1, -51.73,-48.69,-54.82,-47.65,-47.82]
+        lo = [x+360 for x in lo]
+        cores = ['#70279C', '#AE9AD4', '#757575', '#CF2664', '#0BAAF2', '#80CFF3', '#FF8F00', '#FDD835', '#E78CAB']
+        marcador = 'o'
+        ax.scatter(lo, la, marker=marcador, edgecolor=cores, facecolors=cores,s=50)
 
     if shapefiles is not None:
         for shapefile in shapefiles:
@@ -494,15 +549,15 @@ def plot_chuva_acumulada(
 
 class GeraProdutosPrevisao:
 
-    def __init__(self, modelo_fmt, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
+    def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
 
-        self.modelo_fmt = modelo_fmt
+        self.modelo_fmt = self.produto_config_sf.modelo_fmt
         self.produto_config_sf = produto_config_sf
         self.tp_params = tp_params or {}
         self.pl_params = pl_params or {}
         self.shapefiles = shapefiles
         self.produto_config_pl = produto_config_pl
-        self.qtdade_max_semanas = CONSTANTES['semanas_operativas'].get(modelo_fmt, 3)
+        self.qtdade_max_semanas = CONSTANTES['semanas_operativas'].get(self.modelo_fmt, 3)
 
         # Inicializando algumas variaveis
         self.us = None
@@ -521,6 +576,12 @@ class GeraProdutosPrevisao:
         self.q = None
         self.t2m_mean = None
         self.t2m = None
+        self.olr_mean = None
+        self.olr = None
+        self.us100 = None
+        self.us100_mean = None
+        self.vs100 = None
+        self.vs100_mean = None
 
         self.freqs_map = {
             'sop': {
@@ -577,6 +638,21 @@ class GeraProdutosPrevisao:
 
         return us, vs, us_mean, vs_mean, cond_ini
 
+    def _carregar_uv100_mean(self):
+
+        ''' Carrega e processa os campos u e v apenas uma vez. '''
+        us = get_dado_cacheado('u100', self.produto_config_sf, **self.pl_params)
+        vs = get_dado_cacheado('v100', self.produto_config_sf, **self.pl_params)
+        us_mean = ensemble_mean(us)
+        vs_mean = ensemble_mean(vs)
+        cond_ini = get_inicializacao_fmt(us_mean)
+
+        if us_mean.longitude.min() >= 0:
+            us_mean = us_mean.assign_coords(longitude=(((us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+            vs_mean = vs_mean.assign_coords(longitude=(((vs_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
+        return us, vs, us_mean, vs_mean, cond_ini
+
     def _carregar_t_mean(self):
         t = get_dado_cacheado('t', self.produto_config_pl, **self.pl_params)
         t_mean = ensemble_mean(t)
@@ -592,8 +668,8 @@ class GeraProdutosPrevisao:
         t_mean = ensemble_mean(t)
         cond_ini = get_inicializacao_fmt(t_mean)
 
-        if t_mean.longitude.min() >= 0:
-            t_mean = t_mean.assign_coords(longitude=(((t_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+        # if t_mean.longitude.min() >= 0:
+        #     t_mean = t_mean.assign_coords(longitude=(((t_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
         return t, t_mean, cond_ini
 
@@ -621,6 +697,18 @@ class GeraProdutosPrevisao:
             q_mean = q_mean.assign_coords(longitude=(((q_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
         return q, q_mean, cond_ini
+
+    def _carregar_olr_mean(self):
+
+        varname = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
+        olr = get_dado_cacheado(varname, self.produto_config_sf, **self.pl_params)
+        olr_mean = ensemble_mean(olr)
+        cond_ini = get_inicializacao_fmt(olr_mean)
+
+        # if t_mean.longitude.min() >= 0:
+        #     t_mean = t_mean.assign_coords(longitude=(((t_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
+        return olr, olr_mean, cond_ini
 
     ###################################################################################################################
 
@@ -1262,8 +1350,6 @@ class GeraProdutosPrevisao:
                 us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
                 vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-                pdb.set_trace()
-
                 for n_24h in us_24h.tempo:
 
                     print(f'Processando {n_24h.item()}...')
@@ -1797,7 +1883,7 @@ class GeraProdutosPrevisao:
                         **kwargs
                     )
 
-            elif modo == 'geada':
+            elif modo == 'geada-inmet':
 
                 if self.t2m_mean is None:
                     _, self.t2m_mean, _ = self._carregar_t2m_mean()
@@ -1807,16 +1893,136 @@ class GeraProdutosPrevisao:
                 for n_24h in t2m_24h.tempo:
                     print(f'Processando {n_24h.item()}...')
                     t2m_24h_plot = t2m_24h.sel(tempo=n_24h)  
+                    t2m_24h_plot = t2m_24h_plot-273.15
+                    t2m_24h_plot = -1*t2m_24h_plot
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
                     semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini)[0]
                     titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
                 
                     plot_campos(
-                        ds=(-1)*t2m_24h_plot['t2m']/10,
-                        variavel_plotagem='geada',
+                        ds=t2m_24h_plot['t2m'],
+                        variavel_plotagem='geada-inmet',
                         title=titulo,
-                        filename=f'geada_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=f'geada_inmet_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        **kwargs
+                    )
+
+            elif modo == 'geada-cana':
+
+                if self.t2m_mean is None:
+                    _, self.t2m_mean, _ = self._carregar_t2m_mean()
+
+                t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
+
+                for n_24h in t2m_24h.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    t2m_24h_plot = t2m_24h.sel(tempo=n_24h)  
+                    t2m_24h_plot = t2m_24h_plot-273.15
+                    t2m_24h_plot = -1*t2m_24h_plot
+
+                    tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini)[0]
+                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
+                
+                    plot_campos(
+                        ds=t2m_24h_plot['t2m'],
+                        variavel_plotagem='geada-cana',
+                        title=titulo,
+                        filename=f'geada_cana_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        **kwargs
+                    )
+
+            elif modo == 'olr':
+
+                if self.olr_mean is None:
+                    _, self.olr_mean, self.cond_ini = self._carregar_olr_mean()
+
+                varname = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
+                var_24h = resample_variavel(self.olr_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+
+                for n_24h in var_24h.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    var_24h_plot = var_24h.sel(tempo=n_24h)  # Seleciona o tempo atual
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(var_24h_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.olr_mean.time.values), tempo_ini)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            var_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}OLR', semana, self.cond_ini,
+                        )
+
+                    else:
+                        intervalo = var_24h_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = var_24h_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=var_24h_plot[varname],
+                        variavel_plotagem='olr',
+                        title=titulo,
+                        filename=f'olr_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        ds_contour=var_24h_plot[varname],
+                        variavel_contour='olr',
+                        **kwargs
+                    )
+
+            elif modo == 'mag_vento100':
+
+                if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
+                    self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
+
+                us_24h = resample_variavel(self.us100_mean, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h = resample_variavel(self.vs100_mean, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+
+                for n_24h in us_24h.tempo:
+
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h.sel(tempo=n_24h)
+                    vs_plot = vs_24h.sel(tempo=n_24h)
+                    magnitude = np.sqrt(us_plot['u100']**2 + vs_plot['v100']**2)
+
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u100'],
+                        'v': vs_plot['v100'],
+                        'magnitude': magnitude
+                    })
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us100.time.values), tempo_ini)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e magnitude em 100m', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=magnitude,
+                        variavel_plotagem='mag_vento100',
+                        title=titulo,
+                        filename=f'mag_vento100_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        ds_quiver=ds_quiver,
+                        variavel_quiver='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         **kwargs
@@ -1878,8 +2084,17 @@ class GeraProdutosPrevisao:
     def gerar_psi(self, **kwargs):
         self._processar_varsdinamicas('psi', **kwargs)
 
-    def gerar_geada(self, **kwargs):
-        self._processar_varsdinamicas('geada', **kwargs)
+    def gerar_geada_inmet(self, **kwargs):
+        self._processar_varsdinamicas('geada-inmet', **kwargs)
+
+    def gerar_geada_cana(self, **kwargs):
+        self._processar_varsdinamicas('geada-cana', **kwargs)
+
+    def gerar_olr(self, **kwargs):
+        self._processar_varsdinamicas('olr', **kwargs)
+
+    def gerar_mag_vento100(self, **kwargs):
+        self._processar_varsdinamicas('mag_vento100', **kwargs)
 
     ###################################################################################################################
 
@@ -1998,10 +2213,140 @@ class GeraProdutosPrevisao:
 
 class GeraProdutosObservacao:
 
-    def __init__(self, modelo_fmt, produto_config, shapefiles=None):
-
-        self.modelo_fmt = modelo_fmt
+    def __init__(self, produto_config, shapefiles=None):
+        
         self.produto_config = produto_config
         self.shapefiles = shapefiles
+        self.modelo_fmt = self.produto_config.modelo
+
+        if self.modelo_fmt == 'merge':
+            self.modelo_fmt = self.modelo_fmt + 'gpm'
+
+        # Inicializando variáveis
+        self.tp = None
+        self.cond_ini = None
+
+    ###################################################################################################################
+
+    def _carregar_tp_mean(self, **kwargs):
+
+        """Carrega e processa o campo tp apenas uma vez."""
+        tp = get_dado_cacheado(self.produto_config, usa_variavel=False, **kwargs)
+        cond_ini = get_inicializacao_fmt(tp)
+        return tp, cond_ini
+    
+    ###################################################################################################################
+
+    def _processar_precipitacao(self, modo, **kwargs):
+
+        print(f'Processando precipitação no modo: {modo}')
+
+        if modo == '24h':
+
+            if self.tp is None or self.cond_ini is None:
+                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, todo_dir=True, unico=False)
+
+            for index, n in enumerate(self.tp['valid_time']):
+
+                if len(self.cond_ini) > 0:
+                    cond_ini = self.cond_ini[index]
+                else:
+                    cond_ini = self.cond_ini
+
+                print(f'Processando {index}')
+
+                tp_plot = self.tp.sel(valid_time=n)
+                tempo_ini = pd.to_datetime(n.item()) - pd.Timedelta(days=1)
+                tempo_fim = pd.to_datetime(n.item())
+                
+                titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo='PREC24', cond_ini=cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        sem_intervalo_semana=True, condicao_inicial='Data arquivo'
+                    )
+
+                plot_campos(
+                    ds=tp_plot['tp'],
+                    variavel_plotagem='chuva_ons',
+                    title=titulo,
+                    filename=f'{index}_tp_24h_{self.modelo_fmt}',
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
+
+        elif modo == 'acumulado_mensal':
+
+            if self.tp is None or self.cond_ini is None:
+                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, todo_dir=False, unico=False, apenas_mes_atual=True)
+
+            if len(self.cond_ini) > 0:
+                cond_ini = self.cond_ini[-1]
+            else:
+                cond_ini = self.cond_ini
+
+            # Acumulando no mes
+            tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
+
+            tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=pd.to_datetime(self.tp['valid_time'].values[0]).day-1)
+            tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
+
+            # Abrindo a climatologia
+            if self.modelo_fmt == 'mergegpm':
+                path_clim = Constants().PATH_CLIMATOLOGIA_MERGE
+                mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
+                tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
+                tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
+            
+            # Anomalia total
+            tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
+
+            # Anomalia parcial
+            dmes = pd.to_datetime(self.tp['valid_time'].values[-1]).day
+            tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dmes)*len(self.tp['valid_time'])
+
+            # Criando um xarray para colocar as anomalias
+            ds_total = xr.Dataset(
+                {
+                    "acumulado_total": tp_plot_acc["tp"],
+                    "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
+                    "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
+                }
+            )
+            
+            for data_var in ds_total.data_vars:
+
+                print(f'Processando {data_var}')
+
+                if data_var == 'acumulado_total':
+                    tipo = 'Acumulado total'
+                elif data_var == 'anomalia_total':
+                    tipo = 'Anomalia total'
+                elif data_var == 'anomalia_parcial':
+                    tipo = 'Anomalia parcial'
+
+                titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        sem_intervalo_semana=True, condicao_inicial='Data arquivo'
+                    )
+
+                plot_campos(
+                    ds=ds_total[data_var],
+                    variavel_plotagem='chuva_ons' if data_var == 'acumulado_total' else 'tp_anomalia',
+                    title=titulo,
+                    filename=f'tp_{data_var}_{self.modelo_fmt}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}',
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
+
+    ###################################################################################################################
+
+    def gerar_prec24h(self, **kwargs):
+        self._processar_precipitacao('24h', **kwargs)
+
+    def gerar_acumulado_mensal(self, **kwargs):
+        self._processar_precipitacao('acumulado_mensal', **kwargs)
 
 ###################################################################################################################

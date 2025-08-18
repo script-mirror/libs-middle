@@ -462,3 +462,7 @@ class Constants:
     @property 
     def PATH_FTP_ECMWF(self):
         return './tmp/data' # '/ftp/files_sftp/ECMWF'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_MERGE(self):
+        return './tmp/data' # '/WX/WX2TB/Documentos/dados/merge-climatologia'
