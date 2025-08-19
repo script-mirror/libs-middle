@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import xarray as xr
+import requests
 import metpy.calc as mpcalc
 from middle.utils import Constants
 from metpy.units import units
@@ -17,15 +18,17 @@ from ..utils.utils import (
     encontra_casos_frentes_xarray,
     skip_zero_formatter,
     interpola_ds,
-    get_lat_lon_from_df,
+    get_df_ons,
     calcula_media_bacia,
     converter_psat_para_cd_subbacia,
     calcula_psi_chi,
     open_hindcast_file,
     ajusta_lon_0_360,
-    ajusta_acumulado_ds
+    ajusta_acumulado_ds,
+    ajusta_shp_json
 )
 from ..consts.constants import CONSTANTES
+from middle.utils import get_auth_header
 import matplotlib
 
 matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
@@ -77,6 +80,13 @@ def custom_colorbar(variavel_plotagem):
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
         cbar_ticks = [-150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150]
+
+    elif variavel_plotagem in ['pct_climatologia']:
+        colors = ['firebrick', 'red', 'orange', 'yellow', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
+        levels = range(0, 305, 5)
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = levels[::4]   
 
     elif variavel_plotagem in ['psi']:
         levels = np.arange(-30, 30.2, 0.2)
@@ -285,6 +295,7 @@ def plot_campos(
                 shapefiles=None,
                 margin_x = -50,
                 margin_y = -10,
+                add_valor_bacias=False,
     ):
 
     os.makedirs(path_to_save, exist_ok=True)
@@ -419,6 +430,62 @@ def plot_campos(
             else:
                 gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
 
+    if add_valor_bacias:
+
+        # criando a var para tp no dataset se nao existir, o valor será o mesmo
+        ds = ds.to_dataset()
+        if 'tp' not in ds.data_vars:
+            varname = list(ds.data_vars.keys())[0]  # pega o primeiro nome de variável
+            ds = ds.rename({varname: "tp"})
+
+        # Abrindo o json arrumado
+        shp = ajusta_shp_json()
+
+        chuva_media = []
+        for lat, lon, bacia, codigo in zip(shp['lat'], shp['lon'], shp['nome'], shp['cod']):
+            chuva_media.append(calcula_media_bacia(ds, lat, lon, bacia, codigo, shp))
+
+        df = xr.concat(chuva_media, dim='id').to_dataframe().reset_index()
+        df = df.rename(columns={'id': 'cod_psat'})
+        df_ons = get_df_ons()
+        df = pd.merge(df, df_ons, on='cod_psat', how='left')
+        media_bacia = df.groupby(['nome_bacia'])[['tp', 'vl_lat', 'vl_lon']].mean().reset_index()
+        bacias_para_plotar = [
+            'grande',
+            'iguaçu',
+            'itaipu',
+            'jacuí',
+            'madeira',
+            'paranapane',
+            'paranaíba',
+            'tietê',
+            'uruguai',
+            'paraná',
+            'xingu',
+            'tocantins',
+            'são franci',
+        ]
+
+        # Itera sobre as bacias e adiciona as anotações no mapa
+        for idx, row in media_bacia.iterrows():
+
+            if row['nome_bacia'].lower() in bacias_para_plotar:
+
+                # if media_bacia['tp'].min() > 0:
+                #     color='black'
+                # else:
+                #     if row['tp'] > 0:
+                #         color='green'
+                #     else:
+                #         color='purple'
+
+                if not np.isnan(row['tp']):  # Garante que há valor para exibir
+                    lon, lat = row["vl_lon"], row["vl_lat"]  # Extrai coordenadas do centroide
+                    lon = lon+360
+                    ax.text(lon, lat, f"{row['tp']:.0f}", fontsize=11, color='black', fontweight='bold', ha='center', va='center', transform=ccrs.PlateCarree())
+                            # bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')c
+                            # )
+
     # Logo
     img = Image.open(Constants().LOGO_RAIZEN)
     im_width, _ = img.size
@@ -551,8 +618,8 @@ class GeraProdutosPrevisao:
 
     def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
 
-        self.modelo_fmt = self.produto_config_sf.modelo_fmt
         self.produto_config_sf = produto_config_sf
+        self.modelo_fmt = self.produto_config_sf.modelo
         self.tp_params = tp_params or {}
         self.pl_params = pl_params or {}
         self.shapefiles = shapefiles
@@ -715,7 +782,7 @@ class GeraProdutosPrevisao:
     def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, 
                                 salva_db=True, modelo_obs='merge', limiares_prob=[5], freq_prob='sop', 
                                 timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False, qtdade_max_semanas=None,
-                                var_anomalia='tp', level_anomalia=200, anomalia_mensal=False,
+                                var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='seb',
                                 **kwargs):
         
         """
@@ -974,21 +1041,23 @@ class GeraProdutosPrevisao:
 
             elif modo == 'bacias_smap':
 
-                import requests
                 from datetime import datetime
-                from middle.utils import get_auth_header
                 API_URL = Constants().API_URL_APIV2
 
-                # Abrindo arquvos das subbacias
-                shp_path_bacias = Constants().PATH_SUBBACIAS_JSON
-                shp = gpd.read_file(shp_path_bacias)
+                # # Abrindo arquvos das subbacias
+                # shp_path_bacias = Constants().PATH_SUBBACIAS_JSON
+                # shp = gpd.read_file(shp_path_bacias)
 
                 # Vou usar para pegar as informações das subbacias
-                df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
-                df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
+                # df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
+                # df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
+                df_ons = get_df_ons()
 
-                # Atribuindo os valores de latitude e longitude no arquivo shp
-                shp[['lat', 'lon']] = shp['cod'].apply(lambda row: pd.Series(get_lat_lon_from_df(row, df_ons)))
+                # # Atribuindo os valores de latitude e longitude no arquivo shp
+                # shp[['lat', 'lon']] = shp['cod'].apply(lambda row: pd.Series(get_lat_lon_from_df(row, df_ons)))
+
+                # Abrindo o json arrumado
+                shp = ajusta_shp_json()
 
                 # Adicionando alguns pontos que não estão no arquivo
                 novas_subbacias = CONSTANTES['novas_subbacias']
@@ -1323,6 +1392,49 @@ class GeraProdutosPrevisao:
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
+
+            elif modo == 'estacao_chuvosa':
+
+                if regiao_estacao_chuvosa == 'seb':
+                    lati = -15
+                    latf = -25
+                    loni = 307.5
+                    lonf = 320
+                
+                elif regiao_estacao_chuvosa == 'norte':
+                    lati = -2
+                    latf = -6
+                    loni = 360-56
+                    lonf = 360-46.4
+
+                # Selecionando a região da estação chuvosa
+                tp_estacao = self.tp_mean.sel(latitude=slice(latf, lati), longitude=slice(loni, lonf))
+
+                # Aplicando a mascara sobre o oceano
+                ds_mask = xr.open_dataset('./tmp/data/land.nc').isel(time=0).isel(nbnds=0)
+                ds_mask = ds_mask.rename({'lat': 'latitude', 'lon': 'longitude'})
+                ds_mask = ds_mask.interp(latitude=tp_estacao.latitude, longitude=tp_estacao.longitude)
+                tp_estacao = tp_estacao['tp']*ds_mask['land']
+                tp_estacao.name = 'tp'
+
+                # Calculando a média
+                ds_mean = tp_estacao.mean(('latitude', 'longitude')).to_dataframe().reset_index()   
+                ds_mean['hr_rodada'] = pd.to_datetime(self.tp_mean['time'].values).hour
+                ds_mean['dt_rodada'] = pd.to_datetime(self.tp_mean['time'].values).strftime('%Y-%m-%d')
+                ds_mean['dt_prevista'] = ds_mean["dt_prevista"].astype(str)
+                ds_mean['str_modelo'] = self.modelo_fmt
+                ds_mean = ds_mean[['valid_time', 'dt_rodada', 'hr_rodada', 'tp', 'str_modelo']]
+                ds_mean = ds_mean.rename({'valid_time': 'dt_prevista', 'tp': 'vl_chuva'}, axis=1)
+                # ds_mean['regiao'] = regiao_estacao_chuvosa
+
+                # Tirando o primeiro tempo do ec estendido (acumulado de 12 horas)
+                if 'ecmwf' in self.modelo_fmt:
+                    ds_mean = ds_mean[1:]
+
+                print('Salvando dados no db')
+                API_URL = Constants().API_URL_APIV2
+                response = requests.post(f'{API_URL}/meteorologia/estacao-chuvosa-prev', verify=False, json=ds_mean.to_dict('records'), headers=get_auth_header())
+                print(f'Código POST: {response.status_code}')
 
         except Exception as e:
             print(f'Erro ao gerar precipitação ({modo}): {e}') 
@@ -2057,6 +2169,9 @@ class GeraProdutosPrevisao:
     def gerar_prec_pnmm(self, **kwargs):
         self._processar_precipitacao('prec_pnmm', **kwargs)
 
+    def gerar_estacao_chuvosa(self, **kwargs):
+        self._processar_precipitacao('estacao_chuvosa', **kwargs)
+
     def gerar_jato_div200(self, **kwargs):
         self._processar_varsdinamicas('jato_div200', **kwargs)
 
@@ -2233,6 +2348,10 @@ class GeraProdutosObservacao:
         """Carrega e processa o campo tp apenas uma vez."""
         tp = get_dado_cacheado(self.produto_config, usa_variavel=False, **kwargs)
         cond_ini = get_inicializacao_fmt(tp)
+
+        if isinstance(cond_ini, str):
+            cond_ini = [cond_ini]
+
         return tp, cond_ini
     
     ###################################################################################################################
@@ -2244,7 +2363,7 @@ class GeraProdutosObservacao:
         if modo == '24h':
 
             if self.tp is None or self.cond_ini is None:
-                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, todo_dir=True, unico=False)
+                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, todo_dir=True)
 
             for index, n in enumerate(self.tp['valid_time']):
 
@@ -2258,7 +2377,7 @@ class GeraProdutosObservacao:
                 tp_plot = self.tp.sel(valid_time=n)
                 tempo_ini = pd.to_datetime(n.item()) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(n.item())
-                
+
                 titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo='PREC24', cond_ini=cond_ini,
                         data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
@@ -2277,11 +2396,14 @@ class GeraProdutosObservacao:
 
         elif modo == 'acumulado_mensal':
 
+            from calendar import monthrange
+
             if self.tp is None or self.cond_ini is None:
-                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, todo_dir=False, unico=False, apenas_mes_atual=True)
+                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, apenas_mes_atual=True)
 
             if len(self.cond_ini) > 0:
                 cond_ini = self.cond_ini[-1]
+
             else:
                 cond_ini = self.cond_ini
 
@@ -2302,8 +2424,14 @@ class GeraProdutosObservacao:
             tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
 
             # Anomalia parcial
-            dmes = pd.to_datetime(self.tp['valid_time'].values[-1]).day
-            tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dmes)*len(self.tp['valid_time'])
+            dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
+            tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time'])
+
+            # Porcentagem da anomalia
+            tp_plot_anomalia_percentual = (tp_plot_acc['tp'].values / tp_plot_clim['tp'].values) * 100
+
+            # Porcentagem da anomalia parcial
+            tp_plot_anomalia_percentual_parcial = (tp_plot_acc['tp'].values / ((tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time']))) * 100
 
             # Criando um xarray para colocar as anomalias
             ds_total = xr.Dataset(
@@ -2311,6 +2439,8 @@ class GeraProdutosObservacao:
                     "acumulado_total": tp_plot_acc["tp"],
                     "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
                     "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
+                    "pct_climatologia": (("latitude", "longitude"), tp_plot_anomalia_percentual),
+                    "pct_climatologia_parcial": (("latitude", "longitude"), tp_plot_anomalia_percentual_parcial),
                 }
             )
             
@@ -2320,26 +2450,43 @@ class GeraProdutosObservacao:
 
                 if data_var == 'acumulado_total':
                     tipo = 'Acumulado total'
+                    variavel_plotagem = 'chuva_ons'
+
                 elif data_var == 'anomalia_total':
                     tipo = 'Anomalia total'
+                    variavel_plotagem = 'tp_anomalia'
+
                 elif data_var == 'anomalia_parcial':
                     tipo = 'Anomalia parcial'
+                    variavel_plotagem = 'tp_anomalia'
+
+                elif data_var == 'pct_climatologia':
+                    tipo = '% da climatologia'
+                    variavel_plotagem = 'pct_climatologia'
+
+                elif data_var == 'pct_climatologia_parcial':
+                    tipo = '% da climatologia parcial'
+                    variavel_plotagem = 'pct_climatologia'
 
                 titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
                         data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                         data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                         sem_intervalo_semana=True, condicao_inicial='Data arquivo'
-                    )
+                )
 
                 plot_campos(
                     ds=ds_total[data_var],
-                    variavel_plotagem='chuva_ons' if data_var == 'acumulado_total' else 'tp_anomalia',
+                    variavel_plotagem=variavel_plotagem,
                     title=titulo,
                     filename=f'tp_{data_var}_{self.modelo_fmt}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}',
                     shapefiles=self.shapefiles,
                     **kwargs
                 )
+
+        elif modo == 'dif_prev':
+
+            pass
 
     ###################################################################################################################
 

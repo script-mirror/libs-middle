@@ -21,7 +21,7 @@ CONSTANTES = {
         '[kg*m-1*s-1]': ['ivt'],
         '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes'],
-        '[%]': ['probabilidade'],
+        '[%]': ['probabilidade', 'pct_climatologia'],
         '[agdp]': ['geop_500_anomalia'],
         '[W/m²]': ['olr']
     },

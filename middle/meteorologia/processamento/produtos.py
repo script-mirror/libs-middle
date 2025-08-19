@@ -496,7 +496,7 @@ class ProdutosObservado:
         pass
 
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, todo_dir=False, unico=True, ajusta_nome=True, ajusta_longitude=True, apenas_mes_atual=False):
+    def open_model_file(self, todo_dir=False, unico=False, ajusta_nome=True, ajusta_longitude=True, apenas_mes_atual=False):
 
         import xarray as xr
 

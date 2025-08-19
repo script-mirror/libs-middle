@@ -554,12 +554,49 @@ def get_lat_lon_from_df(row, df):
 
 ###################################################################################################################
 
+def get_df_ons():
+
+    import requests
+    from middle.utils import get_auth_header
+    API_URL = Constants().API_URL_APIV2
+
+    # Vou usar para pegar as informações das subbacias
+    df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
+    df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
+
+    return df_ons
+
+###################################################################################################################
+
+def ajusta_shp_json():
+
+    import geopandas as gpd
+    # import requests
+    # from middle.utils import get_auth_header
+    # API_URL = Constants().API_URL_APIV2
+
+    # Abrindo arquvos das subbacias
+    shp_path_bacias = Constants().PATH_SUBBACIAS_JSON
+    shp = gpd.read_file(shp_path_bacias)
+    
+    # Vou usar para pegar as informações das subbacias
+    # df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
+    # df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
+    df_ons = get_df_ons()
+
+    # Atribuindo os valores de latitude e longitude no arquivo shp
+    shp[['lat', 'lon']] = shp['cod'].apply(lambda row: pd.Series(get_lat_lon_from_df(row, df_ons)))
+
+    return shp
+
+###################################################################################################################
+
 def calcula_media_bacia(dataset, lat, lon, bacia, codigo, shp):
 
     import regionmask
 
     if shp[shp['nome'] == bacia].geometry.values[0] is None:
-        print(f'Não há pontos na bacia {bacia}. Código {codigo}. Pegando o mais próximo')
+        # print(f'Não há pontos na bacia {bacia}. Código {codigo}. Pegando o mais próximo')
         media = dataset.sel(latitude=lat, longitude=lon, method='nearest')
         media = media.drop_vars(['latitude', 'longitude'])
     else:
@@ -569,7 +606,7 @@ def calcula_media_bacia(dataset, lat, lon, bacia, codigo, shp):
         media = chuva_mask.mean(('latitude', 'longitude'))
 
         if pd.isna(media['tp'].values.mean()):
-            print(f'Não há pontos na bacia {bacia}. Código {codigo}. Pegando o mais próximo')
+            # print(f'Não há pontos na bacia {bacia}. Código {codigo}. Pegando o mais próximo')
             media = dataset.sel(latitude=lat, longitude=lon, method='nearest')
             media = media.drop_vars(['latitude', 'longitude'])
 
@@ -702,5 +739,54 @@ def ajusta_acumulado_ds(ds: xr.Dataset, m_to_mm=True):
         ds = ds * 1000  # Convertendo de metros para milímetros
 
     return ds
+
+###################################################################################################################
+
+def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
+
+    def to_geopandas(df, lon, lat):
+
+        from shapely.geometry import Point
+        import geopandas as gpd
+        
+        geometry = [Point(xy) for xy in zip(df[lon], df[lat])]
+        gdf = gpd.GeoDataFrame(df, geometry=geometry)
+        gdf = gdf.set_crs("EPSG:4326")
+
+        shp_file = gpd.read_file(Constants().PATH_SUBBACIAS_JSON)
+        gdf_basins = shp_file.to_crs(gdf.crs)    
+
+        def geometry_basin(codigo, gdf_basins):
+
+            try:
+                geometry = gdf_basins[gdf_basins['cod'] == codigo]['geometry'].values[0]
+            except:
+                geometry = np.nan
+            return geometry
+
+        gdf['geometry'] = gdf['cod_psat'].apply(lambda x: geometry_basin(x, gdf_basins))
+
+        return gdf
+
+    import requests
+    from middle.utils import get_auth_header
+    # API_URL = Constants().API_URL_APIV2
+
+    if modelo in ['merge', 'mergegpm']:
+        response = requests.get(f'https://tradingenergiarz.com/api/v2/rodadas/chuva/observada?dt_observada={dt_modelo}', verify=False, headers=get_auth_header())
+
+    else:
+        dt_hr_rodada = f'{dt_modelo}%20{hr_rodada}'
+        response = requests.get(f'https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao?nome_modelo={modelo}&dt_hr_rodada={dt_hr_rodada}%3A00%3A00&granularidade=subbacia&no_cache=true&atualizar=false', verify=False, headers=get_auth_header())
+        
+    if response.status_code == 200:
+        df = pd.DataFrame(response.json())
+        # df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
+        # df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
+        df_ons = get_df_ons()
+        df = pd.merge(df, df_ons, on='cd_subbacia', how='left')
+        df = to_geopandas(df, 'vl_lon', 'vl_lat')
+
+    return df
 
 ###################################################################################################################
