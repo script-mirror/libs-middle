@@ -899,7 +899,7 @@ class GeraProdutosPrevisao:
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
                 
                 for n_24h in tp_proc.tempo:
-                    print(f'Processando {n_24h.item()}...')
+                    print(f'Processando {n_24h.item()}... x')
                     tp_plot = tp_proc.sel(tempo=n_24h)
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
