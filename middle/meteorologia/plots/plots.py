@@ -715,11 +715,15 @@ class GeraProdutosPrevisao:
 
         self.produto_config_sf = produto_config_sf
         self.modelo_fmt = self.produto_config_sf.modelo
+        self.data_fmt = f'{pd.to_datetime(self.produto_config_sf.data).strftime("%Y%m%d")}{str(self.produto_config_sf.inicializacao).zfill(2)}'
         self.tp_params = tp_params or {}
         self.pl_params = pl_params or {}
         self.shapefiles = shapefiles
         self.produto_config_pl = produto_config_pl
         self.qtdade_max_semanas = CONSTANTES['semanas_operativas'].get(self.modelo_fmt, 3)
+        self.path_savefiguras = f'{Constants().PATH_SAVE_FIGS_METEOROLOGIA}/{self.modelo_fmt}/{self.data_fmt}'
+
+        os.makedirs(self.path_savefiguras, exist_ok=True)
 
         # Inicializando algumas variaveis
         self.us = None
@@ -876,7 +880,7 @@ class GeraProdutosPrevisao:
 
     def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, 
                                 salva_db=True, modelo_obs='merge', limiares_prob=[5], freq_prob='sop', 
-                                timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False, qtdade_max_semanas=None,
+                                timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False,
                                 var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='seb',
                                 **kwargs):
         
@@ -884,8 +888,9 @@ class GeraProdutosPrevisao:
         modo: 24h, total, semanas_operativas, bacias_smap, probabilidade_limiar, diferenca, prec_pnmm'
         """
 
-        if qtdade_max_semanas is None:
-            qtdade_max_semanas = self.qtdade_max_semanas
+
+        qtdade_max_semanas = self.qtdade_max_semanas
+        path_to_save = f'{self.path_savefiguras}/{modo}'
 
         try:
 
@@ -899,7 +904,7 @@ class GeraProdutosPrevisao:
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
                 
                 for n_24h in tp_proc.tempo:
-                    print(f'Processando {n_24h.item()}... x')
+                    print(f'Processando {n_24h.item()}...')
                     tp_plot = tp_proc.sel(tempo=n_24h)
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
@@ -912,6 +917,7 @@ class GeraProdutosPrevisao:
                         title=titulo,
                         filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -953,6 +959,7 @@ class GeraProdutosPrevisao:
                         ds_contour=pnmm_plot,
                         variavel_contour='pnmm',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )                
 
@@ -977,6 +984,7 @@ class GeraProdutosPrevisao:
                     title=titulo,
                     filename=f'tp_acumulado_total_{self.modelo_fmt}',
                     shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
                     **kwargs
                 )
 
@@ -1067,6 +1075,7 @@ class GeraProdutosPrevisao:
                                 title=titulo,
                                 filename=f'{index}_tp_anomalia_merge_{self.modelo_fmt}',
                                 shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
                                 **kwargs
                             )     
 
@@ -1085,6 +1094,7 @@ class GeraProdutosPrevisao:
                             title=titulo,
                             filename=f'{index}_tp_acumulado_total_merge_{self.modelo_fmt}',
                             shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
                             **kwargs
                         )              
 
@@ -1113,6 +1123,7 @@ class GeraProdutosPrevisao:
                             title=titulo,
                             filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}' if not anomalia_sop else f'tp_sop_{self.modelo_fmt}_anomalia_semana{n_semana.item()}',
                             shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
                             **kwargs
                         )
 
@@ -1132,6 +1143,7 @@ class GeraProdutosPrevisao:
                                 title=titulo,
                                 filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}_{membro.item()}',
                                 shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
                                 **kwargs
                             )
 
@@ -1140,17 +1152,8 @@ class GeraProdutosPrevisao:
                 from datetime import datetime
                 API_URL = Constants().API_URL_APIV2
 
-                # # Abrindo arquvos das subbacias
-                # shp_path_bacias = Constants().PATH_SUBBACIAS_JSON
-                # shp = gpd.read_file(shp_path_bacias)
-
                 # Vou usar para pegar as informações das subbacias
-                # df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
-                # df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
                 df_ons = get_df_ons()
-
-                # # Atribuindo os valores de latitude e longitude no arquivo shp
-                # shp[['lat', 'lon']] = shp['cod'].apply(lambda row: pd.Series(get_lat_lon_from_df(row, df_ons)))
 
                 # Abrindo o json arrumado
                 shp = ajusta_shp_json()
@@ -1299,7 +1302,7 @@ class GeraProdutosPrevisao:
                                 modelo_obs=modelo_obs,
                                 modelo_prev=self.modelo_fmt,
                                 dt_rodada=pd.to_datetime(dt_rodada).strftime('%Y-%m-%d-%Hz'),
-                                path_to_save='./tmp/plots',
+                                path_to_save=path_to_save,
                                 index=index,
                                 mes_fmt_svg=mes_fmt_svg,
                                 com_climatologia=True
@@ -1375,6 +1378,7 @@ class GeraProdutosPrevisao:
                             title=titulo,
                             filename=f'tp_{freq_prob}_{self.modelo_fmt}_{self.freqs_map[freq_prob]["prefix_filename"]}{n.item()}_probabilidade_{limiar}',
                             shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
                             **kwargs
                         )
 
@@ -1460,6 +1464,7 @@ class GeraProdutosPrevisao:
                         title=titulo,
                         shapefiles=self.shapefiles,
                         filename=f'{index}_dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}_{tipo_dif}',
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1486,6 +1491,7 @@ class GeraProdutosPrevisao:
                         title=titulo,
                         filename=f'tp_{freq_prob}_{self.modelo_fmt}_{self.freqs_map[freq_prob]["prefix_filename"]}{n.item()}_desvpad_{limiar}',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1514,7 +1520,6 @@ class GeraProdutosPrevisao:
                 tp_estacao.name = 'tp'
 
                 # Calculando a média
-                pdb.set_trace()
                 ds_mean = tp_estacao.mean(('latitude', 'longitude')).to_dataframe().reset_index()   
                 ds_mean['hr_rodada'] = pd.to_datetime(self.tp_mean['time'].values).hour
                 ds_mean['dt_rodada'] = pd.to_datetime(self.tp_mean['time'].values).strftime('%Y-%m-%d')
@@ -1536,14 +1541,14 @@ class GeraProdutosPrevisao:
         except Exception as e:
             print(f'Erro ao gerar precipitação ({modo}): {e}') 
 
-    def _processar_varsdinamicas(self, modo, anomalia_frentes=False, resample_freq='24h', qtdade_max_semanas=None, anomalia_sop=False, var_anomalia='gh', level_anomalia=500, **kwargs):
+    def _processar_varsdinamicas(self, modo, anomalia_frentes=False, resample_freq='24h', anomalia_sop=False, var_anomalia='gh', level_anomalia=500, **kwargs):
 
         """
         modo: jato_div200, vento_temp850, geop_vort500, frentes_frias, geop500, ivt, vento_div850,  chuva_geop500_vento850
         """
 
-        if qtdade_max_semanas is None:
-            qtdade_max_semanas = self.qtdade_max_semanas
+        qtdade_max_semanas = self.qtdade_max_semanas
+        path_to_save = f'{self.path_savefiguras}/{modo}'
 
         try:
 
@@ -1600,6 +1605,7 @@ class GeraProdutosPrevisao:
                         variavel_streamplot='wind200',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
             
@@ -1656,6 +1662,7 @@ class GeraProdutosPrevisao:
                         variavel_quiver='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1715,6 +1722,7 @@ class GeraProdutosPrevisao:
                         plot_bacias=False,
                         color_contour='black',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1758,6 +1766,7 @@ class GeraProdutosPrevisao:
                         ds_contour=ds_frentes,
                         variavel_contour='frentes',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1791,6 +1800,7 @@ class GeraProdutosPrevisao:
                             title=titulo,
                             filename=f'anomalia_frentes_{self.modelo_fmt}',
                             shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
                             **kwargs
                         )
 
@@ -1841,6 +1851,7 @@ class GeraProdutosPrevisao:
                         color_contour='black' if anomalia_sop else 'white',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1894,17 +1905,6 @@ class GeraProdutosPrevisao:
                         'gh_700': gh_plot['gh']/10  # Convertendo de m para dam
                     })
 
-                    # tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
-                    # tempo_fim = pd.to_datetime(gh_plot.data_final.item())
-                    # semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini)[0]
-
-                    # titulo = gerar_titulo(
-                    #     modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV (1000-300)', cond_ini=self.cond_ini,
-                    #     data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    #     data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    #     semana=semana
-                    # )
-
                     if resample_freq == '24h':
                         tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
                         tempo_fim = pd.to_datetime(gh_plot.data_final.item())
@@ -1937,6 +1937,7 @@ class GeraProdutosPrevisao:
                         plot_bacias=False,
                         color_contour='black',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -1988,6 +1989,7 @@ class GeraProdutosPrevisao:
                         variavel_streamplot='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -2040,6 +2042,7 @@ class GeraProdutosPrevisao:
                                 variavel_contour='gh_500', 
                                 color_contour='black',
                                 shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
                                 **kwargs
                                 )
 
@@ -2089,6 +2092,7 @@ class GeraProdutosPrevisao:
                         color_contour='black' if anomalia_sop else 'white',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -2116,6 +2120,7 @@ class GeraProdutosPrevisao:
                         filename=f'geada_inmet_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -2143,6 +2148,7 @@ class GeraProdutosPrevisao:
                         filename=f'geada_cana_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -2184,6 +2190,7 @@ class GeraProdutosPrevisao:
                         shapefiles=self.shapefiles,
                         ds_contour=var_24h_plot[varname],
                         variavel_contour='olr',
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -2234,6 +2241,7 @@ class GeraProdutosPrevisao:
                         variavel_quiver='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
                         **kwargs
                     )
 
@@ -2338,6 +2346,7 @@ class GeraProdutosPrevisao:
         try:
 
             print('Gerando mapa de diferença total ...')
+            path_to_save = f'{self.path_savefiguras}/diferenca'
 
             # Arquivo atual
             ds = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
@@ -2413,6 +2422,7 @@ class GeraProdutosPrevisao:
                     title=titulo,
                     shapefiles=self.shapefiles,
                     filename=f'{index}_dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}_{tipo_dif}',
+                    path_to_save=path_to_save,
                     **kwargs
                 )
 

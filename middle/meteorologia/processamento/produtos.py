@@ -12,7 +12,7 @@ import shutil
 
 class ProdutosPrevisaoCurtoPrazo:
 
-    def __init__(self, modelo, inicializacao=0, resolucao='0p25', data=datetime.now(), output_path='./tmp/downloads', days_time_delta=None, shapefiles=None, name_prefix=None):
+    def __init__(self, modelo, inicializacao=0, resolucao='0p25', data=datetime.now(), output_path=Constants().PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA, days_time_delta=None, shapefiles=None, name_prefix=None):
 
         import geopandas as gpd
 

@@ -470,3 +470,11 @@ class Constants:
     @property 
     def PATH_CLIMATOLOGIA_MERGE(self):
         return './tmp/data' # '/WX/WX2TB/Documentos/dados/merge-climatologia'
+    
+    @property 
+    def PATH_SAVE_FIGS_METEOROLOGIA(self):
+        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+    
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
+        return './tmp/downloads' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
