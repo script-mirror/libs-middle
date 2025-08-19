@@ -477,7 +477,7 @@ class ProdutosObservado:
         while True:
             try:
                 # Baixando o dado
-                file = requests.get(url, allow_redirects=True, timeout=30)
+                file = requests.get(url, allow_redirects=True, timeout=30, verify=False)
                 
                 if file.status_code == 200:
                     with open(caminho_arquivo, 'wb') as f:

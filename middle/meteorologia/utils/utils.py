@@ -494,7 +494,7 @@ def ajustar_hora_utc(dt):
 
 def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial'):
 
-    modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est')
+    modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est').replace('pconjunto', 'pconj')
 
     if semana_operativa:
 
@@ -770,7 +770,6 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
 
     import requests
     from middle.utils import get_auth_header
-    # API_URL = Constants().API_URL_APIV2
 
     if modelo in ['merge', 'mergegpm']:
         response = requests.get(f'https://tradingenergiarz.com/api/v2/rodadas/chuva/observada?dt_observada={dt_modelo}', verify=False, headers=get_auth_header())
@@ -781,8 +780,6 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
         
     if response.status_code == 200:
         df = pd.DataFrame(response.json())
-        # df_ons = requests.get(f"{API_URL}/rodadas/subbacias", verify=False, headers=get_auth_header())
-        # df_ons = pd.DataFrame(df_ons.json()).rename(columns={"nome":"cod_psat", 'id': 'cd_subbacia'})
         df_ons = get_df_ons()
         df = pd.merge(df, df_ons, on='cd_subbacia', how='left')
         df = to_geopandas(df, 'vl_lon', 'vl_lat')

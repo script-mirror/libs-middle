@@ -25,7 +25,8 @@ from ..utils.utils import (
     open_hindcast_file,
     ajusta_lon_0_360,
     ajusta_acumulado_ds,
-    ajusta_shp_json
+    ajusta_shp_json,
+    get_prec_db
 )
 from ..consts.constants import CONSTANTES
 from middle.utils import get_auth_header
@@ -80,6 +81,13 @@ def custom_colorbar(variavel_plotagem):
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
         cbar_ticks = [-150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150]
+
+    elif variavel_plotagem in ['dif_prev']:
+        colors = ['#FF0000', '#Ffa500', '#FFFFFF', '#FFFFFF', '#0000ff', '#800080']
+        levels = np.arange(-50, 55, 5)
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = None
 
     elif variavel_plotagem in ['pct_climatologia']:
         colors = ['firebrick', 'red', 'orange', 'yellow', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
@@ -614,6 +622,93 @@ def plot_chuva_acumulada(
 
 ###################################################################################################################
 
+# --- PLOT CHUVA A PARTIR DE UM GEODATAFRAME ---
+def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_plot='dif', type='dif', titulo=None, shapefiles=None):
+
+    from PIL import Image
+
+    # Agrupando por bacia
+    media_bacia = df.groupby('nome_bacia')[column_plot].mean()
+    media_bacia = media_bacia.rename({'Paranapane':'Paranapanema', 'São Franci':'São Francisco', 'Jequitinho':'Jequitinhonha'})
+
+    fig, ax = get_base_ax(extent=[280, 330, -35, 10], figsize=(12, 12), central_longitude=0)
+
+    # Titulo
+    ax.set_title(titulo, loc='left', fontsize=16)
+
+    # Barra de cor
+    levels, colors, cmap, cbar_ticks = custom_colorbar('dif_prev')
+    norm = matplotlib.colors.BoundaryNorm(boundaries=levels, ncolors=cmap.N)
+
+    if shapefiles is not None:
+        for shapefile in shapefiles:
+            gdf = gpd.read_file(shapefile)
+            if 'Nome_Bacia' in gdf.columns:
+                shp = gdf.copy()
+
+    shp = shp.rename(columns={'Nome_Bacia': 'nome_bacia'})
+    shp = shp.merge(media_bacia, on="nome_bacia", how="left")
+    shp["centroid"] = shp.geometry.centroid
+    shp.plot(ax=ax, transform=ccrs.PlateCarree(), edgecolor='black', alpha=0.8, linewidths=1.2, facecolor = 'none', zorder=10)
+
+    # Plota o GeoDataFrame no eixo do Cartopy
+    df.plot(column=column_plot, legend=False, lw=0, legend_kwds={'extend':'both'}, ax=ax, cmap=cmap, norm=norm, ec='black')
+
+    # Itera sobre as bacias e adiciona as anotações no mapa
+    for idx, row in shp.iterrows():
+        if not np.isnan(row[column_plot]):  # Garante que há valor para exibir
+            lon, lat = row["centroid"].x, row["centroid"].y  # Extrai coordenadas do centroide
+
+            if row['nome_bacia'] == 'Uruguai': # Caso especial para o uruguai
+                lat = lat + 1
+                lon = lon + 2
+            
+            ax.text(lon, lat, f"{row[column_plot]:.0f}", 
+                    fontsize=15, color='black', fontweight='bold',
+                    ha='center', va='center', transform=ccrs.PlateCarree(),
+                    # bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')
+                    )
+
+    # Escala de cores
+    sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm._A = []  # necessário para ScalarMappable
+    axins = inset_axes(ax, width="95%", height="2.5%", loc='lower center', borderpad=-3.6)
+    fig.colorbar(sm, cax=axins, orientation='horizontal', ticks=levels, extendrect=True)
+
+    # Labels dos ticks de lat e lon
+    gl = ax.gridlines(xlocs=np.arange(-120, 0, 10), ylocs=np.arange(-55, 25, 10), draw_labels=True, alpha=0, linestyle='--')
+    gl.top_labels = False
+    gl.right_labels = False
+
+    # Adicionando o logo
+    margin_x = -100
+    margin_y = -60
+    img = Image.open(Constants().LOGO_RAIZEN)
+    im_width, im_height = img.size
+
+    # Obtém o retângulo da figura atual
+    bbox = plt.gca().get_window_extent()
+    xo = bbox.x1 - im_width + margin_x
+    yo = bbox.y0 + margin_y
+    plt.figimage(img, xo=xo, yo=yo)
+
+    if type == 'dif':
+        # Adiciona "Vermelho: Subestimativa da previsão" no topo em vermelho
+        ax.annotate("Vermelho:", xy=(0.58, 0.92), xycoords='axes fraction', fontsize=12, fontweight='bold', color='red')
+
+        ax.annotate(" Subestimativa da previsão", xy=(0.68, 0.92), xycoords='axes fraction', fontsize=12, fontweight='bold', color='black')
+
+        # Adiciona "Azul: Superestimativa da previsão" no topo em azul
+        ax.annotate("Azul:", xy=(0.58, 0.89), xycoords='axes fraction', fontsize=12, fontweight='bold', color='blue')
+
+        ax.annotate("  Superestimativa da previsão", xy=(0.62, 0.89), xycoords='axes fraction', fontsize=12, fontweight='bold', color='black')
+
+    # filename = filename + '_' + dt_observada_fmt.replace('/', '')
+    plt.savefig(f'{path_to_save}/{filename}.png', bbox_inches='tight')
+    plt.close()
+
+###################################################################################################################
+
 class GeraProdutosPrevisao:
 
     def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
@@ -802,6 +897,7 @@ class GeraProdutosPrevisao:
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
+                
                 for n_24h in tp_proc.tempo:
                     print(f'Processando {n_24h.item()}...')
                     tp_plot = tp_proc.sel(tempo=n_24h)
@@ -1395,7 +1491,7 @@ class GeraProdutosPrevisao:
 
             elif modo == 'estacao_chuvosa':
 
-                if regiao_estacao_chuvosa == 'seb':
+                if regiao_estacao_chuvosa == 'sudeste':
                     lati = -15
                     latf = -25
                     loni = 307.5
@@ -1418,14 +1514,15 @@ class GeraProdutosPrevisao:
                 tp_estacao.name = 'tp'
 
                 # Calculando a média
+                pdb.set_trace()
                 ds_mean = tp_estacao.mean(('latitude', 'longitude')).to_dataframe().reset_index()   
                 ds_mean['hr_rodada'] = pd.to_datetime(self.tp_mean['time'].values).hour
                 ds_mean['dt_rodada'] = pd.to_datetime(self.tp_mean['time'].values).strftime('%Y-%m-%d')
-                ds_mean['dt_prevista'] = ds_mean["dt_prevista"].astype(str)
+                ds_mean['valid_time'] = ds_mean["valid_time"].astype(str)
                 ds_mean['str_modelo'] = self.modelo_fmt
                 ds_mean = ds_mean[['valid_time', 'dt_rodada', 'hr_rodada', 'tp', 'str_modelo']]
                 ds_mean = ds_mean.rename({'valid_time': 'dt_prevista', 'tp': 'vl_chuva'}, axis=1)
-                # ds_mean['regiao'] = regiao_estacao_chuvosa
+                ds_mean['regiao'] = regiao_estacao_chuvosa
 
                 # Tirando o primeiro tempo do ec estendido (acumulado de 12 horas)
                 if 'ecmwf' in self.modelo_fmt:
@@ -2356,137 +2453,220 @@ class GeraProdutosObservacao:
     
     ###################################################################################################################
 
-    def _processar_precipitacao(self, modo, **kwargs):
+    def _processar_precipitacao(self, modo, tipo_plot='tp_db', N_dias=9, **kwargs):
 
         print(f'Processando precipitação no modo: {modo}')
 
-        if modo == '24h':
+        try:
 
-            if self.tp is None or self.cond_ini is None:
-                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, todo_dir=True)
+            if modo == '24h':
 
-            for index, n in enumerate(self.tp['valid_time']):
+                if self.tp is None or self.cond_ini is None:
+                    self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, unico=True)
+
+                for index, n in enumerate(self.tp['valid_time']):
+
+                    if len(self.cond_ini) > 0:
+                        cond_ini = self.cond_ini[index]
+                    else:
+                        cond_ini = self.cond_ini
+
+                    print(f'Processando {index}')
+
+                    tp_plot = self.tp.sel(valid_time=n)
+                    tempo_ini = pd.to_datetime(n.item()) - pd.Timedelta(days=1)
+                    tempo_fim = pd.to_datetime(n.item())
+
+                    titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo='PREC24', cond_ini=cond_ini,
+                            data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True, condicao_inicial='Data arquivo'
+                        )
+
+                    plot_campos(
+                        ds=tp_plot['tp'],
+                        variavel_plotagem='chuva_ons',
+                        title=titulo,
+                        filename=f'{index}_tp_24h_{self.modelo_fmt}',
+                        shapefiles=self.shapefiles,
+                        **kwargs
+                    )
+
+            elif modo == 'acumulado_mensal':
+
+                from calendar import monthrange
+
+                if self.tp is None or self.cond_ini is None:
+                    self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, apenas_mes_atual=True)
 
                 if len(self.cond_ini) > 0:
-                    cond_ini = self.cond_ini[index]
+                    cond_ini = self.cond_ini[-1]
+
                 else:
                     cond_ini = self.cond_ini
 
-                print(f'Processando {index}')
+                # Acumulando no mes
+                tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
 
-                tp_plot = self.tp.sel(valid_time=n)
-                tempo_ini = pd.to_datetime(n.item()) - pd.Timedelta(days=1)
-                tempo_fim = pd.to_datetime(n.item())
+                tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=pd.to_datetime(self.tp['valid_time'].values[0]).day-1)
+                tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
 
-                titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo='PREC24', cond_ini=cond_ini,
-                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        sem_intervalo_semana=True, condicao_inicial='Data arquivo'
+                # Abrindo a climatologia
+                if self.modelo_fmt == 'mergegpm':
+                    path_clim = Constants().PATH_CLIMATOLOGIA_MERGE
+                    mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
+                    tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
+                    tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
+                
+                # Anomalia total
+                tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
+
+                # Anomalia parcial
+                dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
+                tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time'])
+
+                # Porcentagem da anomalia
+                tp_plot_anomalia_percentual = (tp_plot_acc['tp'].values / tp_plot_clim['tp'].values) * 100
+
+                # Porcentagem da anomalia parcial
+                tp_plot_anomalia_percentual_parcial = (tp_plot_acc['tp'].values / ((tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time']))) * 100
+
+                # Criando um xarray para colocar as anomalias
+                ds_total = xr.Dataset(
+                    {
+                        "acumulado_total": tp_plot_acc["tp"],
+                        "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
+                        "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
+                        "pct_climatologia": (("latitude", "longitude"), tp_plot_anomalia_percentual),
+                        "pct_climatologia_parcial": (("latitude", "longitude"), tp_plot_anomalia_percentual_parcial),
+                    }
+                )
+                
+                for data_var in ds_total.data_vars:
+
+                    print(f'Processando {data_var}')
+
+                    if data_var == 'acumulado_total':
+                        tipo = 'Acumulado total'
+                        variavel_plotagem = 'chuva_ons'
+
+                    elif data_var == 'anomalia_total':
+                        tipo = 'Anomalia total'
+                        variavel_plotagem = 'tp_anomalia'
+
+                    elif data_var == 'anomalia_parcial':
+                        tipo = 'Anomalia parcial'
+                        variavel_plotagem = 'tp_anomalia'
+
+                    elif data_var == 'pct_climatologia':
+                        tipo = '% da climatologia'
+                        variavel_plotagem = 'pct_climatologia'
+
+                    elif data_var == 'pct_climatologia_parcial':
+                        tipo = '% da climatologia parcial'
+                        variavel_plotagem = 'pct_climatologia'
+
+                    titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
+                            data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True, condicao_inicial='Data arquivo'
                     )
 
-                plot_campos(
-                    ds=tp_plot['tp'],
-                    variavel_plotagem='chuva_ons',
-                    title=titulo,
-                    filename=f'{index}_tp_24h_{self.modelo_fmt}',
-                    shapefiles=self.shapefiles,
-                    **kwargs
-                )
+                    plot_campos(
+                        ds=ds_total[data_var],
+                        variavel_plotagem=variavel_plotagem,
+                        title=titulo,
+                        filename=f'tp_{data_var}_{self.modelo_fmt}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}',
+                        shapefiles=self.shapefiles,
+                        **kwargs
+                    )
 
-        elif modo == 'acumulado_mensal':
+            elif modo == 'dif_prev':
 
-            from calendar import monthrange
+                if self.tp is None or self.cond_ini is None:
+                    self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, unico=True)
 
-            if self.tp is None or self.cond_ini is None:
-                self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, apenas_mes_atual=True)
+                # Dia atual 
+                cond_ini = pd.to_datetime(self.cond_ini, format='%d/%m/%Y %H UTC')[0]
 
-            if len(self.cond_ini) > 0:
-                cond_ini = self.cond_ini[-1]
+                # Dias para trás
+                date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
 
-            else:
-                cond_ini = self.cond_ini
+                for index, n_dia in enumerate(date_range[::-1]):
 
-            # Acumulando no mes
-            tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                    dateprev = n_dia.strftime('%Y%m%d%H')
 
-            tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=pd.to_datetime(self.tp['valid_time'].values[0]).day-1)
-            tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
+                    for modelo_prev in ['gfs', 'ecmwf', 'ecmwf-ens', 'gefs', 'pconjunto-ons', 'ecmwf-aifs']:
 
-            # Abrindo a climatologia
-            if self.modelo_fmt == 'mergegpm':
-                path_clim = Constants().PATH_CLIMATOLOGIA_MERGE
-                mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
-                tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
-                tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
-            
-            # Anomalia total
-            tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
+                        try:
 
-            # Anomalia parcial
-            dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
-            tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time'])
+                            print(f'Abrindo arquivo de previsão: {modelo_prev} e {dateprev}')
 
-            # Porcentagem da anomalia
-            tp_plot_anomalia_percentual = (tp_plot_acc['tp'].values / tp_plot_clim['tp'].values) * 100
+                            if tipo_plot == 'tp_db':
 
-            # Porcentagem da anomalia parcial
-            tp_plot_anomalia_percentual_parcial = (tp_plot_acc['tp'].values / ((tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time']))) * 100
+                                tp_prev = get_prec_db(modelo_prev, n_dia.strftime('%Y-%m-%d'), str(n_dia.hour).zfill(2))
+                                tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
+                                tp_obs = get_prec_db(self.modelo_fmt, (cond_ini - pd.Timedelta(days=1)).strftime('%Y-%m-%d'))
+                                tp_obs['dt_observado'] = pd.to_datetime(tp_obs['dt_observado']) + pd.Timedelta(days=1)
+                                tp_prev = tp_prev[tp_prev['dt_prevista'] == tp_obs['dt_observado'].unique()[0]]
+                                tp_prev = tp_prev.rename(columns={'dt_prevista': 'dt_observado'})
+                                tp_prev = tp_prev[['dt_observado', 'vl_chuva', 'geometry']]
+                                dif = tp_obs.merge(tp_prev, on='geometry')
+                                dif['dif'] = dif['vl_chuva_y'] - dif['vl_chuva_x'] # previsao - observado
 
-            # Criando um xarray para colocar as anomalias
-            ds_total = xr.Dataset(
-                {
-                    "acumulado_total": tp_plot_acc["tp"],
-                    "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
-                    "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
-                    "pct_climatologia": (("latitude", "longitude"), tp_plot_anomalia_percentual),
-                    "pct_climatologia_parcial": (("latitude", "longitude"), tp_plot_anomalia_percentual_parcial),
-                }
-            )
-            
-            for data_var in ds_total.data_vars:
+                                tempo_ini = tp_obs['dt_observado'].unique()[0] - pd.Timedelta(hours=12)
+                                tempo_fim = tp_obs['dt_observado'].unique()[0] + pd.Timedelta(hours=12)
 
-                print(f'Processando {data_var}')
+                                titulo = gerar_titulo(
+                                    modelo=f'{modelo_prev} - {self.modelo_fmt}',
+                                    tipo='Dif. de precipitação',
+                                    cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
+                                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                    data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                    sem_intervalo_semana=True,
+                                    condicao_inicial=f'Prev {modelo_prev.replace("pconjunto", "pconj").upper()}'
+                                )
 
-                if data_var == 'acumulado_total':
-                    tipo = 'Acumulado total'
-                    variavel_plotagem = 'chuva_ons'
+                                plot_df_to_mapa(dif, titulo=titulo, shapefiles=self.shapefiles, filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}')
 
-                elif data_var == 'anomalia_total':
-                    tipo = 'Anomalia total'
-                    variavel_plotagem = 'tp_anomalia'
+                            elif tipo_plot == 'tp_netcdf':
 
-                elif data_var == 'anomalia_parcial':
-                    tipo = 'Anomalia parcial'
-                    variavel_plotagem = 'tp_anomalia'
+                                # Abrindo o arquivo de previsao
+                                tp_prev = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{modelo_prev}_tp_{dateprev}.nc')
+                                tp_prev = resample_variavel(tp_prev, modelo_prev, 'tp', '24h').isel(tempo=index)
+                                tp_prev = interpola_ds(tp_prev, self.tp)
 
-                elif data_var == 'pct_climatologia':
-                    tipo = '% da climatologia'
-                    variavel_plotagem = 'pct_climatologia'
+                                # Calculando a diferença
+                                dif = tp_prev['tp'] - self.tp['tp'].sel(valid_time=cond_ini)
+                                
+                                tempo_ini = dif.data_inicial - pd.Timedelta(hours=6)
+                                tempo_fim = dif.data_final
+                                tempo_ini = pd.to_datetime(tempo_ini.item())
+                                tempo_fim = pd.to_datetime(tempo_fim.item())
 
-                elif data_var == 'pct_climatologia_parcial':
-                    tipo = '% da climatologia parcial'
-                    variavel_plotagem = 'pct_climatologia'
+                                titulo = gerar_titulo(
+                                        modelo=f'{modelo_prev.upper()} - {self.modelo_fmt.upper()}', tipo='Dif. de precipitação', cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
+                                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                        sem_intervalo_semana=True, condicao_inicial=f'Prev {modelo_prev.upper()}'
+                                )
 
-                titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
-                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        sem_intervalo_semana=True, condicao_inicial='Data arquivo'
-                )
+                                plot_campos(
+                                    ds=dif,
+                                    variavel_plotagem='dif_prev',
+                                    title=titulo,
+                                    filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}',
+                                    shapefiles=self.shapefiles,
+                                    **kwargs
+                                )
 
-                plot_campos(
-                    ds=ds_total[data_var],
-                    variavel_plotagem=variavel_plotagem,
-                    title=titulo,
-                    filename=f'tp_{data_var}_{self.modelo_fmt}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}',
-                    shapefiles=self.shapefiles,
-                    **kwargs
-                )
+                        except Exception as e:
+                            print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
 
-        elif modo == 'dif_prev':
-
-            pass
+        except Exception as e:
+            print(f'Erro ao processar {modo}: {e}')
 
     ###################################################################################################################
 
@@ -2495,5 +2675,8 @@ class GeraProdutosObservacao:
 
     def gerar_acumulado_mensal(self, **kwargs):
         self._processar_precipitacao('acumulado_mensal', **kwargs)
+
+    def gerar_dif_prev(self, **kwargs):
+        self._processar_precipitacao('dif_prev', **kwargs)
 
 ###################################################################################################################
