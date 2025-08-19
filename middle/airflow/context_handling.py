@@ -19,6 +19,7 @@ def enviar_whatsapp_erro(
 
 def enviar_whatsapp_sucesso(
     dag_id: str,
+    task_id: str,
     destinatario: str,
 ):
     """
@@ -27,5 +28,5 @@ def enviar_whatsapp_sucesso(
     Args:
         context: Argumentos adicionais que podem ser passados para a função.
     """
-    mensagem = f"✅ Sucesso na DAG: *{dag_id}*"
+    mensagem = f"✅ Sucesso na DAG: *{dag_id}*\nTask: *{task_id}*"
     send_whatsapp_message(destinatario, mensagem, None)
