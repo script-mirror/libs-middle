@@ -442,6 +442,10 @@ class Constants:
     @property 
     def WEBHOOK_CARGA_DECOMP(self):
         return "Carga por patamar - DECOMP"
+    
+    @property 
+    def WEBHOOK_RDH(self):
+        return "RDH"
 
     @property 
     def LOGO_RAIZEN(self):

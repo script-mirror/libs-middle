@@ -20,7 +20,7 @@ def extract_zip(
             zip_file = arquivo_zip
         if not zipfile.is_zipfile(zip_file):
             logger.warning(f"O arquivo '{zip_file}' nao eh um arquivo zip. Seguindo sem descompactar.")
-            return None
+            return zip_file
 
         zip_directory = os.path.dirname(zip_file) if not path_out else path_out
         nome_zip = os.path.basename(zip_file) if not nome_zip else nome_zip

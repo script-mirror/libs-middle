@@ -46,11 +46,11 @@ jobs:
             
             . /projetos/env/bin/activate || exit 1
             
-            pip install --upgrade --force-reinstall git+https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/raizen-energy/raizen-power-trading-libs-middle.git || exit 1
+            pip install --upgrade --force-reinstall git+https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/wx-middle/libs-middle.git || exit 1
             
             . /WX2TB/Documentos/fontes/PMO/scripts_unificados/env/bin/activate || exit 1
 
-            pip install --upgrade --force-reinstall git+https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/raizen-energy/raizen-power-trading-libs-middle.git || exit 1
+            pip install --upgrade --force-reinstall git+https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/wx-middle/libs-middle.git || exit 1
           EOF
         env:
           GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
