@@ -3,16 +3,16 @@ import requests
 import os
 import time
 import pandas as pd
-from ..utils.utils import abrir_modelo_sem_vazios, ajusta_lon_0_360
+from ..utils.utils import abrir_modelo_sem_vazios, ajusta_lon_0_360, ajusta_acumulado_ds
 from ..consts.constants import CONSTANTES
-from middle.utils._constants import Constants
+from middle.utils import Constants
 import shutil
 
 ###################################################################################################################
 
 class ProdutosPrevisaoCurtoPrazo:
 
-    def __init__(self, modelo, inicializacao=0, resolucao='0p25', data=datetime.now(), output_path='./tmp/downloads', days_time_delta=None, shapefiles=None, name_prefix=None):
+    def __init__(self, modelo, inicializacao=0, resolucao='0p25', data=datetime.now(), output_path=Constants().PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA, days_time_delta=None, shapefiles=None, name_prefix=None):
 
         import geopandas as gpd
 
@@ -338,7 +338,13 @@ class ProdutosPrevisaoCurtoPrazo:
                 backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface'}, "indexpath": ""}
             
             elif variavel in height_above_ground:
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'heightAboveGround'}, "indexpath": ""}
+
+                if variavel in ['u100', 'v100']:
+                    name = 'cfVarName'
+                else:
+                    name = 'shortName'
+
+                backend_kwargs = {"filter_by_keys": {name: variavel, 'typeOfLevel': 'heightAboveGround'}, "indexpath": ""}
 
             elif variavel in isobaric_inhPa:  # variaveis isobaricas
                 backend_kwargs = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa'}, "indexpath": ""}
@@ -410,19 +416,7 @@ class ProdutosPrevisaoCurtoPrazo:
 
         # Ajusta acumulado de precipitação (nao necessariamente precisa ser feito, mas é uma opção geralmente apenas para o ECMWF)
         if ajusta_acumulado:
-
-            variaveis_com_valid_time = [v for v in ds.data_vars if 'valid_time' in ds[v].dims]
-
-            ds_diff = xr.Dataset()
-
-            for var in variaveis_com_valid_time:
-                primeiro = ds[var].isel(valid_time=0)
-                dif = ds[var].diff(dim='valid_time')
-                dif_completo = xr.concat([primeiro, dif], dim='valid_time')
-                ds_diff[var] = dif_completo
-
-            ds_diff['valid_time'] = ds['valid_time']
-            ds = ds_diff
+            ds = ajusta_acumulado_ds(ds, m_to_mm=False)
 
         # Ajusta a unidade de medida
         if m_to_mm and variavel == 'tp':
@@ -444,10 +438,10 @@ class ProdutosPrevisaoCurtoPrazo:
 
 class ProdutosObservado:
 
-    def __init__(self, modelo: str, data: datetime, shapefiles=None, output_path='./tmp/downloads'):
+    def __init__(self, modelo: str, data: datetime, output_path='./tmp/downloads'):
+        
         self.modelo = modelo
         self.data = pd.to_datetime(data)
-        self.shapefiles = shapefiles
         self.output_path = output_path
 
     # -- DOWNLOAD
@@ -468,7 +462,7 @@ class ProdutosObservado:
         dia_fmt = self.data.strftime('%d')
 
         # Caminho para salvar os arquivos
-        caminho_para_salvar = f'{output_path}/{modelo_fmt}/{ano_fmt}{mes_fmt}{dia_fmt}'
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}/'
         os.makedirs(caminho_para_salvar, exist_ok=True)
 
         if modelo_fmt == 'merge':
@@ -477,13 +471,13 @@ class ProdutosObservado:
         elif modelo_fmt == 'cpc':
             url = f'https://ftp.cpc.ncep.noaa.gov/precip/CPC_UNI_PRCP/GAUGE_GLB/RT/{ano_fmt}/PRCP_CU_GAUGE_V1.0GLB_0.50deg.lnx.{ano_fmt}{mes_fmt}{dia_fmt}.RT'
 
-        filename = url.split('/')[-1]
+        filename = f'{modelo_fmt}_{ano_fmt}{mes_fmt}{dia_fmt}.grib2'
         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
 
         while True:
             try:
                 # Baixando o dado
-                file = requests.get(url, allow_redirects=True, timeout=30)
+                file = requests.get(url, allow_redirects=True, timeout=30, verify=False)
                 
                 if file.status_code == 200:
                     with open(caminho_arquivo, 'wb') as f:
@@ -500,6 +494,61 @@ class ProdutosObservado:
                 time.sleep(5)
 
         pass
+
+    # --- ABERTURA DOS DADOS ---
+    def open_model_file(self, todo_dir=False, unico=False, ajusta_nome=True, ajusta_longitude=True, apenas_mes_atual=False):
+
+        import xarray as xr
+
+        print(f'\n************* ABRINDO DADOS DO MODELO {self.modelo.upper()} *************\n')
+        output_path = self.output_path
+
+        # Formatando modelo
+        modelo_fmt = self.modelo.lower()
+
+        # Caminho para salvar os arquivos
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}'
+        files = os.listdir(caminho_para_salvar)
+
+        if apenas_mes_atual:
+            # Data
+            data = self.data
+            data_fmt = data.strftime('%Y%m')
+
+            # Filtrando arquivos pela data
+            files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f]
+            ds = xr.open_mfdataset(files, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
+
+            # Troca time por valid_time
+            ds = ds.swap_dims({'time': 'valid_time'})
+
+        if todo_dir:
+            
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith('.grib2')]
+            ds = xr.open_mfdataset(files, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
+
+            # Troca time por valid_time
+            ds = ds.swap_dims({'time': 'valid_time'})
+
+        if unico:
+            data_fmt = self.data.strftime('%Y%m%d')
+            ds = xr.open_dataset(f'{caminho_para_salvar}/{modelo_fmt}_{data_fmt}.grib2', engine='cfgrib', backend_kwargs={"indexpath": ""})
+
+            # Cria dim valid_time e atribui o valor do time
+            ds = ds.assign_coords(valid_time=ds.time)
+            ds = ds.expand_dims('valid_time')
+
+        if ajusta_nome:
+            ds = ds.rename({'rdp': 'tp'})
+
+            if 'lon' in ds.dims:
+                ds = ds.rename({'lon': 'longitude', 'lat': 'latitude'})
+
+        # Ajustando a longitude para 0 a 360
+        if 'longitude' in ds.dims and ajusta_longitude:
+           ds = ajusta_lon_0_360(ds)
+
+        return ds
 
 ###################################################################################################################
 
