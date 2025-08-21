@@ -716,7 +716,7 @@ def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_
 
 ###################################################################################################################
 
-# --- PLOT GRÁFICOS PREVISAO BACIAS SMAP ---
+# --- PLOT GRÁFICOS PREVISAO 2D ---
 def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo='teste', filename='grafico'):
 
     plt.figure(figsize=(12, 6))
@@ -844,6 +844,29 @@ def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo='teste', 
             plt.yticks(np.arange(20, 36, 5),fontsize=16)
 
         plt.grid(axis='both', ls='--', alpha=0.4)
+
+    elif tipo == 'prec24h':
+
+        plt.bar(df['data_fmt'], df['tp'], color='#810090', edgecolor='black')
+        plt.ylim(0, 100)  
+        plt.ylabel('Precipitação (mm)', fontsize=20)
+        plt.yticks(range(0, 101, 10))
+        plt.xticks(rotation=45, fontsize=12)
+        plt.yticks(fontsize=12)
+        plt.grid(axis='both', ls='--', alpha=0.4)
+
+    elif tipo == 'vento':
+
+        plt.plot(df['data'], df['magnitude'], marker='o', color='purple')
+        plt.plot(df['data'], df['magnitude_clim'], linestyle='--', color='black')
+        plt.ylabel('Magnitude do vento (m/s)', size=15)
+        plt.grid(axis='both', ls='--', alpha=0.4)
+        plt.yticks(size=13)
+        plt.ylim(0, 12)
+        plt.xticks(rotation=75, size=13)        
+
+        for x, y in zip(df['data'], df['magnitude']):
+            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='purple')
 
     plt.title(titulo, fontsize=16, fontweight='bold')
     plt.savefig(f'{filename}.png', bbox_inches='tight')
@@ -1679,6 +1702,21 @@ class GeraProdutosPrevisao:
                 response = requests.post(f'{API_URL}/meteorologia/estacao-chuvosa-prev', verify=False, json=ds_mean.to_dict('records'), headers=get_auth_header())
                 print(f'Código POST: {response.status_code}')
 
+            elif modo == 'graficos':
+
+                target_lon, target_lat, _ = get_pontos_localidades()
+                tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
+                tp_no_ponto = tp_proc.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe().reset_index()
+                tp_no_ponto['data_fmt'] = tp_no_ponto['data_final'].dt.strftime('%d/%m')
+
+                for id in tp_no_ponto['id'].unique():
+
+                    tp_plot = tp_no_ponto[tp_no_ponto['id'] == id]
+                    titulo = f"{CONSTANTES['city_dict'][id]}\n{self.modelo_fmt.upper()} - PRECH24HRS - Condição Inicial: {self.cond_ini}"
+                    filename = f'{path_to_save}/{id}_prec24h'
+                    plot_graficos_2d(df=tp_plot, tipo='prec24h', titulo=titulo, filename=filename)
+                    pdb.set_trace()
+
         except Exception as e:
             print(f'Erro ao gerar precipitação ({modo}): {e}') 
 
@@ -2503,6 +2541,68 @@ class GeraProdutosPrevisao:
                     filename = f'{path_to_save}/{submercado}'
                     plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
 
+            elif modo == 'graficos_vento':
+
+                if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
+                    self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
+
+                us_24h = resample_variavel(self.us100_mean, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h = resample_variavel(self.vs100_mean, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+
+                AREAS = {
+
+                'LITORAL_NORTE' : [-2, -4.5, -41.5, -38],
+                'LITORAL_NE_NORTE' : [-4.5, -7.5, -38.5, -34.5],
+                'LITORAL_NE_SUL' : [-8.5, -11.5, -38.5, -35],
+                'BAHIA' : [-6, -15, -43, -40],
+
+                }
+
+                # Climatologia do vento
+                uv100_clim = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_UV100}/monthly_clim_uv100.nc')
+
+                for area in AREAS:
+
+                    latini = AREAS.get(area)[0]
+                    latfim = AREAS.get(area)[1]
+                    lonini = AREAS.get(area)[2]
+                    lonfim = AREAS.get(area)[3]
+
+                    area_u = us_24h.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='longitude').mean(dim='latitude')
+                    area_v = vs_24h.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='longitude').mean(dim='latitude')
+
+                    # Climatologia
+                    clim_sel = uv100_clim.sel(month=self.us100.valid_time.dt.month)
+                    clim_sel = clim_sel.sel(latitude=slice(latini, latfim), longitude=slice(lonini, lonfim))
+                    clim_sel_u = resample_variavel(clim_sel, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u').mean(dim='longitude').mean(dim='latitude')
+                    clim_sel_v = resample_variavel(clim_sel, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v').mean(dim='longitude').mean(dim='latitude')
+
+                    # Previsao
+                    u_med_area = area_u['u100'].values
+                    v_med_area = area_v['v100'].values
+                    magnitude = np.sqrt(u_med_area**2 + v_med_area**2)
+
+                    # Climatologia
+                    u_med_area_clim = clim_sel_u['u100'].values
+                    v_med_area_clim = clim_sel_v['v100'].values
+                    magnitude_clim = np.sqrt(u_med_area_clim**2 + v_med_area_clim**2)
+
+                    # Tempos para montar o dataframe
+                    valid_times = clim_sel_u.data_final.dt.strftime('%d/%m').values
+
+                    # montando o df
+                    df = pd.DataFrame({
+                        'data': valid_times,
+                        'magnitude': magnitude,
+                        'magnitude_clim': magnitude_clim
+                    })
+
+                    # Titulo do plot
+                    titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
+                    path_to_save = path_to_save.replace('_vento', '')
+                    filename = f'{path_to_save}/mag_vento100_{area}'
+                    plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
+
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -2574,8 +2674,14 @@ class GeraProdutosPrevisao:
     def gerar_mag_vento100(self, **kwargs):
         self._processar_varsdinamicas('mag_vento100', **kwargs)
 
-    def gerar_graficos(self, **kwargs):
+    def gerar_graficos_temp(self, **kwargs):
         self._processar_varsdinamicas('graficos', **kwargs)
+
+    def gerar_graficos_chuva(self, **kwargs):
+        self._processar_precipitacao('graficos', **kwargs)
+
+    def gerar_graficos_v100(self, **kwargs):
+        self._processar_varsdinamicas('graficos_vento', **kwargs)
 
     ###################################################################################################################
 
