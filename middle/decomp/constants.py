@@ -263,5 +263,15 @@ regex_blocos = {
         'campos': ['mnemonico', 'nome_arq'],
         'regex': r'^(.{2})\s{2}(.{1,11})(.*)',
         'formatacao': '{:>2}  {:<12}'
+    },   
+    'RT': {
+        'campos': ['mnemonico', 'valor'],
+        'regex': r'(.{2})  (.{5})(.*)',
+        'formatacao': '{:>2}  {:>5}'
+    },
+    'FP': {
+        'campos': ['mnemonico', 'usi', 'iper', 'tp', 'Npt', 'QMin', 'QMax', 'tp', 'Npt', 'VMin', 'VMax'],
+        'regex': r'^(.{2}) {2}(.{3}) {2}(.{3}) {2}(.{1}) (.{4}) (.{5}) (.{5}) {2}(.{1}) (.{4}) (.{5}) (.{5})(.*)',
+        'formatacao': '{:>2}  {:>3}  {:>3}  {:>1} {:>4} {:>5} {:>5}  {:>1} {:>4} {:>5} {:>5}'
     }
 }

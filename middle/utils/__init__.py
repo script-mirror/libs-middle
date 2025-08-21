@@ -14,6 +14,7 @@ from .date_utils import (
 )
 from .logger import (
     setup_logger,
+    criar_logger,
 )
 
 from .html_generator import (
@@ -30,6 +31,7 @@ from ._constants import (
 
 from .file_manipulation import(
     extract_zip,
+    create_directory,
 )
 
 
@@ -44,4 +46,6 @@ __all__ = [
     "Constants",
     "extract_zip",
     "extrair_mes_ano",
+    "criar_logger",
+    "create_directory",
 ]

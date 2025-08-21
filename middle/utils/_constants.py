@@ -466,3 +466,36 @@ class Constants:
     @property 
     def PATH_FTP_ECMWF(self):
         return './tmp/data' # '/ftp/files_sftp/ECMWF'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_MERGE(self):
+        return './tmp/data' # '/WX/WX2TB/Documentos/dados/merge-climatologia'
+    
+    @property 
+    def PATH_SAVE_FIGS_METEOROLOGIA(self):
+        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+    
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
+        return './tmp/downloads' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_SAMET(self):
+        return './tmp/data' # '/WX2TB/Documentos/dados/temp_samet/climatologia/'
+
+    @property 
+    def PATH_COORDENADAS_CIDADES(self):
+        return './tmp/data' # '/WX2TB/Documentos/fontes/tempo/novos_produtos/COORDENADAS_CIDADES/'
+    
+    @property 
+    def PATH_TO_SAVE_TXT_SAMET(self):
+        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos-novo/samet'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL(self):
+        return './tmp/data' # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_UV100(self):
+        return './tmp/data' # '/WX2TB/Documentos/dados/UVCLIM/'
+     
