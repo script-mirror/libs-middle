@@ -22,6 +22,7 @@ def encontra_semanas_operativas(inicializacao, data, qtdade_max_semanas=6, date_
 
     if inicializacao.hour == 18:
         tempo_ds_inicial = pd.to_datetime(inicializacao, format='%Y%m%d%H') + pd.Timedelta(days=1)
+
     else:
         tempo_ds_inicial = pd.to_datetime(inicializacao, format='%Y%m%d%H')
 
@@ -37,7 +38,7 @@ def encontra_semanas_operativas(inicializacao, data, qtdade_max_semanas=6, date_
 
         else:
 
-            tempoinicial = pd.to_datetime(tempofinal) + pd.Timedelta(days=1)
+            tempoinicial = pd.to_datetime(tempofinal)
             tempofinal = pd.to_datetime(pendulum.datetime(int(str(tempofinal).split('-')[0]), 
                     int(str(tempofinal).split('-')[1]), 
                     int(str(tempofinal).split('-')[2].split(' ')[0])
@@ -70,20 +71,26 @@ def encontra_semanas_operativas(inicializacao, data, qtdade_max_semanas=6, date_
                 else:
 
                     tempofinal = pd.to_datetime(ds_tempo_final)
-            
-        date_range = pd.date_range(tempoinicial, tempofinal)
-        intervalo_fmt = [str(tempoinicial).split(' ')[0]+'T18', str(tempofinal).split(' ')[0]+'T12']
-        locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
-        days_of_week = [x.strftime('%a')[0].upper() for x in date_range]
-        days_of_week = ''.join(days_of_week[1:]) if semanas == 0 else ''.join(days_of_week)
 
+                intervalo = pd.date_range(tempoinicial.strftime('%Y-%m-%d'), tempofinal.strftime('%Y-%m-%d'), freq='D')
+                intervalo_fmt = [str(intervalo[0]).split(' ')[0]+'T18', tempofinal.strftime('%Y-%m-%dT%H')]
+
+            else:
+
+                intervalo = pd.date_range(tempoinicial.strftime('%Y-%m-%d'), tempofinal.strftime('%Y-%m-%d'), freq='D')
+                intervalo_fmt = [str(intervalo[0]).split(' ')[0]+'T18', str(intervalo[-1]).split(' ')[0]+'T12']
+
+        date_range = pd.date_range(tempoinicial, tempofinal)
+        locale.setlocale(locale.LC_TIME, 'pt_BR.utf8')
+        days_of_week = [x.strftime('%a')[0].upper() for x in intervalo]
+        days_of_week = ''.join(days_of_week[1:])
         tempos_iniciais.append(tempoinicial) 
         tempos_finais.append(tempofinal) 
         num_semana.append(semanas+1)
         dates_range.append(date_range)
         intervalos_fmt.append(intervalo_fmt)
         days_of_weeks.append(days_of_week)
-        
+
     for index, date_range in enumerate(dates_range):
 
         data_nova = pd.to_datetime(data, format=date_format).strftime('%Y-%m-%d')
@@ -114,45 +121,54 @@ def ajusta_lon_0_360(ds, var='longitude'):
 
 ###################################################################################################################
 
-def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().PATH_HINDCAST_ECMWF_EST, inicio_mes=False):
+def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().PATH_HINDCAST_ECMWF_EST, inicio_mes=False, modelo='ecmwf-ens-estendido', mesdia=None):
 
     from datetime import datetime
 
-    # Pegando a última climatologia
-    files_clim = os.listdir(path_clim)
-    files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)
+    if 'ecmwf' in modelo.lower():
 
-    if inicio_mes:
-        files_clim_mes1 = None
-        tempoinicial_mes1 = pd.to_datetime(datetime(datetime.now().year, datetime.now().month, 1))
-        tempoinicial_mes1_comparar = pd.to_datetime(pd.to_datetime(tempoinicial_mes1).strftime('%Y-%m-%d')).strftime('%m-%d')
-        # Se o tempo inicial for menor que tempo inicial (começo do mes1), pega o hindcast com o mes completo
-        for file_clim in files_clim[-30:]:
+        # Pegando a última climatologia
+        files_clim = os.listdir(path_clim)
+        files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)
 
-            ds_temp = xr.open_dataset(f'{path_clim}/{file_clim}')
-            tempo_temp = pd.to_datetime(pd.to_datetime(ds_temp['alvo_previsao'][0].values).strftime('%Y-%m-%d')).strftime('%m-%d')
+        if inicio_mes:
+            files_clim_mes1 = None
+            tempoinicial_mes1 = pd.to_datetime(datetime(datetime.now().year, datetime.now().month, 1))
+            tempoinicial_mes1_comparar = pd.to_datetime(pd.to_datetime(tempoinicial_mes1).strftime('%Y-%m-%d')).strftime('%m-%d')
+            # Se o tempo inicial for menor que tempo inicial (começo do mes1), pega o hindcast com o mes completo
+            for file_clim in files_clim[-30:]:
 
-            if pd.to_datetime(tempo_temp, format='%m-%d') <= pd.to_datetime(tempoinicial_mes1_comparar, format='%m-%d'):
-                files_clim_mes1 = file_clim
+                ds_temp = xr.open_dataset(f'{path_clim}/{file_clim}')
+                tempo_temp = pd.to_datetime(pd.to_datetime(ds_temp['alvo_previsao'][0].values).strftime('%Y-%m-%d')).strftime('%m-%d')
 
-    else:
-        files_clim_mes1 = files_clim[-1]
+                if pd.to_datetime(tempo_temp, format='%m-%d') <= pd.to_datetime(tempoinicial_mes1_comparar, format='%m-%d'):
+                    files_clim_mes1 = file_clim
 
-    # Abre o arquivo de climatologia
-    ds_clim = xr.open_dataset(f'{path_clim}/{files_clim_mes1}')
+        else:
+            files_clim_mes1 = files_clim[-1]
 
-    # Ajustando longitude
-    ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+        # Abre o arquivo de climatologia
+        ds_clim = xr.open_dataset(f'{path_clim}/{files_clim_mes1}')
 
-    # Selando o level, se existir
-    if 'isobaricInhPa' in ds_clim.dims and level_anomalia is not None:
-        ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
+        # Ajustando longitude
+        ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+
+        # Selando o level, se existir
+        if 'isobaricInhPa' in ds_clim.dims and level_anomalia is not None:
+            ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
+
+    elif 'gefs' in modelo.lower():
+        # Pegando a última climatologia
+        files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
+
+        # Abre o arquivo de climatologia
+        ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
 
     return ds_clim
 
 ###################################################################################################################
 
-def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=3, modo_agrupador='sum', anomalia_sop=False, var_anomalia='tp', level_anomalia=200):
+def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_max_semanas=3, modo_agrupador='sum', anomalia_sop=False, var_anomalia='tp', level_anomalia=200, prob_semana=False):
 
     # Condição inicial do dataset
     inicializacao = pd.to_datetime(ds.time.data)
@@ -231,13 +247,59 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         data = pd.to_datetime(ds[coluna_prev].valid_time[1].values, format='%d/%m/%Y\ %H\ UTC')
         ds_tempo_final = ds.valid_time[-1].values
         
-        _, _, _, num_semana, _, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(
+        semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(
             inicializacao, data, qtdade_max_semanas=qtdade_max_semanas, modelo=modelo, ds_tempo_final=ds_tempo_final
         )
-
+        
         # Lista para armazenar os acumulados
         lista_acumulados = []
         intervalo_labels = []
+
+        # Abrindo arquivo de climatologia
+        if anomalia_sop:
+
+            if 'ecmwf' in modelo.lower():
+                ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+
+            elif 'gefs' in modelo.lower():
+                ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'))
+    
+            # if 'ecmwf' in modelo.lower():
+
+            #     # Definindo qual arquivo de climatologia vou usar
+            #     # path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
+            #     # files_clim = os.listdir(path_clim)
+
+            #     if var_anomalia not in ['psi', 'chi']:
+            #         # Abre o arquivo de climatologia
+            #         ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+            #         ds_clim = interpola_ds(ds_clim, ds_sel)
+
+
+            #     else:
+
+            #         pass
+            #         # # Pegando a última climatologia
+            #         # files_clim_u = sorted([x for x in files_clim if 'u' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+            #         # files_clim_v = sorted([x for x in files_clim if 'v' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                    
+            #         # # Arquivos climatologia
+            #         # ds_clim_u = xr.open_dataset(f'{path_clim}/{files_clim_u}')
+            #         # ds_clim_v = xr.open_dataset(f'{path_clim}/{files_clim_v}')
+
+            #         # ds_clim = calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='alvo_previsao', level=level_anomalia)[0] if var_anomalia == 'psi' else calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='valid_time', level=level_anomalia)[1]      
+            
+            # elif modelo.lower() == 'gefs-estendido':
+
+            #     # Definindo qual arquivo de climatologia vou usar
+            #     path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
+            #     mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
+                
+            #     # Pegando a última climatologia
+            #     files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
+
+            #     # Abre o arquivo de climatologia
+            #     ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
 
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
@@ -258,51 +320,43 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
             if anomalia_sop:
 
-                if modelo.lower() == 'ecmwf-ens-estendido':
+                # if 'ecmwf' in modelo.lower():
 
-                    # Definindo qual arquivo de climatologia vou usar
-                    path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
-                    files_clim = os.listdir(path_clim)
+                #     # Definindo qual arquivo de climatologia vou usar
+                #     path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
+                #     files_clim = os.listdir(path_clim)
 
-                    if var_anomalia not in ['psi', 'chi']:
+                #     if var_anomalia not in ['psi', 'chi']:
 
-                        # # Pegando a última climatologia
-                        # files_clim = sorted([x for x in files_clim if var_anomalia in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                #         # Abre o arquivo de climatologia
+                #         ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+                #         ds_clim = interpola_ds(ds_clim, ds_sel)
 
-                        # # Abre o arquivo de climatologia
-                        # ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
-
-                        # # Ajustando longitude
-                        # ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
-
-                        # # Selando o level, se existir
-                        # if 'isobaricInhPa' in ds_clim.dims:
-                        #     ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
-
-                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
-
-                    else:
-                        # Pegando a última climatologia
-                        files_clim_u = sorted([x for x in files_clim if 'u' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
-                        files_clim_v = sorted([x for x in files_clim if 'v' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                #     else:
+                #         # Pegando a última climatologia
+                #         files_clim_u = sorted([x for x in files_clim if 'u' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
+                #         files_clim_v = sorted([x for x in files_clim if 'v' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
                         
-                        # Arquivos climatologia
-                        ds_clim_u = xr.open_dataset(f'{path_clim}/{files_clim_u}')
-                        ds_clim_v = xr.open_dataset(f'{path_clim}/{files_clim_v}')
+                #         # Arquivos climatologia
+                #         ds_clim_u = xr.open_dataset(f'{path_clim}/{files_clim_u}')
+                #         ds_clim_v = xr.open_dataset(f'{path_clim}/{files_clim_v}')
 
-                        ds_clim = calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='alvo_previsao', level=level_anomalia)[0] if var_anomalia == 'psi' else calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='valid_time', level=level_anomalia)[1]      
+                #         ds_clim = calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='alvo_previsao', level=level_anomalia)[0] if var_anomalia == 'psi' else calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='valid_time', level=level_anomalia)[1]      
                 
-                elif modelo.lower() == 'gefs-estendido':
+                # elif modelo.lower() == 'gefs-estendido':
 
-                    # Definindo qual arquivo de climatologia vou usar
-                    path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
-                    mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
+                #     # Definindo qual arquivo de climatologia vou usar
+                #     path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
+                #     mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
                     
-                    # Pegando a última climatologia
-                    files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
+                #     # Pegando a última climatologia
+                #     files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
 
-                    # Abre o arquivo de climatologia
-                    ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+                #     # Abre o arquivo de climatologia
+                #     ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+
+                # Interpola
+                ds_clim = interpola_ds(ds_clim, ds_sel)    
 
                 # Anos iniciais e finais da climatologia
                 ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
@@ -325,10 +379,18 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
                 # Calcula a anomalia
                 if modo_agrupador == 'sum':
-                    ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
+                    if prob_semana:
+                        ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
+                        
+                    else:
+                        ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
 
                 else:
-                    ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
+                    if prob_semana:
+                        ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
+                        
+                    else:
+                        ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
 
             else:
                 ds_sel = ds_sel.sum(dim='valid_time') if modo_agrupador == 'sum' else ds_sel.mean(dim='valid_time')
@@ -426,7 +488,7 @@ def get_inicializacao_fmt(data, format='%d/%m/%Y %H UTC'):
 
 ###################################################################################################################
 
-def get_dado_cacheado(var, obj, varname=None, usa_variavel=True, **kwargs):
+def get_dado_cacheado(var, obj, varname=None, usa_variavel=True, verifica_cache=True, **kwargs):
     """
     Carrega e cacheia dados de modelo ou observação.
 
@@ -445,11 +507,21 @@ def get_dado_cacheado(var, obj, varname=None, usa_variavel=True, **kwargs):
         Argumentos extras para open_model_file.
     """
     varname = varname or var
-    if varname not in globals():
+
+    if verifica_cache:
+
+        if varname not in globals():
+            if usa_variavel:
+                globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
+            else:
+                globals()[varname] = obj.open_model_file(**kwargs).load()
+
+    else:
         if usa_variavel:
             globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
         else:
             globals()[varname] = obj.open_model_file(**kwargs).load()
+
     return globals()[varname]
 
 ###################################################################################################################

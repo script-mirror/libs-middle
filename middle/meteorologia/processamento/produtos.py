@@ -76,12 +76,12 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             prefixo_pgrb2 = 'pgrb2' if resolucao == '0p25' or resolucao == '1p00' else 'pgrb2full'
             prefix_modelo = f'gfs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos&file=gfs.t{inicializacao_fmt}z.{prefixo_pgrb2}.{resolucao}.f'
 
-        elif modelo_fmt == 'gefs':
+        elif modelo_fmt == 'gefs' or modelo_fmt == 'gefs-estendido':
             prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
             prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file=geavg.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
 
         # Baixando os arquivos
-        if modelo_fmt in ['gfs', 'gefs']:
+        if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
 
             while True:
                 todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente

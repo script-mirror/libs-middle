@@ -1,11 +1,10 @@
 import pandas as pd
 
-
 CONSTANTES = {
 
     'tipos_variaveis': {
         "surface": ['tp', 'u10', 'v10', 'prec'],                  # Variáveis em superfície
-        "height_above_ground": ['t2m', '2t', 'v100', 'u100'],                     # Variáveis a 2 metros
+        "height_above_ground": ['t2m', '2t', 'v100', 'u100', '100u', '100v'],                     # Variáveis a 2 metros
         "isobaric_inhPa": ['u', 'v', 'z', 'gh', 't', 'q'],        # Variáveis isobáricas
         "mean_sea": ['pnmm', 'msl', 'prmsl'],                     # Pressão ao nível médio do mar
         "nominalTop": ['ttr', 'sulwrf']                           # Variáveis no topo nominal
@@ -134,7 +133,13 @@ CONSTANTES = {
                 'Norte','Norte','Norte','Norte'
             ]
         }
-    )
+    ),
+
+    'extents_mapa': {
+
+        'brasil': [280, 330, -35, 10]
+
+    }
 
 
 }
