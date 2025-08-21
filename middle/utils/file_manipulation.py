@@ -3,6 +3,7 @@ import os
 import io
 import zipfile
 import shutil
+from pathlib import Path
 from .logger import setup_logger
 
 logger = setup_logger()
@@ -45,3 +46,15 @@ def extract_zip(
         logger.error(f"O arquivo '{zip_file}' nao foi encontrado.")
         raise FileNotFoundError(f"O arquivo '{zip_file}' nao foi encontrado.")
     
+    
+    
+def create_directory(base_path: str, sub_path: str) -> Path:
+    full_path = Path(base_path) / sub_path
+    shutil.rmtree(full_path, ignore_errors=True)
+    if os.path.exists(full_path):
+        try:
+            os.remove(full_path)
+        except:
+            pass
+    full_path.mkdir(parents=True, exist_ok=True)
+    return full_path.as_posix()

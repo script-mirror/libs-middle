@@ -42,3 +42,26 @@ def setup_logger(log_path: str = None):
     logger.addHandler(sh)
 
     return logger
+
+# criar logging sem propagar para o log raiz
+def criar_logger(nome_logger, caminho_arquivo):
+    nivel = logging.INFO
+    console = True
+    diretorio = os.path.dirname(caminho_arquivo) or '.'
+    os.makedirs(diretorio, exist_ok=True)
+    logger = logging.getLogger(nome_logger)
+    logger.setLevel(nivel)
+    logger.handlers.clear()
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    file_handler = logging.FileHandler(caminho_arquivo, mode='a')
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
+    if console:
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+    
+    # não propaga para o log raiz
+    logger.propagate = False   
+    
+    return logger

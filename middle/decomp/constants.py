@@ -263,5 +263,10 @@ regex_blocos = {
         'campos': ['mnemonico', 'nome_arq'],
         'regex': r'^(.{2})\s{2}(.{1,11})(.*)',
         'formatacao': '{:>2}  {:<12}'
+    },   
+    'RT': {
+        'campos': ['mnemonico', 'valor'],
+        'regex': r'(.{2})  (.{5})(.*)',
+        'formatacao': '{:>2}  {:>5}'
     }
 }
