@@ -478,3 +478,20 @@ class Constants:
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
         return './tmp/downloads' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_SAMET(self):
+        return './tmp/data' # '/WX2TB/Documentos/dados/temp_samet/climatologia/'
+
+    @property 
+    def PATH_COORDENADAS_CIDADES(self):
+        return './tmp/data' # '/WX2TB/Documentos/fontes/tempo/novos_produtos/COORDENADAS_CIDADES/'
+    
+    @property 
+    def PATH_TO_SAVE_TXT_SAMET(self):
+        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos-novo/samet'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL(self):
+        return './tmp/data' # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
+     

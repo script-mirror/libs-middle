@@ -1,3 +1,6 @@
+import pandas as pd
+
+
 CONSTANTES = {
 
     'tipos_variaveis': {
@@ -17,7 +20,7 @@ CONSTANTES = {
         '[m/s]': ['wind200', 'mag_vento100'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
-        '[°C]': ['temp850', 't2m', '2t', 'geada'],
+        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia'],
         '[kg*m-1*s-1]': ['ivt'],
         '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes'],
@@ -87,8 +90,52 @@ CONSTANTES = {
         'ecmwf-ens-estendido': 7,
         'ecmwf-ens-membros-estendido': 7
 
+    },
 
-    }
+    'city_dict': {'sp': 'São Paulo', 'sp_pp': 'Presidente Prudente', 'sp_rp':'Ribeirão Preto',
+                'rj':'Rio de Janeiro', 'mg':'Belo Horizonte', 'es':'Vitória', 'rs':'Porto Alegre',
+                'sc':'Florianópolis', 'pr':'Curitiba','df':'Brasília', 'go':'Goiânia',
+                'ms':'Campo Grande', 'mt':'Cuiabá', 'ba':'Salvador', 'se':'Aracaju',
+                'al':'Maceió','pe':'Recife','pb':'João Pessoa','rn':'Natal','ce':'Fortaleza',
+                'pi':'Teresina','ma':'São Luis','to':'Palmas','pa':'Belém','am':'Manaus',
+                'ap':'Macapá','rr':'Boa Vista','ac':'Rio Branco','ro':'Porto Velho','sp_as':'Assis',
+                'sp_ar':'Araçatuba', 'sp_aq':'Araraquara','sp_br':'Brotas','sp_ja':'Jaú',
+                'sp_pi':'Piracicaba','ms_ms':'MS','go_ja':'Jataí','sp_ou':'Ourinhos','sp_sa':'Santos',
+                'sp_va':'Valinhos','sp_ss':'São Sebastião','mg_ub':'Ubá','mg_de':'Descoberto',
+                'sc_ba':'Balneário Camboriú', 'sc_it':'Itajaí', 'be':'Benálcool (Araçatuba - SP)',
+                'de':'Destivale (Araçatuba - SP)', 'ga':'Gasa (Araçatuba - SP)',
+                'mu':'Mundial (Araçatuba - SP)', 'un' : 'Univalem (Araçatuba - SP)',
+                'bo':'Bonfim (Araraquara - SP)','se_':'Serra (Araraquara - SP)',
+                'ta':'Tamoio (Araraquara - SP)','za':'Araraquara (Araraquara - SP)',
+                'lem':'Leme (Araraquara - SP)', 'ip':'Iparussu (Assis - SP)',
+                'ma_':'Maracaí (Assis - SP)', 'pa_':'Paraguaçu (Assis - SP)',
+                'tr':'Tarumã (Assis - SP)', 'ps':'Paraiso (Brotas - SP)',
+                'sc_':'Santa Cândida (Brotas - SP)','ja':'Jataí (Jataí - GO)','ba_':'Barra (Jaú - SP)',
+                'dc':'Dois Córregos (Jaú - SP)','di':'Diamante (Jau - SP)','ca':'Caarapó (MS)',
+                'ptp':'Passa Tempo (MS)','rbr':'Rio Brilhante (MS)','br':'Bom Retiro (Piracicaba - SP)',
+                'cp':'Costa Pinto (Piracicaba - SP)','ra':'Rafard (Piracicaba - SP)',
+                'sf':'São Francisco (Piracicaba - SP)','sh':'Santa Helena (Piracicaba - SP)',
+                'ju':'Junqueira (Ribeirão Norte)','lpt':'Lagoa da Prata (Ribeiraão Norte)',
+                'cnt':'Continental (Ribeirão Norte)','vro':'Vale do Rosário (Ribeirão Sul)',
+                'umb':'Morro Agudo (Ribeirão Sul)','sel':'Santa Elisa (Ribeirão Sul)'
+        },
+
+    'city_peso': pd.DataFrame(
+        {
+            'id': ['sp_pp','sp_rp','rj','mg','es','go','rs','sc','pr','ba','pe',
+                'pb','rn','ce','pi','ma','pa','am','ap'],
+            'weights': [0.100,0.210,0.231,0.098,0.244,0.118,0.483,0.228,0.289,
+                        0.244,0.075,0.170,0.227,0.115,0.170,0.270,0.130,0.310,0.290],
+            'region': [
+                'Sudeste','Sudeste','Sudeste',
+                'Sudeste','Sudeste','Sudeste',
+                'Sul','Sul','Sul',
+                'Nordeste','Nordeste','Nordeste','Nordeste','Nordeste','Nordeste',
+                'Norte','Norte','Norte','Norte'
+            ]
+        }
+    )
+
 
 }
 

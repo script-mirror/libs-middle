@@ -426,14 +426,6 @@ def get_inicializacao_fmt(data, format='%d/%m/%Y %H UTC'):
 
 ###################################################################################################################
 
-# def get_dado_cacheado(var, obj, varname=None, **kwargs):
-#     varname = varname or var
-#     if varname not in globals():
-#         globals()[varname] = obj.open_model_file(variavel=varname, **kwargs).load()
-#     return globals()[varname]
-
-###################################################################################################################
-
 def get_dado_cacheado(var, obj, varname=None, usa_variavel=True, **kwargs):
     """
     Carrega e cacheia dados de modelo ou observação.
@@ -512,11 +504,21 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
 
     elif unico_tempo:
 
-        titulo = (
-            f'{modelo.upper()} - {tipo} \u2022 '
-            f'{condicao_inicial}: {cond_ini}\n'
-            f'$\\mathbf{{Válido\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
-        )
+        if semana is not None:
+
+            titulo = (
+                f'{modelo.upper()} - {tipo} \u2022 '
+                f'{condicao_inicial}: {cond_ini}\n'
+                f'$\\mathbf{{Válido\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
+            )
+
+        else:
+
+            titulo = (
+                f'{modelo.upper()} - {tipo} \u2022 '
+                f'{condicao_inicial}: {cond_ini}\n'
+                f'$\\mathbf{{Válido\\ para\\ {data_ini}}}$'
+            )
 
     else:
 
@@ -785,5 +787,16 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
         df = to_geopandas(df, 'vl_lon', 'vl_lat')
 
     return df
+
+###################################################################################################################
+
+def get_pontos_localidades():
+
+    # Coordenadas que vamos extrair os pontos
+    pontos = pd.read_csv(f'{Constants().PATH_COORDENADAS_CIDADES}/coord_cidades.dat', names=['lat','lon','id'])
+    target_lon = xr.DataArray(pontos.lon, dims='id',coords={"id": pontos.id})
+    target_lat = xr.DataArray(pontos.lat, dims='id',coords={"id": pontos.id})
+
+    return target_lon, target_lat, pontos
 
 ###################################################################################################################
