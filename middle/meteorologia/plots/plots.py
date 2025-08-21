@@ -26,7 +26,8 @@ from ..utils.utils import (
     ajusta_lon_0_360,
     ajusta_acumulado_ds,
     ajusta_shp_json,
-    get_prec_db
+    get_prec_db,
+    get_pontos_localidades
 )
 from ..consts.constants import CONSTANTES
 from middle.utils import get_auth_header
@@ -207,6 +208,12 @@ def custom_colorbar(variavel_plotagem):
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
         cbar_ticks = None
+
+    elif variavel_plotagem == 'temp_anomalia':
+        levels = np.arange(-5, 5.1, 0.1)
+        colors = None
+        cmap = 'RdBu_r'
+        cbar_ticks = np.arange(-5, 5.5, 0.5)
 
     elif variavel_plotagem == 'divergencia850':
         levels = np.arange(-5, 6, 1)
@@ -509,7 +516,7 @@ def plot_campos(
 
 ###################################################################################################################
 
-# --- PLOT GRÁFICOS ---
+# --- PLOT GRÁFICOS PREVISAO BACIAS SMAP ---
 def plot_chuva_acumulada(
     df_merged,
     mes,
@@ -709,6 +716,142 @@ def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_
 
 ###################################################################################################################
 
+# --- PLOT GRÁFICOS PREVISAO BACIAS SMAP ---
+def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo='teste', filename='grafico'):
+
+    plt.figure(figsize=(12, 6))
+    
+    if tipo == 'tmax_tmin':
+
+        df_tmin_obs = df_tmin[df_tmin['type'] == 'observado']
+        df_tmin_prev = df_tmin[df_tmin['type'] == 'previsão']
+        df_tmax_obs = df[df['type'] == 'observado']
+        df_tmax_prev = df[df['type'] == 'previsão'] 
+
+        # tmin obs
+        plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m'], color='blue', lw=1.5, marker='o', markerfacecolor="None")
+        plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m_clim'], color='blue', lw=1, ls='--')
+
+        for x, y in zip(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", color='blue', ha='right', va='bottom', fontsize=16)
+
+        # tmax obs
+        plt.plot(df_tmax_obs['valid_time_fmt'], df_tmax_obs['t2m'], color='red', lw=1.5, marker='o', markerfacecolor="None")
+        plt.plot(df_tmax_obs['valid_time_fmt'], df_tmax_obs['t2m_clim'], color='red', lw=1, ls='--')
+
+        for x, y in zip(df_tmax_obs['valid_time_fmt'], df_tmax_obs['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='red')
+
+        # tmin prev
+        plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m'], color='blue', lw=1.5, marker='o')
+        plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m_clim'], color='blue', lw=1, ls='--')
+
+        for x, y in zip(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='blue')
+
+        # tmax prev
+        plt.plot(df_tmax_prev['valid_time_fmt'], df_tmax_prev['t2m'], color='red', lw=1.5, marker='o')
+        plt.plot(df_tmax_prev['valid_time_fmt'], df_tmax_prev['t2m_clim'], color='red', lw=1, ls='--')
+
+        for x, y in zip(df_tmax_prev['valid_time_fmt'], df_tmax_prev['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='red')
+
+        # Ajustes de layout
+        plt.ylabel('Temperatura do Ar (°C)\n', fontsize=20)
+        plt.ylim(5, 45)  
+        plt.xlabel('Data', fontsize=18)
+        plt.xticks(rotation=45, fontsize=16)
+        plt.yticks(fontsize=16)
+        plt.grid(axis='both', ls='--', alpha=0.4)
+
+    elif tipo == 'geada':
+
+        df_tmin_obs = df[df['type'] == 'observado']
+        df_tmin_prev = df[df['type'] == 'previsão']
+        xaxix_l1 = df['valid_time_fmt'].values.tolist()
+
+        # tmin obs
+        plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m'], color='blue', lw=1.5, marker='o', markerfacecolor="None")
+        plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m_clim'], color='blue', lw=1, ls='--')
+
+        for x, y in zip(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", color='blue', ha='right', va='bottom', fontsize=16)
+
+        # tmin prev
+        plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m'], color='blue', lw=1.5, marker='o')
+        plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m_clim'], color='blue', lw=1, ls='--')
+
+        for x, y in zip(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='blue')
+
+        limites_geada = [5.5, 1.8, -0.5, -4]
+        fraca = [limites_geada[0]] * len(xaxix_l1)
+        moderada = [limites_geada[1]] * len(xaxix_l1)
+        forte = [limites_geada[2]] * len(xaxix_l1)
+        base = [limites_geada[3]]  * len(xaxix_l1)
+
+        plt.fill_between(xaxix_l1, base, forte, color='#5759A8', label='forte')
+        plt.fill_between(xaxix_l1, forte, moderada, color='#917BCE', label='moderada')
+        plt.fill_between(xaxix_l1, moderada, fraca, color='#C4BDE6', label='fraca')
+        
+        plt.axhline(y=-0.5, color='black', linestyle='--', label='-0.5')
+        plt.axhline(y=1.8,  color='black', linestyle='--', label='1.8')
+        plt.axhline(y=5.5,  color='black', linestyle='--', label='5.5')
+
+        plt.text(0.2, 0.16, 'Forte', fontsize=16, color='black', ha='center', va='bottom', transform=plt.gcf().transFigure)
+        plt.text(0.217, 0.25, 'Moderada', fontsize=16, color='black', ha='center', va='bottom', transform=plt.gcf().transFigure)
+        plt.text(0.2, 0.34, 'Fraca', fontsize=16, color='black', ha='center', va='bottom', transform=plt.gcf().transFigure)
+        plt.text(0.217, 0.45, 'Sem Risco', fontsize=16, color='black', ha='center', va='bottom', transform=plt.gcf().transFigure)
+
+        plt.ylim(-4, 20)
+        plt.yticks(fontsize=16)
+        plt.ylabel('Temp. minima do Ar (°C)\n', fontsize=20)
+        plt.xlabel('Data', fontsize=18)
+        plt.xticks(rotation=45, fontsize=16)
+        plt.grid(axis='both', ls='--', alpha=0.4)
+
+    elif tipo == 'submercado':
+
+        df_obs = df[df['type'] == 'observado']
+        df_prev = df[df['type'] == 'previsão']
+
+        # obs
+        plt.plot(df_obs['valid_time_fmt'], df_obs['t2m'], color='purple', lw=1.5, marker='o', markerfacecolor="None")
+        plt.plot(df_obs['valid_time_fmt'], df_obs['t2m_clim'], color='purple', lw=1, ls='--')
+
+        for x, y in zip(df_obs['valid_time_fmt'], df_obs['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", color='purple', ha='right', va='bottom', fontsize=16)
+
+        # prev
+        plt.plot(df_prev['valid_time_fmt'], df_prev['t2m'], color='purple', lw=1.5, marker='o')
+        plt.plot(df_prev['valid_time_fmt'], df_prev['t2m_clim'], color='purple', lw=1, ls='--')
+
+        for x, y in zip(df_prev['valid_time_fmt'], df_prev['t2m']):
+            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='purple')
+
+       # Ajustes de layout
+        plt.ylabel('Temp. média do ar (°C)\n', fontsize=20)
+        plt.xlabel('Data', fontsize=18)
+        plt.xticks(rotation=45, fontsize=16)
+        
+        if df['regiao'].unique() == 'Sudeste':
+            plt.yticks(np.arange(15, 35, 5),fontsize=16)
+
+        elif df['regiao'].unique() == 'Sul':
+            plt.yticks(np.arange(10, 35, 5),fontsize=16)
+
+        elif df['regiao'].unique() == 'Nordeste' or df['regiao'].unique() ==    'Norte':
+            plt.yticks(np.arange(20, 36, 5),fontsize=16)
+
+        plt.grid(axis='both', ls='--', alpha=0.4)
+
+    plt.title(titulo, fontsize=16, fontweight='bold')
+    plt.savefig(f'{filename}.png', bbox_inches='tight')
+
+    return
+
+###################################################################################################################
+
 class GeraProdutosPrevisao:
 
     def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
@@ -834,9 +977,6 @@ class GeraProdutosPrevisao:
         t_mean = ensemble_mean(t)
         cond_ini = get_inicializacao_fmt(t_mean)
 
-        # if t_mean.longitude.min() >= 0:
-        #     t_mean = t_mean.assign_coords(longitude=(((t_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
-
         return t, t_mean, cond_ini
 
     def _carregar_gh_mean(self):
@@ -891,6 +1031,7 @@ class GeraProdutosPrevisao:
 
         qtdade_max_semanas = self.qtdade_max_semanas
         path_to_save = f'{self.path_savefiguras}/{modo}'
+        os.makedirs(path_to_save, exist_ok=True)
 
         try:
 
@@ -1549,6 +1690,7 @@ class GeraProdutosPrevisao:
 
         qtdade_max_semanas = self.qtdade_max_semanas
         path_to_save = f'{self.path_savefiguras}/{modo}'
+        os.makedirs(path_to_save, exist_ok=True)
 
         try:
 
@@ -2245,6 +2387,122 @@ class GeraProdutosPrevisao:
                         **kwargs
                     )
 
+            elif modo == 'graficos':
+
+                if self.t2m_mean is None:
+                    _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
+
+                # Ajustando a coordenada de tempo para o BR
+                t2m_brt = self.t2m_mean.assign_coords(valid_time=self.t2m_mean.valid_time - np.timedelta64(3,'h'))
+
+                # Máximo e minimos diários
+                t2m_max = t2m_brt.resample(valid_time='D').max() - 273.15
+                t2m_min = t2m_brt.resample(valid_time='D').min() - 273.15
+                t2m_med = t2m_brt.resample(valid_time='D').mean() - 273.15
+
+                # Selecionado os próximos 15 dias
+                t2max = t2m_max.sel(valid_time=slice(t2m_max.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_max.time + np.timedelta64(15,'D')))
+                t2min = t2m_min.sel(valid_time=slice(t2m_min.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_min.time + np.timedelta64(15,'D')))
+                t2med = t2m_med.sel(valid_time=slice(t2m_med.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_med.time + np.timedelta64(15,'D')))
+
+                # Pegando os pontos
+                target_lon, target_lat, pontos = get_pontos_localidades()
+                t2max_no_ponto = t2max.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
+                t2min_no_ponto = t2min.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
+                t2med_no_ponto = t2med.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
+                t2max_no_ponto = t2max_no_ponto.reset_index('valid_time')
+                t2min_no_ponto = t2min_no_ponto.reset_index('valid_time')
+                t2med_no_ponto = t2med_no_ponto.reset_index('valid_time')
+                t2max_no_ponto['type'] = 'previsão'
+                t2min_no_ponto['type'] = 'previsão'
+                t2med_no_ponto['type'] = 'previsão'
+                t2max_no_ponto['mes'] = t2max_no_ponto['valid_time'].dt.month
+                t2min_no_ponto['mes'] = t2min_no_ponto['valid_time'].dt.month
+                t2med_no_ponto['mes'] = t2med_no_ponto['valid_time'].dt.month
+                colunas_para_usar = ['valid_time', 't2m', 'type', 'mes']
+                t2max_no_ponto = t2max_no_ponto[colunas_para_usar].reset_index()
+                t2min_no_ponto = t2min_no_ponto[colunas_para_usar].reset_index()
+                t2med_no_ponto = t2med_no_ponto[colunas_para_usar].reset_index()
+
+                # Lendo o csv observado dos ultimos 2 meses
+                mes_atual = str(self.t2m_mean.time.dt.month.item()).zfill(2)
+                ano_atual = str(self.t2m_mean.time.dt.year.item()).zfill(4)
+                mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
+                ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
+                obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+                obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+                obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+                obs_tmax_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+                obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+                obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+                obs_tmax = pd.concat([obs_tmax_anterior, obs_tmax_atual], ignore_index=True)
+                obs_tmin = pd.concat([obs_tmin_anterior, obs_tmin_atual], ignore_index=True)
+                obs_tmed = pd.concat([obs_tmed_anterior, obs_tmed_atual], ignore_index=True)
+                obs_tmax['type'] = 'observado'
+                obs_tmin['type'] = 'observado'
+                obs_tmed['type'] = 'observado'
+                ultimos_15_dias = pd.date_range(start=pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15), end=pd.to_datetime(self.t2m_mean.time.item()))
+                obs_tmax = obs_tmax[obs_tmax['valid_time'].isin(ultimos_15_dias)]
+                obs_tmin = obs_tmin[obs_tmin['valid_time'].isin(ultimos_15_dias)]
+                obs_tmed = obs_tmed[obs_tmed['valid_time'].isin(ultimos_15_dias)]
+                obs_tmax['mes'] = obs_tmax['valid_time'].dt.month
+                obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
+                obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
+
+                # Juntando com a previsao
+                t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
+                t2min_no_ponto = pd.concat([obs_tmin.rename(columns={'tmin': 't2m'}), t2min_no_ponto], axis=0)
+                t2med_no_ponto = pd.concat([obs_tmed.rename(columns={'tmed': 't2m'}), t2med_no_ponto], axis=0)
+
+                # Abrindo os arquivos de climatologia
+                clim_tmax = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmax_cidades.txt', sep=' ', names=np.arange(1,13))
+                clim_tmin = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmin_cidades.txt', sep=' ', names=np.arange(1,13))
+                clim_tmed = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmed_cidades.txt', sep=' ', names=np.arange(1,13))
+                clim_tmax['id'] = pontos['id']
+                clim_tmax = clim_tmax.melt(id_vars='id', value_name='t2m_clim', var_name='month')
+                clim_tmin['id'] = pontos['id']
+                clim_tmin = clim_tmin.melt(id_vars='id', value_name='t2m_clim', var_name='month')
+                clim_tmed['id'] = pontos['id']
+                clim_tmed = clim_tmed.melt(id_vars='id', value_name='t2m_clim', var_name='month')
+
+                # Juntar pelo id e mês
+                t2max_no_ponto = t2max_no_ponto.reset_index().merge(clim_tmax, left_on=["id", "mes"], right_on=["id", "month"], how="left")
+                t2min_no_ponto = t2min_no_ponto.reset_index().merge(clim_tmin, left_on=["id", "mes"], right_on=["id", "month"], how="left")
+                t2med_no_ponto = t2med_no_ponto.reset_index().merge(clim_tmed, left_on=["id", "mes"], right_on=["id", "month"], how="left")
+                t2max_no_ponto['valid_time_fmt'] = t2max_no_ponto['valid_time'].dt.strftime('%d/%m')
+                t2min_no_ponto['valid_time_fmt'] = t2min_no_ponto['valid_time'].dt.strftime('%d/%m')
+                t2med_no_ponto['valid_time_fmt'] = t2med_no_ponto['valid_time'].dt.strftime('%d/%m')
+
+                # Agrupar no submercado e calcular a temperatura por peso
+                df_submercado = CONSTANTES['city_peso']
+                t2med_no_ponto_submercado = t2med_no_ponto[t2med_no_ponto['id'].isin(df_submercado['id'])]
+                t2med_no_ponto_submercado['peso'] = t2med_no_ponto_submercado['id'].map(df_submercado.set_index('id')['weights'])
+                t2med_no_ponto_submercado['regiao'] = t2med_no_ponto_submercado['id'].map(df_submercado.set_index('id')['region'])
+                t2med_no_ponto_submercado['t2m_peso'] = t2med_no_ponto_submercado['t2m'] * t2med_no_ponto_submercado['peso']
+                t2med_no_ponto_submercado['t2m_clim_peso'] = t2med_no_ponto_submercado['t2m_clim'] * t2med_no_ponto_submercado['peso']
+                t2med_no_ponto_submercado = t2med_no_ponto_submercado.groupby(['regiao', 'valid_time', 'type'])[['t2m_peso', 't2m_clim_peso']].sum().reset_index()
+                t2med_no_ponto_submercado['valid_time_fmt'] = t2med_no_ponto_submercado['valid_time'].dt.strftime('%d/%m')
+
+                # Grafico por id
+                for id in t2max_no_ponto['id'].unique():
+                    dados_t2max = t2max_no_ponto[t2max_no_ponto['id'] == id]
+                    dados_t2min = t2min_no_ponto[t2min_no_ponto['id'] == id]
+
+                    titulo = f"{CONSTANTES['city_dict'][id]}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
+                    filename = f'{path_to_save}/{id}'
+                    plot_graficos_2d(df=dados_t2max, tipo='tmax_tmin', df_tmin=dados_t2min, titulo=titulo, filename=filename)
+                    
+                    filename = f'{path_to_save}/{id}_geada'
+                    plot_graficos_2d(df=dados_t2min, tipo='geada', titulo=titulo, filename=filename)
+
+                # Grafico por submercado
+                for submercado in t2med_no_ponto_submercado['regiao'].unique():
+                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado].rename(columns={'t2m_peso': 't2m', 't2m_clim_peso': 't2m_clim'})
+
+                    titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
+                    filename = f'{path_to_save}/{submercado}'
+                    plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
+
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -2315,6 +2573,9 @@ class GeraProdutosPrevisao:
 
     def gerar_mag_vento100(self, **kwargs):
         self._processar_varsdinamicas('mag_vento100', **kwargs)
+
+    def gerar_graficos(self, **kwargs):
+        self._processar_varsdinamicas('graficos', **kwargs)
 
     ###################################################################################################################
 
@@ -2447,13 +2708,17 @@ class GeraProdutosObservacao:
         # Inicializando variáveis
         self.tp = None
         self.cond_ini = None
+        self.tmax = None
+        self.tmin = None
+        self.tmed = None
 
     ###################################################################################################################
 
     def _carregar_tp_mean(self, **kwargs):
 
         """Carrega e processa o campo tp apenas uma vez."""
-        tp = get_dado_cacheado(self.produto_config, usa_variavel=False, **kwargs)
+        # tp = get_dado_cacheado(**kwargs)
+        tp = self.produto_config.open_model_file(**kwargs)
         cond_ini = get_inicializacao_fmt(tp)
 
         if isinstance(cond_ini, str):
@@ -2461,6 +2726,17 @@ class GeraProdutosObservacao:
 
         return tp, cond_ini
     
+    def _carregar_t_mean(self, **kwargs):
+
+        """Carrega e processa o campo t apenas uma vez.""" 
+        t = self.produto_config.open_model_file(**kwargs)
+        cond_ini = get_inicializacao_fmt(t)
+
+        if isinstance(cond_ini, str):
+            cond_ini = [cond_ini]
+
+        return t, cond_ini
+
     ###################################################################################################################
 
     def _processar_precipitacao(self, modo, tipo_plot='tp_db', N_dias=9, **kwargs):
@@ -2471,8 +2747,7 @@ class GeraProdutosObservacao:
 
             if modo == '24h':
 
-                if self.tp is None or self.cond_ini is None:
-                    self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, unico=True)
+                self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
 
                 for index, n in enumerate(self.tp['valid_time']):
 
@@ -2507,8 +2782,7 @@ class GeraProdutosObservacao:
 
                 from calendar import monthrange
 
-                if self.tp is None or self.cond_ini is None:
-                    self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, apenas_mes_atual=True)
+                self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
 
                 if len(self.cond_ini) > 0:
                     cond_ini = self.cond_ini[-1]
@@ -2519,7 +2793,7 @@ class GeraProdutosObservacao:
                 # Acumulando no mes
                 tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
 
-                tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=pd.to_datetime(self.tp['valid_time'].values[0]).day-1)
+                tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
 
                 # Abrindo a climatologia
@@ -2595,8 +2869,7 @@ class GeraProdutosObservacao:
 
             elif modo == 'dif_prev':
 
-                if self.tp is None or self.cond_ini is None:
-                    self.tp, self.cond_ini = self._carregar_tp_mean(obj=self.produto_config, unico=True)
+                self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
 
                 # Dia atual 
                 cond_ini = pd.to_datetime(self.cond_ini, format='%d/%m/%Y %H UTC')[0]
@@ -2678,6 +2951,151 @@ class GeraProdutosObservacao:
         except Exception as e:
             print(f'Erro ao processar {modo}: {e}')
 
+    def _processar_temperatura(self, modo, **kwargs):
+
+        try:
+
+            if modo == 'temp_diario':
+
+                self.tmax, self.cond_ini = self._carregar_t_mean(unico=True, variavel='tmax')
+                self.tmin, self.cond_ini = self._carregar_t_mean(unico=True, variavel='tmin')
+                self.tmed, self.cond_ini = self._carregar_t_mean(unico=True, variavel='tmed')
+
+                # Climatologia para a anomalia
+                mes = pd.to_datetime(self.tmax.time.values[0]).strftime('%m')
+                ds_clim_tmin = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_SAMET}/tmin/SAMeT_CPTEC_TMIN_mean_{mes}.nc', decode_times=False).isel(time=0)
+                ds_clim_tmax = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_SAMET}/tmax/SAMeT_CPTEC_TMAX_mean_{mes}.nc', decode_times=False).isel(time=0)
+                ds_clim_tmed = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_SAMET}/tmed/SAMeT_CPTEC_TMED_mean_{mes}.nc', decode_times=False).isel(time=0)
+
+                ds_clim_tmin = ajusta_lon_0_360(ds_clim_tmin.rename({'lon': 'longitude', 'lat': 'latitude'}))
+                ds_clim_tmax = ajusta_lon_0_360(ds_clim_tmax.rename({'lon': 'longitude', 'lat': 'latitude'}))
+                ds_clim_tmed = ajusta_lon_0_360(ds_clim_tmed.rename({'lon': 'longitude', 'lat': 'latitude'}))
+
+                # Calculando a anomalia
+                anomalia_tmin = self.tmin['tmin'] - ds_clim_tmin['tmin']
+                anomalia_tmax = self.tmax['tmax'] - ds_clim_tmax['tmax']
+                anomalia_tmed = self.tmed['tmed'] - ds_clim_tmed['tmed']
+
+                # Juntando todos 
+                ds_temp = xr.merge([self.tmax.drop_vars('nobs'), self.tmin.drop_vars('nobs'), self.tmed.drop_vars('nobs'), anomalia_tmin.to_dataset().rename({'tmin': 'anomalia_tmin'}), anomalia_tmax.to_dataset().rename({'tmax': 'anomalia_tmax'}), anomalia_tmed.to_dataset().rename({'tmed': 'anomalia_tmed'})])
+
+                for index, valid_time in enumerate(ds_temp['valid_time']):
+
+                    if len(self.cond_ini) > 0:
+                        cond_ini = self.cond_ini[index]
+                    else:
+                        cond_ini = self.cond_ini
+
+                    for data_var in ds_temp.data_vars:
+                        
+                        titulo = gerar_titulo(
+                                modelo=self.modelo_fmt, tipo=f'Temperatura SaMET {data_var.upper()}', cond_ini=cond_ini,
+                                data_ini=pd.to_datetime(valid_time.item()).strftime('%d/%m/%Y').replace(' ', '\\ '),
+                                unico_tempo=True, condicao_inicial='Data arquivo'
+                            )
+
+                        plot_campos(
+                            ds=ds_temp.sel(valid_time=valid_time)[data_var],
+                            variavel_plotagem='temp850' if 'anomalia' not in data_var else 'temp_anomalia',
+                            title=titulo,
+                            filename=f'{data_var}_{self.modelo_fmt}_{pd.to_datetime(valid_time.item()).strftime("%Y%m%d")}',
+                            shapefiles=self.shapefiles,
+                            plot_bacias=False,
+                            **kwargs
+                        )
+
+            elif modo == 'temp_mensal':
+
+                self.tmax, self.cond_ini = self._carregar_t_mean(apenas_mes_atual=True, variavel='tmax')
+                self.tmin, self.cond_ini = self._carregar_t_mean(apenas_mes_atual=True, variavel='tmin')
+                self.tmed, self.cond_ini = self._carregar_t_mean(apenas_mes_atual=True, variavel='tmed')
+
+                # Gerar um csv mensal
+                target_lon, target_lat, pontos = get_pontos_localidades()
+                t2max_no_ponto = self.tmax['tmax'].sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe().reset_index('valid_time').dropna()
+                t2min_no_ponto = self.tmin['tmin'].sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe().reset_index('valid_time').dropna()
+                t2med_no_ponto = self.tmed['tmed'].sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe().reset_index('valid_time').dropna()
+
+                # Ajustando os labels
+                t2max_no_ponto = t2max_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'}).drop(columns=['valid_time'])
+                t2min_no_ponto = t2min_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'}).drop(columns=['valid_time'])
+                t2med_no_ponto = t2med_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'}).drop(columns=['valid_time'])
+
+                print(f'gerando csv...')
+                os.makedirs(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files', exist_ok=True)
+                YEAR = pd.to_datetime(self.tmax.time.values[0]).strftime('%Y')
+                MONTH = pd.to_datetime(self.tmax.time.values[0]).strftime('%m')
+                t2med_no_ponto.to_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{YEAR}{MONTH}.csv')
+                t2max_no_ponto.to_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{YEAR}{MONTH}.csv')
+                t2min_no_ponto.to_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{YEAR}{MONTH}.csv')
+
+                # Climatologia para a anomalia
+                mes = pd.to_datetime(self.tmax.time.values[0]).strftime('%m')
+                ds_clim_tmin = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_SAMET}/tmin/SAMeT_CPTEC_TMIN_mean_{mes}.nc', decode_times=False).isel(time=0)
+                ds_clim_tmax = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_SAMET}/tmax/SAMeT_CPTEC_TMAX_mean_{mes}.nc', decode_times=False).isel(time=0)
+                ds_clim_tmed = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_SAMET}/tmed/SAMeT_CPTEC_TMED_mean_{mes}.nc', decode_times=False).isel(time=0)
+
+                ds_clim_tmin = ajusta_lon_0_360(ds_clim_tmin.rename({'lon': 'longitude', 'lat': 'latitude'}))
+                ds_clim_tmax = ajusta_lon_0_360(ds_clim_tmax.rename({'lon': 'longitude', 'lat': 'latitude'}))
+                ds_clim_tmed = ajusta_lon_0_360(ds_clim_tmed.rename({'lon': 'longitude', 'lat': 'latitude'}))            
+
+                # Calculando a anomalia
+                anomalia_tmin = self.tmin['tmin'].resample(time='1M').mean().isel(time=0) - ds_clim_tmin['tmin']
+                anomalia_tmax = self.tmax['tmax'].resample(time='1M').mean().isel(time=0) - ds_clim_tmax['tmax']
+                anomalia_tmed = self.tmed['tmed'].resample(time='1M').mean().isel(time=0) - ds_clim_tmed['tmed']
+
+                # Juntando todos 
+                ds_temp = xr.merge([self.tmin['tmin'].resample(time='1M').mean().isel(time=0), self.tmed['tmed'].resample(time='1M').mean().isel(time=0), self.tmax['tmax'].resample(time='1M').mean().isel(time=0), anomalia_tmin.to_dataset().rename({'tmin': 'anomalia_tmin'}), anomalia_tmax.to_dataset().rename({'tmax': 'anomalia_tmax'}), anomalia_tmed.to_dataset().rename({'tmed': 'anomalia_tmed'})])
+
+                tempo_ini = pd.to_datetime(self.cond_ini[0], format='%d/%m/%Y %H UTC')
+                tempo_fim = pd.to_datetime(self.cond_ini[-1], format='%d/%m/%Y %H UTC')
+
+                for data_var in ds_temp.data_vars:
+
+                    titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo={data_var.upper()}, cond_ini=self.cond_ini[-1],
+                            data_ini=tempo_ini.strftime('%d/%m/%Y').replace(' ', '\\ '),
+                            data_fim=tempo_fim.strftime('%d/%m/%Y').replace(' ', '\\ '),
+                            sem_intervalo_semana=True, condicao_inicial='Data arquivo'
+                    )
+
+                    plot_campos(
+                        ds=ds_temp[data_var],
+                        variavel_plotagem='temp850' if 'anomalia' not in data_var else 'temp_anomalia',
+                        title=titulo,
+                        filename=f'{tempo_fim.strftime("%Y%m%d")}_bruto{data_var}' if 'anomalia' not in data_var else f'{tempo_fim.strftime("%Y%m%d")}_anomalia{data_var}',
+                        shapefiles=self.shapefiles,
+                        plot_bacias=False,
+                        **kwargs
+                    )
+
+            elif modo == 'gerar_txt_cidades':
+
+                self.tmax, self.cond_ini = self._carregar_t_mean(ultimos_n_dias=True, variavel='tmax', ajusta_nome=False)
+                self.tmin, self.cond_ini = self._carregar_t_mean(ultimos_n_dias=True, variavel='tmin', ajusta_nome=False)
+                self.tmed, self.cond_ini = self._carregar_t_mean(ultimos_n_dias=True, variavel='tmed', ajusta_nome=False)
+                ds_temp = xr.merge([self.tmax.drop_vars('nobs'), self.tmin.drop_vars('nobs'), self.tmed.drop_vars('nobs')])
+
+                # Coordenadas que vamos extrair os pontos
+                target_lon, target_lat, pontos = get_pontos_localidades()
+
+                # Criando o diretorio que vou salvar
+                os.makedirs(f'{Constants().PATH_TO_SAVE_TXT_SAMET}', exist_ok=True)
+
+                for varname in ds_temp.data_vars:
+
+                    for id in pontos['id']:
+
+                        ds_no_ponto = ds_temp[varname].sel(lat=target_lat, lon=target_lon, method='nearest').to_dataframe().reset_index().round(2)
+                        ds_no_ponto = ds_no_ponto[ds_no_ponto['id'] == id]
+                        temp_type = ds_no_ponto.columns[-1] # pega o nome da coluna de temperatura
+                        ds_no_ponto = ds_no_ponto[['time','lon', 'lat', temp_type]]
+                        ds_no_ponto['type'] = temp_type
+                        ds_no_ponto.to_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/{id}_{temp_type}.txt', header=False, sep=' ', index=False)
+
+        except Exception as e:
+            print(f"Erro ao gerar modo: {e}")  
+
     ###################################################################################################################
 
     def gerar_prec24h(self, **kwargs):
@@ -2688,5 +3106,14 @@ class GeraProdutosObservacao:
 
     def gerar_dif_prev(self, **kwargs):
         self._processar_precipitacao('dif_prev', **kwargs)
+
+    def gerar_temp_diario(self, **kwargs):
+        self._processar_temperatura('temp_diario', **kwargs)
+
+    def gerar_temp_mensal(self, **kwargs):
+        self._processar_temperatura('temp_mensal', **kwargs)
+
+    def gerar_txt_cidades(self, **kwargs):
+        self._processar_temperatura('gerar_txt_cidades', **kwargs)
 
 ###################################################################################################################
