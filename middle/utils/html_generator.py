@@ -294,7 +294,7 @@ class HtmlBuilder:
     
     def _gerar_tabela_mmgd_total(self, dados):
         """
-        Gera tabela HTML para dados de geração MMGD Total (Base + Expansão)
+        Gera tabela HTML para dados de geração MMGD Total (Expansão)
         
         Args:
             dados (dict): Dados contendo informações de decks antigo e novo
@@ -827,7 +827,7 @@ class HtmlBuilder:
             dados: [dict] Um dicionário contendo os dados necessários para gerar as tabelas. Deve conter as chaves:
                 - 'dados_unsi': Dados para usinas não simuladas
                 - 'dados_ande': Dados para carga ANDE
-                - 'dados_mmgd_total': Dados para MMGD Total (Base + Expansão)
+                - 'dados_mmgd_total': Dados para MMGD Total (Expansão)
                 - 'dados_carga_global': Dados para carga global
                 - 'dados_carga_liquida': Dados para carga líquida
 
@@ -927,7 +927,7 @@ class HtmlBuilder:
                 </div>
 
                 <div class="table-section">
-                    <h2>Diferença de MMGD Total (Base + Expansão)</h2>
+                    <h2>Diferença de MMGD Total (Expansão)</h2>
                     {html_tabela_diff_mmgd_total}
                 </div>
 

@@ -1,5 +1,6 @@
 import datetime
 from typing import List, Union
+from dateutil.relativedelta import relativedelta
 
 class SemanaOperativa:
     @staticmethod
@@ -90,12 +91,14 @@ class SemanaOperativa:
             raise TypeError("date must be a datetime.date or datetime.datetime object")
         # Convert input date to the next Saturday
         self.date = date
+        date_aux = date +  relativedelta(months=1)
+        self.fist_next_month= self.get_last_saturday(datetime.date(date_aux.year, date_aux.month, 1))
         self.first_day_of_month = self.get_last_saturday(datetime.date(self.date.year, self.date.month, 1))
-        if self.date > self.first_day_of_month:
-            date_aux                      = self.date + datetime.timedelta(days=6)
-            self.first_day_of_year        = self.get_last_saturday(datetime.date(date_aux.year, 1, 1))
-            self.last_day_of_year         = self.get_last_friday(datetime.date(date_aux.year, 12, 31))
-            self.first_day_of_month       = self.get_last_saturday(datetime.date(date_aux.year, date_aux.month, 1))
+        if self.date >= self.fist_next_month:
+            self.date_aux                 = self.get_last_saturday(self.date) + datetime.timedelta(days=6)
+            self.first_day_of_year        = self.get_last_saturday(datetime.date(self.date_aux.year, 1, 1))
+            self.last_day_of_year         = self.get_last_friday(datetime.date(self.date_aux.year, 12, 31))
+            self.first_day_of_month       = self.get_last_saturday(datetime.date(self.date_aux.year, self.date_aux.month, 1))
         else:
             self.first_day_of_year        = self.get_last_saturday(datetime.date(self.date.year, 1, 1))
             self.last_day_of_year         = self.get_last_friday(datetime.date(self.date.year, 12, 31))
