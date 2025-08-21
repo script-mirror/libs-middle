@@ -494,4 +494,8 @@ class Constants:
     @property 
     def PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL(self):
         return './tmp/data' # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
+    
+    @property 
+    def PATH_CLIMATOLOGIA_UV100(self):
+        return './tmp/data' # '/WX2TB/Documentos/dados/UVCLIM/'
      
