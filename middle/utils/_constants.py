@@ -446,6 +446,10 @@ class Constants:
     @property 
     def WEBHOOK_RDH(self):
         return "RDH"
+    
+    @property 
+    def WEBHOOK_CARGA_PATAMAR_NEWAVE(self):
+        return "Previsões de carga mensal e por patamar - NEWAVE"
 
     @property 
     def LOGO_RAIZEN(self):
