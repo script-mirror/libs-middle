@@ -21,7 +21,7 @@ MESES = {
     'dezembro': 12
 }
 
-def sanitize_string(text, custom_chars=""):
+def sanitize_string(text: str, custom_chars:str="", space_char: str = " ") -> str:
     """
     Sanitiza uma string removendo caracteres especiais e normalizando o texto.
 
@@ -51,8 +51,17 @@ def sanitize_string(text, custom_chars=""):
     text = re.sub(r'_+', '_', text)
 
     text = text.strip('_')
+    text= text.replace(' ', space_char)
 
     return text
+
+
+
+def remover_acentos_e_caracteres_especiais(texto: str):
+    texto_norm = unicodedata.normalize('NFD', texto)
+    texto_limpo = re.sub(r'[^\w\s]', '', texto_norm)
+    texto_limpo = re.sub(r'\W+', '_', texto_limpo)
+    return texto_limpo
 
 
 def extrair_mes_ano(texto: str) -> datetime.date:
