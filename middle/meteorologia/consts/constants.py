@@ -169,6 +169,5 @@ CONSTANTES = {
 
     'PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA': './tmp/downloads', # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
 
-
 }
 
