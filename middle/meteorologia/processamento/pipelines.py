@@ -43,10 +43,9 @@ def pipelines(modelo, produtos, tipo):
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.salva_netcdf(variavel='tp'),
                 lambda: produtos.gerar_graficos_chuva(),
                 lambda: produtos.gerar_graficos_temp(),
-                lambda: produtos.salva_netcdf(variavel='tp'),
-
             ]
 
     elif modelo == 'gefs':
@@ -190,7 +189,7 @@ def pipelines(modelo, produtos, tipo):
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_prec_pnmm(margin_y=-90),
+                # lambda: produtos.gerar_prec_pnmm(margin_y=-90),
                 lambda: produtos.gerar_diferenca_tp(margin_y=-90),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
@@ -232,17 +231,31 @@ def pipelines(modelo, produtos, tipo):
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
-                # lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False, verifica_cache=False),
-                # lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False, verifica_cache=False),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
+                #lambda: produtos.salva_netcdf(variavel='tp'),
+            ]  
+        
+        elif tipo == 'pl':
+            return [                
+                lambda: produtos.gerar_geop500(margin_y=-90),
+                lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
+            ]
+
+    elif modelo == 'ecmwf-aifs-ens-membros':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False, verifica_cache=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False, verifica_cache=False),
+                # lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
+                lambda: produtos.gerar_desvpad(ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
             ]  
         
         elif tipo == 'pl':
             return [
-                lambda: produtos.gerar_geop500(margin_y=-90),
-                lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
             ]
 
     elif modelo == 'ecmwf-ens-membros':
@@ -270,16 +283,32 @@ def pipelines(modelo, produtos, tipo):
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
+                lambda: produtos.salva_netcdf(variavel='tp'),
             ]
 
         elif tipo == 'pl':
             return [
-
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
-                lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop', anomalia_sop=True),
+                lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop', anomalia_sop=True, anomalia_mensal=True),
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_jato_div200(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_vento_div850(margin_y=-90, resample_freq='sop', anomalia_sop=True),
+            ]
+
+    elif modelo == 'ecmwf-ens-estendido-membros':
+
+        if tipo == 'sfc':
+            return [
+                # lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False),
+                # lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
+                # lambda: produtos.gerar_desvpad(ensemble=False),
+                # lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
+                lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
+            ]
+
+        elif tipo == 'pl':
+            return [
+                # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
             ]
 
     return 
@@ -293,7 +322,16 @@ download_sfc_params = {
         'levtype_ecmwf_opendata': 'sfc',
         'stream_ecmwf_opendata': 'enfo',
         'steps': [i for i in range(0, 366, 6)],
-        'variables': ['tp', 'msl', 'ttr'],
+        'variables': ['tp', 'ttr'],
+        'provedor_ecmwf_opendata': 'ecmwf'
+    },
+
+    'ecmwf-ens-membros': {
+        'type_ecmwf_opendata': ['cf', 'pf'],
+        'levtype_ecmwf_opendata': 'sfc',
+        'stream_ecmwf_opendata': 'enfo',
+        'steps': [i for i in range(0, 366, 6)],
+        'variables': ['tp'],
         'provedor_ecmwf_opendata': 'ecmwf'
     },
 
@@ -326,6 +364,16 @@ download_sfc_params = {
 
     },
 
+    'ecmwf-aifs-ens-membros': {
+        'type_ecmwf_opendata': ['cf', 'pf'],
+        'levtype_ecmwf_opendata': 'sfc',
+        'stream_ecmwf_opendata': 'enfo',
+        'steps': [i for i in range(0, 366, 6)],
+        'variables': ['tp'],
+        'model_ecmwf_opendata': 'aifs-ens',
+
+    },
+
     'gefs': {
         'variables': '&var_ULWRF=on&var_APCP=on&var_PRMSL=on',
         'levels': '&lev_top_of_atmosphere=on&lev_surface=on&lev_mean_sea_level=on',
@@ -335,6 +383,13 @@ download_sfc_params = {
     'gefs-estendido': {
         'variables': '&var_ULWRF=on&var_APCP=on&var_PRMSL=on',
         'levels': '&lev_top_of_atmosphere=on&lev_surface=on&lev_mean_sea_level=on',
+        'sub_region_as_gribfilter': '&subregion=&toplat=20&leftlon=240&rightlon=360&bottomlat=-60',       
+        'steps': [i for i in range(0, 846, 6)]     
+    },
+
+    'gefs-estendido-membros': {
+        'variables': '&var_APCP=on',
+        'levels': '&lev_surface=on',
         'sub_region_as_gribfilter': '&subregion=&toplat=20&leftlon=240&rightlon=360&bottomlat=-60',       
         'steps': [i for i in range(0, 846, 6)]     
     },
@@ -353,6 +408,12 @@ download_sfc_params = {
     },
 
     'ecmwf-ens-estendido': {
+        'last_member_file': None
+
+    },
+
+    'ecmwf-ens-estendido-membros': {
+        'last_member_file': None
 
     },
 
@@ -528,6 +589,19 @@ open_model_params = {
 
     },
 
+    'gefs-estendido-membros': {
+
+        'tp_params': {
+            'sel_area': True,
+        },
+
+        'pl_params': {
+            'sel_area': True,
+            'ajusta_longitude': True,
+        }
+
+    },
+
     'gefs-membros': {
 
         'tp_params': {
@@ -557,7 +631,26 @@ open_model_params = {
             'expand_isobaric_dims': True,
             'sel_area': False
         }
+    },
+
+    'ecmwf-ens-estendido-membros': {
+
+        'tp_params': {
+            'ajusta_acumulado': True,
+            'm_to_mm': True,
+            'cf_pf_members': True,
+            'sel_12z': True,
+            'sel_area': True,
+        },
+
+        'pl_params': {
+            # 'cf_pf_members': True,
+            # 'sel_12z': True,
+            # 'expand_isobaric_dims': True,
+            # 'sel_area': False
+        }
     }
+
 
 }
 

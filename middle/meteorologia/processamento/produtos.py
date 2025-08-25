@@ -31,7 +31,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     # --- DOWNLOAD ---
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None,
-                               type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False) -> None:
+                               type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -63,6 +63,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 if os.path.exists(caminho_arquivo):
                     tamanho = os.path.getsize(caminho_arquivo)
                     if tamanho >= tamanho_min_bytes:
+                        baixa_arquivos = False
                         break  # Arquivo existe e tem tamanho adequado
                     else:
                         print(f'O arquivo {last_member_file} existe, mas ainda está com {tamanho} bytes (aguardando {tamanho_min_bytes} bytes)...')
@@ -81,168 +82,34 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file=geavg.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
 
         # Baixando os arquivos
-        if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
+        if baixa_arquivos:
 
-            while True:
-                todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
-
-                for i in steps:
-                    filename = f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
-                    caminho_arquivo = f'{caminho_para_salvar}/{filename}'
-
-                    # Se o arquivo já existe e está com tamanho esperado, pula
-                    if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
-                        print(f'✅ Arquivo {filename} já existe e está OK, pulando download...')
-                        continue
-
-                    url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
-                    
-                    if sub_region_as_gribfilter:
-                        url += sub_region_as_gribfilter
-
-                    file = requests.get(url, allow_redirects=True)
-                    if file.status_code == 200:
-                        with open(caminho_arquivo, 'wb') as f:
-                            f.write(file.content)
-                    else:
-                        print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
-                        print(url)
-                        todos_sucesso = False
-                        time.sleep(5)
-                        break  # Sai do for e volta ao início do while
-
-                    # Verifica se o arquivo foi baixado corretamente
-                    if os.path.exists(caminho_arquivo):
-                        if os.path.getsize(caminho_arquivo) < file_size:
-                            print(f'Arquivo {filename} está vazio/corrompido, removendo...')
-                            os.remove(caminho_arquivo)
-                            todos_sucesso = False
-                            time.sleep(5)
-                            break  # Sai do for e tenta de novo no while
-                        else:
-                            print(f'✅ Arquivo {filename} baixado com sucesso!')
-                    else:
-                        print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
-                        todos_sucesso = False
-                        time.sleep(5)
-                        break
-
-                if todos_sucesso:
-                    break  # Sai do while quando tudo estiver certo
-
-        elif 'ecmwf' in modelo_fmt:
-
-            if modelo_fmt == 'ecmwf-ens-estendido':
-
-                ftp_dir = Constants().PATH_FTP_ECMWF
-                dia_mes_ini = self.data.strftime('%m%d')
-                datafinal = self.data + pd.Timedelta(days=45)
-                date_range = pd.date_range(self.data, datafinal.strftime('%Y%m%d'), freq='D')
-                
-                for fcst_fmt, dates in enumerate(date_range):
-
-                    fcst_fmt = str(fcst_fmt + 1).zfill(2)
-
-                    while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
-
-                        dia_mes_prev = dates.strftime('%m%d')
-
-                        try:
-                            shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
-   
-                        except:
-                            print('tentando')
-                            time.sleep(10)
-
-            else:
-
-                from ecmwf.opendata import Client
-                client = Client(provedor_ecmwf_opendata, model=model_ecmwf_opendata, resol=resolucao) 
+            if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
 
                 while True:
-                    todos_sucesso = True  # Flag para checar se todos os steps deram certo
-
-                    for step in steps:
-
-                        caminho_arquivo = f'{caminho_para_salvar}/{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
-
-                        if self.name_prefix:
-                            caminho_arquivo = f'{caminho_para_salvar}/{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
-
-                        if os.path.exists(caminho_arquivo):
-                            print(f'✅ Arquivo {caminho_arquivo} já existe, pulando download...')
-                            continue
-
-                        if levlist_ecmwf_opendata:
-                            retrive = {
-                                'date': data_fmt,
-                                'time': self.inicializacao,
-                                'step': step,
-                                'stream': stream_ecmwf_opendata,
-                                'type': type_ecmwf_opendata,
-                                'levtype': levtype_ecmwf_opendata,
-                                'levelist': levlist_ecmwf_opendata,
-                                'param': variables,
-                                'target': caminho_arquivo,
-                            }
-
-                        else:
-                            retrive = {
-                                'date': data_fmt,
-                                'time': self.inicializacao,
-                                'step': step,
-                                'stream': stream_ecmwf_opendata,
-                                'type': type_ecmwf_opendata,
-                                'levtype': levtype_ecmwf_opendata,
-                                'param': variables,
-                                'target': caminho_arquivo,
-                            }
-
-                        try:
-                            client.retrieve(**retrive)
-
-                        except Exception as e:
-                            print(f'❌ Erro ao baixar ECMWF: {e}, tentando novamente...')
-                            todos_sucesso = False
-                            time.sleep(5)
-                            break  # Sai do for e tenta novamente o while
-
-                        print(f'✅ Arquivo {caminho_arquivo} baixado com sucesso!')
-
-                    if todos_sucesso:
-                        break  # Sai do while se tudo deu certo
-
-        elif modelo_fmt == 'gefs-membros':
-            prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
-            
-            while True:
-                todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
-
-                for membros in range(0, 31):
-
-                    if membros == 0:
-                        modelo_name = f'gec{str(membros).zfill(2)}'
-                    else:
-                        modelo_name = f'gep{str(membros).zfill(2)}'
-
-                    prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file={modelo_name}.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
+                    todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
 
                     for i in steps:
-                        filename = f'{modelo_name}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix is None else f'{self.name_prefix}_{modelo_name}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                        filename = f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
                         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
 
                         # Se o arquivo já existe e está com tamanho esperado, pula
                         if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
-                            print(f'Arquivo {filename} já existe e está OK, pulando download...')
+                            print(f'✅ Arquivo {filename} já existe e está OK, pulando download...')
                             continue
 
                         url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
+                        
+                        if sub_region_as_gribfilter:
+                            url += sub_region_as_gribfilter
+
                         file = requests.get(url, allow_redirects=True)
                         if file.status_code == 200:
                             with open(caminho_arquivo, 'wb') as f:
                                 f.write(file.content)
                         else:
-                            print(f'Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                            print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                            print(url)
                             todos_sucesso = False
                             time.sleep(5)
                             break  # Sai do for e volta ao início do while
@@ -256,15 +123,151 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                 time.sleep(5)
                                 break  # Sai do for e tenta de novo no while
                             else:
-                                print(f'Arquivo {filename} baixado com sucesso!')
+                                print(f'✅ Arquivo {filename} baixado com sucesso!')
                         else:
-                            print(f'Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                            print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
                             todos_sucesso = False
                             time.sleep(5)
                             break
 
-                if todos_sucesso:
-                    break  # Sai do while quando tudo estiver certo
+                    if todos_sucesso:
+                        break  # Sai do while quando tudo estiver certo
+
+            elif 'ecmwf' in modelo_fmt:
+
+                if modelo_fmt in ['ecmwf-ens-estendido', 'ecmwf-ens-estendido-membros']:
+
+                    ftp_dir = Constants().PATH_FTP_ECMWF
+                    dia_mes_ini = self.data.strftime('%m%d')
+                    datafinal = self.data + pd.Timedelta(days=45)
+                    date_range = pd.date_range(self.data, datafinal.strftime('%Y%m%d'), freq='D')
+                    
+                    for fcst_fmt, dates in enumerate(date_range):
+
+                        fcst_fmt = str(fcst_fmt + 1).zfill(2)
+
+                        while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
+
+                            dia_mes_prev = dates.strftime('%m%d')
+
+                            try:
+                                shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
+    
+                            except:
+                                print('tentando')
+                                time.sleep(10)
+
+                else:
+
+                    from ecmwf.opendata import Client
+                    client = Client(provedor_ecmwf_opendata, model=model_ecmwf_opendata, resol=resolucao) 
+
+                    while True:
+                        todos_sucesso = True  # Flag para checar se todos os steps deram certo
+
+                        for step in steps:
+
+                            caminho_arquivo = f'{caminho_para_salvar}/{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
+
+                            if self.name_prefix:
+                                caminho_arquivo = f'{caminho_para_salvar}/{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{str(step).zfill(3)}.grib2'
+
+                            if os.path.exists(caminho_arquivo):
+                                print(f'✅ Arquivo {caminho_arquivo} já existe, pulando download...')
+                                continue
+
+                            if levlist_ecmwf_opendata:
+                                retrive = {
+                                    'date': data_fmt,
+                                    'time': self.inicializacao,
+                                    'step': step,
+                                    'stream': stream_ecmwf_opendata,
+                                    'type': type_ecmwf_opendata,
+                                    'levtype': levtype_ecmwf_opendata,
+                                    'levelist': levlist_ecmwf_opendata,
+                                    'param': variables,
+                                    'target': caminho_arquivo,
+                                }
+
+                            else:
+                                retrive = {
+                                    'date': data_fmt,
+                                    'time': self.inicializacao,
+                                    'step': step,
+                                    'stream': stream_ecmwf_opendata,
+                                    'type': type_ecmwf_opendata,
+                                    'levtype': levtype_ecmwf_opendata,
+                                    'param': variables,
+                                    'target': caminho_arquivo,
+                                }
+
+                            try:
+                                client.retrieve(**retrive)
+
+                            except Exception as e:
+                                print(f'❌ Erro ao baixar ECMWF: {e}, tentando novamente...')
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e tenta novamente o while
+
+                            print(f'✅ Arquivo {caminho_arquivo} baixado com sucesso!')
+
+                        if todos_sucesso:
+                            break  # Sai do while se tudo deu certo
+
+            elif modelo_fmt == 'gefs-membros':
+                prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
+                
+                while True:
+                    todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                    for membros in range(0, 31):
+
+                        if membros == 0:
+                            modelo_name = f'gec{str(membros).zfill(2)}'
+                        else:
+                            modelo_name = f'gep{str(membros).zfill(2)}'
+
+                        prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file={modelo_name}.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
+
+                        for i in steps:
+                            filename = f'{modelo_name}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix is None else f'{self.name_prefix}_{modelo_name}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                            caminho_arquivo = f'{caminho_para_salvar}/{filename}'
+
+                            # Se o arquivo já existe e está com tamanho esperado, pula
+                            if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
+                                print(f'Arquivo {filename} já existe e está OK, pulando download...')
+                                continue
+
+                            url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
+                            file = requests.get(url, allow_redirects=True)
+                            if file.status_code == 200:
+                                with open(caminho_arquivo, 'wb') as f:
+                                    f.write(file.content)
+                            else:
+                                print(f'Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e volta ao início do while
+
+                            # Verifica se o arquivo foi baixado corretamente
+                            if os.path.exists(caminho_arquivo):
+                                if os.path.getsize(caminho_arquivo) < file_size:
+                                    print(f'Arquivo {filename} está vazio/corrompido, removendo...')
+                                    os.remove(caminho_arquivo)
+                                    todos_sucesso = False
+                                    time.sleep(5)
+                                    break  # Sai do for e tenta de novo no while
+                                else:
+                                    print(f'Arquivo {filename} baixado com sucesso!')
+                            else:
+                                print(f'Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break
+
+                    if todos_sucesso:
+                        break  # Sai do while quando tudo estiver certo
 
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False):

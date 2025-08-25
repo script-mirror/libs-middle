@@ -151,7 +151,8 @@ def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().
         ds_clim = xr.open_dataset(f'{path_clim}/{files_clim_mes1}')
 
         # Ajustando longitude
-        ds_clim = ajusta_lon_0_360(ds_clim) if var_anomalia == 'tp' else ds_clim
+        if var_anomalia in ['tp', 'gh']:
+            ds_clim = ajusta_lon_0_360(ds_clim)
 
         # Selando o level, se existir
         if 'isobaricInhPa' in ds_clim.dims and level_anomalia is not None:
@@ -264,43 +265,6 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             elif 'gefs' in modelo.lower():
                 ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'))
     
-            # if 'ecmwf' in modelo.lower():
-
-            #     # Definindo qual arquivo de climatologia vou usar
-            #     # path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
-            #     # files_clim = os.listdir(path_clim)
-
-            #     if var_anomalia not in ['psi', 'chi']:
-            #         # Abre o arquivo de climatologia
-            #         ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
-            #         ds_clim = interpola_ds(ds_clim, ds_sel)
-
-
-            #     else:
-
-            #         pass
-            #         # # Pegando a última climatologia
-            #         # files_clim_u = sorted([x for x in files_clim if 'u' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
-            #         # files_clim_v = sorted([x for x in files_clim if 'v' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
-                    
-            #         # # Arquivos climatologia
-            #         # ds_clim_u = xr.open_dataset(f'{path_clim}/{files_clim_u}')
-            #         # ds_clim_v = xr.open_dataset(f'{path_clim}/{files_clim_v}')
-
-            #         # ds_clim = calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='alvo_previsao', level=level_anomalia)[0] if var_anomalia == 'psi' else calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='valid_time', level=level_anomalia)[1]      
-            
-            # elif modelo.lower() == 'gefs-estendido':
-
-            #     # Definindo qual arquivo de climatologia vou usar
-            #     path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
-            #     mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
-                
-            #     # Pegando a última climatologia
-            #     files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
-
-            #     # Abre o arquivo de climatologia
-            #     ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
-
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
 
@@ -319,42 +283,6 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             ds_sel = ds.sel(valid_time=slice(inicio, fim))
 
             if anomalia_sop:
-
-                # if 'ecmwf' in modelo.lower():
-
-                #     # Definindo qual arquivo de climatologia vou usar
-                #     path_clim = Constants().PATH_HINDCAST_ECMWF_EST #'/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
-                #     files_clim = os.listdir(path_clim)
-
-                #     if var_anomalia not in ['psi', 'chi']:
-
-                #         # Abre o arquivo de climatologia
-                #         ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
-                #         ds_clim = interpola_ds(ds_clim, ds_sel)
-
-                #     else:
-                #         # Pegando a última climatologia
-                #         files_clim_u = sorted([x for x in files_clim if 'u' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
-                #         files_clim_v = sorted([x for x in files_clim if 'v' in x if 'pmenos2' in x], key=extrair_data_hindcast)[-1]
-                        
-                #         # Arquivos climatologia
-                #         ds_clim_u = xr.open_dataset(f'{path_clim}/{files_clim_u}')
-                #         ds_clim_v = xr.open_dataset(f'{path_clim}/{files_clim_v}')
-
-                #         ds_clim = calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='alvo_previsao', level=level_anomalia)[0] if var_anomalia == 'psi' else calcula_psi_chi(ds_clim_u, ds_clim_v, dim_laco='valid_time', level=level_anomalia)[1]      
-                
-                # elif modelo.lower() == 'gefs-estendido':
-
-                #     # Definindo qual arquivo de climatologia vou usar
-                #     path_clim = Constants().PATH_HINDCAST_GEFS_EST  #'/WX4TB/Documentos/reforecast_gefs/dados'
-                #     mesdia = pd.to_datetime(ds.time.data).strftime('%m%d')
-                    
-                #     # Pegando a última climatologia
-                #     files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
-
-                #     # Abre o arquivo de climatologia
-                #     ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
-
                 # Interpola
                 ds_clim = interpola_ds(ds_clim, ds_sel)    
 
@@ -449,6 +377,17 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             'data_inicial': ('tempo', data_inicial),
             'data_final': ('tempo', data_final)
         })
+
+    elif freq == 'mensal':
+
+        # Abrindo arquivo de climatologia
+        if anomalia_sop:
+
+            if 'ecmwf' in modelo.lower():
+                ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+
+            elif 'gefs' in modelo.lower():
+                ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'))
 
     return final_ds
 
