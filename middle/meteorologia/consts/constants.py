@@ -10,7 +10,7 @@ CONSTANTES = {
         "nominalTop": ['ttr', 'sulwrf']                           # Variáveis no topo nominal
     },
 
-    "shapefiles": ['C:/Temp/shapefiles/Bacias_Hidrograficas_SIN.shp', 
+    'shapefiles': ['C:/Temp/shapefiles/Bacias_Hidrograficas_SIN.shp', 
                    'C:/Temp/shapefiles/estados_2010.shp'], # Shapefiles utilizados
 
     'labels_variaveis': {
@@ -139,7 +139,35 @@ CONSTANTES = {
 
         'brasil': [280, 330, -35, 10]
 
-    }
+    },
+
+    'LOGO_RAIZEN': './tmp/raizen-logo.png',
+
+    'PATH_SAVE_FIGS_METEOROLOGIA': './tmp/plots', # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+
+    'PATH_HINDCAST_GEFS_EST': './tmp/data', # /WX4TB/Documentos/reforecast_gefs/dados
+
+    'PATH_HINDCAST_ECMWF_EST': './tmp/data',
+
+    'PATH_TO_SAVE_TXT_SAMET': './tmp/plots', # '/WX2TB/Documentos/saidas-modelos-novo/samet'
+
+    'PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL': './tmp/data', # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
+
+    'PATH_CLIMATOLOGIA_UV100': './tmp/data', # '/WX2TB/Documentos/dados/UVCLIM/'
+
+    'PATH_CLIMATOLOGIA_MERGE': './tmp/data', # '/WX/WX2TB/Documentos/dados/merge-climatologia'
+    
+    'PATH_CLIMATOLOGIA_SAMET': './tmp/data', # '/WX2TB/Documentos/dados/temp_samet/climatologia/'
+
+    'PATH_TO_SAVE_TXT_SAMET': './tmp/plots', # '/WX2TB/Documentos/saidas-modelos-novo/samet'
+
+    'PATH_FTP_ECMWF': './tmp/data',
+
+    'PATH_SUBBACIAS_JSON': './tmp/subbacias.json',
+    
+    'PATH_COORDENADAS_CIDADES': './tmp/data', # '/WX2TB/Documentos/fontes/tempo/novos_produtos/COORDENADAS_CIDADES/'
+
+    'PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA': './tmp/downloads', # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
 
 
 }
