@@ -14,7 +14,7 @@ def enviar_whatsapp_erro(
     """
     dag_id = kwargs.get('dag_id')
     task_id = kwargs.get('task_id')
-    destinatario = kwargs.get('destinatario')
+    destinatario = kwargs.get('destinatario', 'debug')
     mensagem, = f"❌ Erro na DAG: *{dag_id}*\nTask: *{task_id}*"
     send_whatsapp_message(destinatario, mensagem, None)
 
@@ -29,6 +29,6 @@ def enviar_whatsapp_sucesso(
     """
     dag_id = kwargs.get('dag_id')
     task_id = kwargs.get('task_id')
-    destinatario = kwargs.get('destinatario')
+    destinatario = kwargs.get('destinatario', 'debug')
     mensagem = f"✅ Sucesso na DAG: *{dag_id}*\nTask: *{task_id}*"
     send_whatsapp_message(destinatario, mensagem, None)
