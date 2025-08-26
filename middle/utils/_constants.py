@@ -1,6 +1,15 @@
 import os
 from dotenv import load_dotenv
-load_dotenv(os.path.join(os.path.abspath(os.path.expanduser("~")),'.env'))
+from .logger import setup_logger
+logger = setup_logger()
+
+env_path = os.path.join(os.path.abspath(os.path.expanduser("~")), '.env')
+if os.path.exists(env_path):
+    load_dotenv(env_path)
+    logger.info(f"Carregando .env de: {env_path}")
+else:
+    load_dotenv()
+    logger.warning(".env nao encontrado no path home, usando load_dotenv() default")
 
 class Constants:
     @property
@@ -446,6 +455,10 @@ class Constants:
     @property 
     def WEBHOOK_RDH(self):
         return "RDH"
+    
+    @property 
+    def WEBHOOK_CARGA_PATAMAR_NEWAVE(self):
+        return "Previsões de carga mensal e por patamar - NEWAVE"
 
     @property 
     def LOGO_RAIZEN(self):

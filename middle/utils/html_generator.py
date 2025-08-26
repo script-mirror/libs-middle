@@ -148,7 +148,7 @@ class HtmlBuilder:
             
             # Calcular e adicionar a média
             if valores_ano:
-                media = sum(valores_ano) / 12
+                media = sum(valores_ano) / valores_ano.__len__()
                 classe_css_media = "positive" if media >= 0 else "negative"
                 html += f'<td class="{classe_css_media}"><strong>{media:.0f}</strong></td>'
             else:
@@ -277,7 +277,7 @@ class HtmlBuilder:
             
             # Calcular e adicionar a média
             if valores_ano:
-                media = sum(valores_ano) / 12
+                media = sum(valores_ano) / valores_ano.__len__()
                 classe_css_media = "positive" if media >= 0 else "negative"
                 html += f'<td class="{classe_css_media}"><strong>{media:.0f}</strong></td>'
             else:
@@ -406,7 +406,7 @@ class HtmlBuilder:
             
             # Calcular e adicionar a média
             if valores_ano:
-                media = sum(valores_ano) / 12
+                media = sum(valores_ano) / valores_ano.__len__()
                 classe_css_media = "positive" if media >= 0 else "negative"
                 html += f'<td class="{classe_css_media}"><strong>{media:.0f}</strong></td>'
             else:
@@ -535,7 +535,7 @@ class HtmlBuilder:
             
             # Calcular e adicionar a média
             if valores_ano:
-                media = sum(valores_ano) / 12
+                media = sum(valores_ano) / valores_ano.__len__()
                 classe_css_media = "positive" if media >= 0 else "negative"
                 html += f'<td class="{classe_css_media}"><strong>{media:.0f}</strong></td>'
             else:
@@ -664,7 +664,7 @@ class HtmlBuilder:
             
             # Calcular e adicionar a média
             if valores_ano:
-                media = sum(valores_ano) / 12
+                media = sum(valores_ano) / valores_ano.__len__()
                 classe_css_media = "positive" if media >= 0 else "negative"
                 html += f'<td class="{classe_css_media}"><strong>{media:.0f}</strong></td>'
             else:
@@ -804,7 +804,7 @@ class HtmlBuilder:
             
             # Calcular e adicionar a média
             if valores_ano:
-                media = sum(valores_ano) / 12
+                media = sum(valores_ano) / valores_ano.__len__()
                 classe_css_media = "positive" if media >= 0 else "negative"
                 html += f'<td class="{classe_css_media}"><strong>{media:.0f}</strong></td>'
             else:
