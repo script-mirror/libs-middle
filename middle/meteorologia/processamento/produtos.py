@@ -1,8 +1,10 @@
 from datetime import datetime
+import glob
 import requests
 import os
 import time
 import pandas as pd
+import numpy as np
 from ..consts.constants import CONSTANTES
 from middle.utils import Constants
 import shutil
@@ -177,11 +179,38 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                             dia_mes_prev = dates.strftime('%m%d')
 
                             try:
-                                shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
-    
+
+                                if self.name_prefix:
+                                    shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/{self.name_prefix}_ecmwf-est_{fcst_fmt}.grib2')
+
+                                else:
+                                    shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
+
                             except:
                                 print('tentando')
                                 time.sleep(10)
+
+                # elif modelo_fmt in ['ecmwf-mensal']:
+
+                #     ftp_dir = Constants().PATH_FTP_ECMWF
+                #     mes_fmt = self.data.strftime(f'%m')
+                #     inicializacao_fmt = self.data.strftime(f'%m01')
+                #     ultimo_arquivo = f'A1L{inicializacao_fmt}0000{mes_fmt}______1'
+
+                #     while os.path.isfile(f'{ftp_dir}/{ultimo_arquivo}') == False:
+                #         print(f'❌ Arquivo {ultimo_arquivo} não encontrado, tentando novamente...')
+                #         time.sleep(5)
+
+                #     if os.path.isfile(f'{ftp_dir}/{ultimo_arquivo}'):
+                #         # Lista os arquivos que casam com o padrão
+                #         padrao = os.path.join(ftp_dir, f"A1L{inicializacao_fmt}*")
+                #         arquivos = glob.glob(padrao)
+
+                #         # Copia todos
+                #         for arquivo in arquivos:
+                #             destino = f'{caminho_para_salvar}/{self.name_prefix}_{os.path.basename(arquivo)}' if self.name_prefix else f'{caminho_para_salvar}/{os.path.basename(arquivo)}'
+                #             shutil.copy(arquivo, destino)
+                #             print(f"Copiado: {arquivo} -> {destino}")
 
                 else:
 
@@ -308,6 +337,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         isobaric_inhPa = CONSTANTES['tipos_variaveis']['isobaric_inhPa']
         mean_sea = CONSTANTES['tipos_variaveis']['mean_sea']
         nominalTop = CONSTANTES['tipos_variaveis']['nominalTop']
+        mensal_sazonal = CONSTANTES['tipos_variaveis']['mensal_sazonal']
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -323,6 +353,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         files = sorted(os.listdir(caminho_para_salvar))
         if self.name_prefix:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith('.grib2') if self.name_prefix in f]  # Filtra pelo prefixo se existir
+
         else:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith('.grib2')]
 
@@ -384,6 +415,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             elif variavel in nominalTop:
                 backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop'}, "indexpath": ""}
                 # files = files[1:] # Remove o primeiro arquivo
+
+            elif variavel in mensal_sazonal:
+                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'dataType': 'em'}, "indexpath": ""}
 
             else:
                 raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
@@ -462,6 +496,26 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         print(ds)
 
         return ds
+
+    # --- REMOVE ARQUIVOS
+    def remove_files(self):
+        """
+        Remove os arquivos temporários baixados.
+        """
+        # Formatação da data e inicialização
+        data_fmt = self.data.strftime('%Y%m%d')
+        inicializacao_fmt = str(self.inicializacao).zfill(2)
+        resolucao = self.resolucao
+        output_path = self.output_path
+
+        # Formatando modelo
+        modelo_fmt = self.modelo.lower()
+
+        # Diretório para salvar os arquivos
+        caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
+
+        shutil.rmtree(caminho_para_salvar, ignore_errors=True)
+        print(f'✅ Arquivos removidos com sucesso: {caminho_para_salvar}')
 
 ###################################################################################################################
 
@@ -616,6 +670,8 @@ class GeraProdutosPrevisao:
 
         self.produto_config_sf = produto_config_sf
         self.modelo_fmt = self.produto_config_sf.modelo
+        self.output_path = self.produto_config_sf.output_path
+        self.resolucao = self.produto_config_sf.resolucao
         self.data_fmt = f'{pd.to_datetime(self.produto_config_sf.data).strftime("%Y%m%d")}{str(self.produto_config_sf.inicializacao).zfill(2)}'
         self.tp_params = tp_params or {}
         self.pl_params = pl_params or {}
@@ -661,6 +717,20 @@ class GeraProdutosPrevisao:
                 'prefix_title': ''
             }
         }
+
+    ###################################################################################################################
+
+    # --- REMOVE ARQUIVOS BRUTOS
+    def remove_files(self):
+        """
+        Remove os arquivos temporários baixados.
+        """
+
+        # Diretório para salvar os arquivos
+        caminho_para_salvar = f'{self.output_path}/{self.modelo_fmt}{self.resolucao}/{self.data_fmt}'
+
+        shutil.rmtree(caminho_para_salvar, ignore_errors=True)
+        print(f'✅ Arquivos removidos com sucesso: {caminho_para_salvar}')
 
     ###################################################################################################################
 
@@ -797,7 +867,17 @@ class GeraProdutosPrevisao:
 
 
         qtdade_max_semanas = self.qtdade_max_semanas
-        path_to_save = f'{self.path_savefiguras}/{modo}'
+
+        # Apenas para ficar como no site atual e nao precisar mudar
+        modo_atual = False
+        if modo_atual:
+            figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total']
+            figs_semana = ['semanas_operativas']
+
+        else:
+            path_save = modo
+
+        path_to_save = f'{self.path_savefiguras}/{path_save}' if path_save not in ['graficos_vento', 'estacao_chuvosa'] else self.path_savefiguras
         os.makedirs(path_to_save, exist_ok=True)
 
         try:
@@ -1342,6 +1422,8 @@ class GeraProdutosPrevisao:
 
             elif modo == 'diferenca':
 
+                import pdb
+
                 # Arquivo atual
                 ds_mean = self.tp_mean.copy()
                 variavel = 'tp'
@@ -1356,7 +1438,7 @@ class GeraProdutosPrevisao:
                 if 'step' in ds_anterior.dims:
                     ds_anterior = ds_anterior.swap_dims({'step': 'valid_time'})
 
-                ds_anterior = ajusta_acumulado_ds(ds_anterior, m_to_mm=True)
+                ds_anterior = ajusta_acumulado_ds(ds_anterior, m_to_mm=True) if 'ecmwf' in self.modelo_fmt else ds_anterior
 
                 # Listas para plot
                 difs = []
@@ -1364,6 +1446,7 @@ class GeraProdutosPrevisao:
                 tipos_dif = []
 
                 if dif_total:
+
                     # Diferença total
                     ti = ds_mean['valid_time'].values[0]
                     tf = ds_anterior['valid_time'].values[-1]
@@ -1410,10 +1493,12 @@ class GeraProdutosPrevisao:
 
                 for index, (dif, date, tipo_dif) in enumerate(zip(difs, dates, tipos_dif)):
 
+                    cond_ini = f'[{self.cond_ini}] - [{data_anterior.strftime("%d/%m/%Y %H UTC")}]'
+
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Diferença {tipo_dif}', cond_ini=self.cond_ini,
-                        data_ini=date[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=date[1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Diferença {tipo_dif}', cond_ini=cond_ini,
+                        data_ini=date[0].strftime('%d/%m/%Y').replace(' ', '\\ '),
+                        data_fim=date[1].strftime('%d/%m/%Y').replace(' ', '\\ '),
                     )
 
                     plot_campos(
@@ -1829,7 +1914,6 @@ class GeraProdutosPrevisao:
                     )
 
                 if anomalia_mensal:
-                    pdb.set_trace()
                     # Dando o resample nos dados de chuva prevista
                     ds_resample = self.geop_mean.resample(valid_time='M').mean()
 

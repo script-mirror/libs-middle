@@ -7,7 +7,8 @@ CONSTANTES = {
         "height_above_ground": ['t2m', '2t', 'v100', 'u100', '100u', '100v'],                     # Variáveis a 2 metros
         "isobaric_inhPa": ['u', 'v', 'z', 'gh', 't', 'q'],        # Variáveis isobáricas
         "mean_sea": ['pnmm', 'msl', 'prmsl'],                     # Pressão ao nível médio do mar
-        "nominalTop": ['ttr', 'sulwrf']                           # Variáveis no topo nominal
+        "nominalTop": ['ttr', 'sulwrf'],
+        "mensal_sazonal": ['tpara']                         
     },
 
     'shapefiles': ['C:/Temp/shapefiles/Bacias_Hidrograficas_SIN.shp', 
