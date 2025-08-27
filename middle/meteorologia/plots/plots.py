@@ -117,6 +117,19 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(cmap, len(levels))    
         cbar_ticks = None     
 
+    elif variavel_plotagem in ['pnmm_vento']:
+        levels = [
+        900, 950, 976, 986, 995, 1002, 1007, 1011,
+        1013, 1015, 1019, 1024, 1030, 1038, 1046, 1080
+        ]
+        colors = [
+        "#2b2e52", "#2a4d91", "#3e66c5", "#5498c6", "#54b3bc",
+        "#56bfb7", "#87c2b6", "#c1ccc6", "#d7c6c8", "#dcc1a5",
+        "#dfcd9b", "#dfba7a", "#d68856", "#c0575b", "#8f2c53"
+        ]
+        cmap = ListedColormap(colors)
+        cbar_ticks = None     
+
     elif variavel_plotagem == 'frentes':
         levels = list(range(0, 6))
         colors = [
@@ -317,6 +330,7 @@ def plot_campos(
                 margin_x = -50,
                 margin_y = -10,
                 add_valor_bacias=False,
+                with_norm=False,
     ):
 
     os.makedirs(path_to_save, exist_ok=True)
@@ -330,12 +344,17 @@ def plot_campos(
     fig, ax = get_base_ax(extent=extent, figsize=figsize, central_longitude=central_longitude)
     levels, colors, cmap, cbar_ticks = custom_colorbar(variavel_plotagem)
 
+    if with_norm:
+        norm = BoundaryNorm(levels, len(colors))
+    else:
+        norm = None
+
     # Se colors e cmap nao forem None, seta levels para None
     if colors is not None and cmap is not None:
         colors = None
     
     lon, lat = np.meshgrid(ds['longitude'], ds['latitude'])
-    cf = ax.contourf(lon, lat, ds, transform=ccrs.PlateCarree(), transform_first=True, origin='upper', levels=levels, colors=colors, extend='both', cmap=cmap)
+    cf = ax.contourf(lon, lat, ds, transform=ccrs.PlateCarree(), transform_first=True, origin='upper', levels=levels, colors=colors, extend='both', cmap=cmap, norm=norm)
 
     if ds_contour is not None:
 
@@ -657,9 +676,11 @@ def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_
 
     # Barra de cor
     levels, colors, cmap, cbar_ticks = custom_colorbar(variavel_plotagem)
-    norm = BoundaryNorm(boundaries=levels, ncolors=len(colors), extend='both')
+    try:
+        norm = BoundaryNorm(boundaries=levels, ncolors=len(colors), extend='both')
+    except:
+        norm = matplotlib.colors.BoundaryNorm(boundaries=levels, ncolors=cmap.N)
     # BoundaryNorm(boundaries=levels, ncolors=len(colors), extend='both')
-    # matplotlib.colors.BoundaryNorm(boundaries=levels, ncolors=cmap.N)
 
     if shapefiles is not None:
         for shapefile in shapefiles:

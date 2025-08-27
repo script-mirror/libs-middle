@@ -1,4 +1,3 @@
-from encodings.punycode import T
 from ..consts.constants import CONSTANTES
 
 ###################################################################################################################
@@ -12,6 +11,7 @@ def pipelines(modelo, produtos, tipo):
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_prec24h_biomassa(extent=CONSTANTES['extents_mapa']['biomassa']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
                 lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil']),
@@ -315,7 +315,7 @@ def pipelines(modelo, produtos, tipo):
 
         if tipo == 'sfc':
             return [
-                lambda: produtos.gerar_prec_db(plot_semana=True, acumulado_total=True),
+                lambda: produtos.gerar_prec_db(plot_semana=True, acumulado_total=True, prec_24h=True),
             ]
 
         elif tipo == 'pl':

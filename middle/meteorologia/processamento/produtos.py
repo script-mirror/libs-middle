@@ -872,6 +872,20 @@ class GeraProdutosPrevisao:
         if modo_atual:
             figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total']
             figs_semana = ['semanas_operativas']
+            figs_6h = ['chuva_geop500_vento850']
+            graficos_vento = ['graficos_vento']
+
+            if modo in figs_24h:
+                path_save = '24-em-24-gifs'
+
+            elif modo in figs_semana:
+                path_save = 'semana-energ'
+
+            elif modo in graficos_vento:
+                path_save = 'uv100_grafs'
+
+            elif modo in figs_6h:
+                path_save = 'figs-6h'
 
         else:
             path_save = modo
@@ -904,6 +918,28 @@ class GeraProdutosPrevisao:
                         title=titulo,
                         filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
                         shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
+
+            elif modo == '24h_biomassa':
+                tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
+                
+                for n_24h in tp_proc.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    tp_plot = tp_proc.sel(tempo=n_24h)
+
+                    tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.tp.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    titulo = self._ajustar_tempo_e_titulo(tp_plot, 'PREC24HRS', semana, self.cond_ini)
+
+                    plot_campos(
+                        ds=tp_plot['tp'],
+                        variavel_plotagem='chuva_ons',
+                        title=titulo,
+                        filename=f'tp_24h_polosbiomassa_{self.modelo_fmt}_{n_24h.item()}',
+                        shapefiles=self.shapefiles,
+                        plot_bacias=False,
                         path_to_save=path_to_save,
                         **kwargs
                     )
@@ -2134,7 +2170,7 @@ class GeraProdutosPrevisao:
                         'tp': tp_plot['tp']
                     })
 
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(n_24h.item()))
+                    tempo_ini = pd.to_datetime(n_24h.item())
                     semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
 
                     titulo = gerar_titulo(
@@ -2533,6 +2569,60 @@ class GeraProdutosPrevisao:
                     filename = f'{path_to_save}/mag_vento100_{area}'
                     plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
 
+            elif modo == 'pnmm_vento850':
+
+                varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
+
+                # Pnmm
+                if self.pnmm_mean is None:
+                    _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
+
+                # Apenas para combar com o vento    
+                if self.pnmm_mean.longitude.min() >= 0:
+                    pnmm_mean = self.pnmm_mean.assign_coords(longitude=(((self.pnmm_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
+                # Vento
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                for index, n_24h in enumerate(pnmm_mean.valid_time):
+
+                    print(f'Processando {index}...')
+
+                    us_plot = self.us_mean.sel(valid_time=n_24h)
+                    vs_plot = self.vs_mean.sel(valid_time=n_24h)
+                    pnmm_plot = pnmm_mean.sel(valid_time=n_24h)
+
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
+                        'v': vs_plot['v'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
+                        'pnmm_plot': pnmm_plot[varname]*1e-2
+                    })
+
+                    tempo_ini = pd.to_datetime(n_24h.item())
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        semana=semana, unico_tempo=True
+                    )
+
+                    plot_campos(ds=ds_quiver['pnmm_plot'], 
+                                variavel_plotagem='pnmm_vento', 
+                                title=titulo, 
+                                filename=f'vento850_pnmm_{self.modelo_fmt}_{index}', 
+                                plot_bacias=False, ds_quiver=ds_quiver, 
+                                variavel_quiver='wind850', 
+                                ds_contour=ds_quiver['pnmm_plot'], 
+                                variavel_contour='pnmm', 
+                                color_contour='black',
+                                shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
+                                with_norm=True,
+                                **kwargs
+                                )         
+
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -2544,9 +2634,10 @@ class GeraProdutosPrevisao:
             cond_ini = f"{self.produto_config_sf.data.strftime('%d/%m/%Y')} {str(self.produto_config_sf.inicializacao).zfill(2)} UTC"
             tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
             df_prev = tp_prev.groupby(['dt_prevista', 'semana', 'geometry', 'nome_bacia'])['vl_chuva'].mean().reset_index()
-        
+
             plot_semana = kwargs.get('plot_semana', False)
             acumulado_total = kwargs.get('acumulado_total', False)
+            prec_24h = kwargs.get('prec_24h', False)
 
             if plot_semana:
                 semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(self.produto_config_sf.data, 
@@ -2572,7 +2663,15 @@ class GeraProdutosPrevisao:
                         cond_ini=cond_ini, intervalo=intervalo, days_of_week=days_of_weeks[index],
                         semana_operativa=True
                     )
-                
+
+                    dados_plot = gpd.GeoDataFrame(dados_plot, geometry="geometry", crs="EPSG:4326")
+                    plot_df_to_mapa(dados_plot, 
+                                    path_to_save=path_to_save,
+                                    titulo=titulo, 
+                                    shapefiles=self.shapefiles, 
+                                    variavel_plotagem=variavel_plotagem,
+                                    column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+
             if acumulado_total:
 
                 path_to_save = f'{self.path_savefiguras}/total'
@@ -2593,21 +2692,62 @@ class GeraProdutosPrevisao:
                     sem_intervalo_semana=True
                 )
 
-            dados_plot = gpd.GeoDataFrame(dados_plot, geometry="geometry", crs="EPSG:4326")
-            plot_df_to_mapa(dados_plot, 
-                            path_to_save=path_to_save,
-                            titulo=titulo, 
-                            shapefiles=self.shapefiles, 
-                            variavel_plotagem=variavel_plotagem,
-                            column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+                dados_plot = gpd.GeoDataFrame(dados_plot, geometry="geometry", crs="EPSG:4326")
+                plot_df_to_mapa(dados_plot, 
+                                path_to_save=path_to_save,
+                                titulo=titulo, 
+                                shapefiles=self.shapefiles, 
+                                variavel_plotagem=variavel_plotagem,
+                                column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+
+            if prec_24h:
+
+                path_to_save = f'{self.path_savefiguras}/24h'
+                variavel_plotagem = 'chuva_ons_geodataframe'
+                os.makedirs(path_to_save, exist_ok=True)
+                
+                for index, dt_prevista in enumerate(df_prev['dt_prevista'].unique()):
+
+                    dados_plot = df_prev[df_prev['dt_prevista'] == dt_prevista]
+                    dados_plot = dados_plot.groupby(['geometry', 'nome_bacia'])['vl_chuva'].sum().reset_index()
+
+                    semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(self.produto_config_sf.data, 
+                                                                    dt_prevista, 
+                                                                    qtdade_max_semanas=3, 
+                                                                    ds_tempo_final=tp_prev['dt_prevista'].max() + pd.Timedelta(days=1),
+                                                                    modelo='pconjunto-ons',
+                                                                    )
+
+
+                    ini = pd.to_datetime(dt_prevista - pd.Timedelta(hours=12)).strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")
+                    fim = pd.to_datetime(dt_prevista + pd.Timedelta(hours=12)).strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")
+                    titulo = gerar_titulo(
+                                modelo=self.modelo_fmt,
+                                tipo='PREC24HRS',
+                                cond_ini=cond_ini,
+                                data_ini=ini,
+                                data_fim=fim,
+                                semana=semana_encontrada,
+                    )
+
+                    dados_plot = gpd.GeoDataFrame(dados_plot, geometry="geometry", crs="EPSG:4326")
+                    plot_df_to_mapa(dados_plot, 
+                                    path_to_save=path_to_save,
+                                    titulo=titulo, 
+                                    shapefiles=self.shapefiles, 
+                                    variavel_plotagem=variavel_plotagem,
+                                    column_plot='vl_chuva', _type='bruto', filename=f'tp_24h_{self.modelo_fmt}_{index}')
 
         except Exception as e:
-            print(f'Erro ao gerar gráficos de semanas operativas: {e}')
+            print(f'Erro ao gerar mapas db: {e}')
 
     ###################################################################################################################
 
     def gerar_prec24h(self, **kwargs):
         self._processar_precipitacao('24h', **kwargs)
+
+    def gerar_prec24h_biomassa(self, **kwargs):
+        self._processar_precipitacao('24h_biomassa', **kwargs)
 
     def gerar_acumulado_total(self, **kwargs):
         self._processar_precipitacao('total', **kwargs)
@@ -2659,6 +2799,9 @@ class GeraProdutosPrevisao:
 
     def gerar_chuva_geop500_vento850(self, **kwargs):
         self._processar_varsdinamicas('chuva_geop500_vento850', **kwargs)
+
+    def gerar_pnmm_vento850(self, **kwargs):
+        self._processar_varsdinamicas('pnmm_vento850', **kwargs)
 
     def gerar_psi(self, **kwargs):
         self._processar_varsdinamicas('psi', **kwargs)

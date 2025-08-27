@@ -26,7 +26,8 @@ CONSTANTES = {
         '[Número de eventos]': ['frentes'],
         '[%]': ['probabilidade', 'pct_climatologia'],
         '[agdp]': ['geop_500_anomalia'],
-        '[W/m²]': ['olr']
+        '[W/m²]': ['olr'],
+        '[hPa]': ['pnmm_vento']
     },
 
     'path_save_netcdf': './tmp/data', # '/WX2TB/Documentos/saidas-modelos-novo'
@@ -138,7 +139,8 @@ CONSTANTES = {
 
     'extents_mapa': {
 
-        'brasil': [280, 330, -35, 10]
+        'brasil': [280, 330, -35, 10],
+        'biomassa': [303, 317, -26, -17],
 
     },
 
