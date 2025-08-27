@@ -9,7 +9,7 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 import cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-from matplotlib.colors import LinearSegmentedColormap
+from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm, ListedColormap
 import matplotlib.ticker as mticker
 import os
 import warnings
@@ -45,6 +45,41 @@ def custom_colorbar(variavel_plotagem):
         levels = [0, 1 ,5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
         colors = ['#ffffff', '#e1ffff', '#b3f0fb','#95d2f9','#2585f0','#0c68ce','#73fd8b','#39d52b','#3ba933','#ffe67b','#ffbd4a','#fd5c22','#b91d22','#f7596f','#a9a9a9']
         cmap = None
+        cbar_ticks = None
+
+    elif variavel_plotagem in ['chuva_ons_geodataframe']:
+        levels = [0, 1 ,5, 10, 15, 20, 25, 30, 40, 50, 75, 100, 150, 200]
+        colors = ['#ffffff', '#e1ffff', '#b3f0fb','#95d2f9','#2585f0','#0c68ce','#73fd8b','#39d52b','#3ba933','#ffe67b','#ffbd4a','#fd5c22','#b91d22','#f7596f','#a9a9a9']  
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = ListedColormap(colors)
+        cbar_ticks = None
+
+    elif variavel_plotagem == 'acumulado_total_geodataframe':
+        levels = range(0, 420, 20)
+        colors = [
+            '#FFFFFF',
+            '#B1EDCF',
+            '#97D8B7',
+            '#7DC19E',
+            '#62AA85',
+            '#48936D',
+            '#2E7E54',
+            '#14673C',
+            '#14678C',
+            '#337E9F',
+            '#5094B5',
+            '#6DACC8',
+            '#8BC4DE',
+            '#A9DBF2',
+            '#EBD5EB',
+            '#D9BED8',
+            '#C5A7C5',
+            '#B38FB2',
+            '#A0779F',
+            '#8E5F8D',
+        ]
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
         cbar_ticks = None
 
     elif variavel_plotagem in ['tp_anomalia']:
@@ -601,12 +636,18 @@ def plot_chuva_acumulada(
 ###################################################################################################################
 
 # --- PLOT CHUVA A PARTIR DE UM GEODATAFRAME ---
-def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_plot='dif', type='dif', titulo=None, shapefiles=None):
+def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_plot='dif', _type='dif', titulo=None, shapefiles=None, agrupador='mean', variavel_plotagem='dif_prev'):
 
     from PIL import Image
+    import pdb
 
     # Agrupando por bacia
-    media_bacia = df.groupby('nome_bacia')[column_plot].mean()
+    if agrupador == 'mean':
+        media_bacia = df.groupby('nome_bacia')[column_plot].mean()
+
+    elif agrupador == 'sum':
+        media_bacia = df.groupby('nome_bacia')[column_plot].sum()
+
     media_bacia = media_bacia.rename({'Paranapane':'Paranapanema', 'São Franci':'São Francisco', 'Jequitinho':'Jequitinhonha'})
 
     fig, ax = get_base_ax(extent=[280, 330, -35, 10], figsize=(12, 12), central_longitude=0)
@@ -615,8 +656,10 @@ def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_
     ax.set_title(titulo, loc='left', fontsize=16)
 
     # Barra de cor
-    levels, colors, cmap, cbar_ticks = custom_colorbar('dif_prev')
-    norm = matplotlib.colors.BoundaryNorm(boundaries=levels, ncolors=cmap.N)
+    levels, colors, cmap, cbar_ticks = custom_colorbar(variavel_plotagem)
+    norm = BoundaryNorm(boundaries=levels, ncolors=len(colors), extend='both')
+    # BoundaryNorm(boundaries=levels, ncolors=len(colors), extend='both')
+    # matplotlib.colors.BoundaryNorm(boundaries=levels, ncolors=cmap.N)
 
     if shapefiles is not None:
         for shapefile in shapefiles:
@@ -651,7 +694,7 @@ def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_
     sm = plt.cm.ScalarMappable(cmap=cmap, norm=norm)
     sm._A = []  # necessário para ScalarMappable
     axins = inset_axes(ax, width="95%", height="2.5%", loc='lower center', borderpad=-3.6)
-    fig.colorbar(sm, cax=axins, orientation='horizontal', ticks=levels, extendrect=True)
+    fig.colorbar(sm, cax=axins, orientation='horizontal', ticks=levels, extendrect=True, label='Precipitação [mm]')
 
     # Labels dos ticks de lat e lon
     gl = ax.gridlines(xlocs=np.arange(-120, 0, 10), ylocs=np.arange(-55, 25, 10), draw_labels=True, alpha=0, linestyle='--')
@@ -670,7 +713,7 @@ def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_
     yo = bbox.y0 + margin_y
     plt.figimage(img, xo=xo, yo=yo)
 
-    if type == 'dif':
+    if _type == 'dif':
         # Adiciona "Vermelho: Subestimativa da previsão" no topo em vermelho
         ax.annotate("Vermelho:", xy=(0.58, 0.92), xycoords='axes fraction', fontsize=12, fontweight='bold', color='red')
 

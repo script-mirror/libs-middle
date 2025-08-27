@@ -1,5 +1,6 @@
 from datetime import datetime
 import glob
+import geopandas as gpd
 import requests
 import os
 import time
@@ -59,7 +60,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     # --- DOWNLOAD ---
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None,
-                               type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True) -> None:
+                               type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -84,8 +85,6 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         print(f'\n************* INICIANDO DONWLOAD {data_fmt}{inicializacao_fmt} para o modelo {modelo_fmt.upper()} *************')
 
         if wait_members:
-            tamanho_min_bytes = 45 * 1024 * 1024  # 45 MB
-
             while True:
                 caminho_arquivo = f'{caminho_para_salvar}/{last_member_file}'
                 if os.path.exists(caminho_arquivo):
@@ -2537,6 +2536,74 @@ class GeraProdutosPrevisao:
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
+    def _processar_chuva_db(self, **kwargs):
+
+        try:
+
+            tp_prev = get_prec_db(self.modelo_fmt, pd.to_datetime(self.produto_config_sf.data).strftime('%Y-%m-%d'), str(self.produto_config_sf.inicializacao).zfill(2))
+            cond_ini = f"{self.produto_config_sf.data.strftime('%d/%m/%Y')} {str(self.produto_config_sf.inicializacao).zfill(2)} UTC"
+            tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
+            df_prev = tp_prev.groupby(['dt_prevista', 'semana', 'geometry', 'nome_bacia'])['vl_chuva'].mean().reset_index()
+        
+            plot_semana = kwargs.get('plot_semana', False)
+            acumulado_total = kwargs.get('acumulado_total', False)
+
+            if plot_semana:
+                semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(self.produto_config_sf.data, 
+                                                                self.produto_config_sf.data, 
+                                                                qtdade_max_semanas=3, 
+                                                                ds_tempo_final=tp_prev['dt_prevista'].max(),
+                                                                modelo='pconjunto-ons',
+                                                                )
+
+                path_to_save = f'{self.path_savefiguras}/semanas_operativas'
+                variavel_plotagem = 'chuva_ons_geodataframe'
+                os.makedirs(path_to_save, exist_ok=True)
+                
+                for index, semana in enumerate(tp_prev['semana'].unique()):
+                    dados_plot = df_prev[df_prev['semana'] == semana]
+                    dados_plot = dados_plot.groupby(['geometry', 'nome_bacia'])['vl_chuva'].sum().reset_index()
+                    ini = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][0])).strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")
+                    fim = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][1])).strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")
+                    intervalo = f"{ini}\ até\ {fim}"
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Semana{semana}',
+                        cond_ini=cond_ini, intervalo=intervalo, days_of_week=days_of_weeks[index],
+                        semana_operativa=True
+                    )
+                
+            if acumulado_total:
+
+                path_to_save = f'{self.path_savefiguras}/total'
+                os.makedirs(path_to_save, exist_ok=True)
+                variavel_plotagem = 'acumulado_total_geodataframe'
+
+                dados_plot = df_prev.groupby(['geometry', 'nome_bacia'])['vl_chuva'].sum().reset_index()
+                
+                ini = ajustar_hora_utc(pd.to_datetime(tp_prev['dt_prevista'].min()))
+                fim = ajustar_hora_utc(pd.to_datetime(tp_prev['dt_prevista'].max()))
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt,
+                    tipo='Acumulado total',
+                    cond_ini=cond_ini,
+                    data_ini=ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    data_fim=fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    sem_intervalo_semana=True
+                )
+
+            dados_plot = gpd.GeoDataFrame(dados_plot, geometry="geometry", crs="EPSG:4326")
+            plot_df_to_mapa(dados_plot, 
+                            path_to_save=path_to_save,
+                            titulo=titulo, 
+                            shapefiles=self.shapefiles, 
+                            variavel_plotagem=variavel_plotagem,
+                            column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+
+        except Exception as e:
+            print(f'Erro ao gerar gráficos de semanas operativas: {e}')
+
     ###################################################################################################################
 
     def gerar_prec24h(self, **kwargs):
@@ -2616,6 +2683,9 @@ class GeraProdutosPrevisao:
 
     def gerar_graficos_v100(self, **kwargs):
         self._processar_varsdinamicas('graficos_vento', **kwargs)
+
+    def gerar_prec_db(self, **kwargs):
+        self._processar_chuva_db(**kwargs)
 
     ###################################################################################################################
 
