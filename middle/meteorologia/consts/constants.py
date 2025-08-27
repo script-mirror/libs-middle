@@ -32,9 +32,9 @@ CONSTANTES = {
 
     'path_save_netcdf': './tmp/data', # '/WX2TB/Documentos/saidas-modelos-novo'
 
-    'path_reanalise_ncepI': './tmp/data', #'/WX2TB/Documentos/dados/reanI-ncep',
+    'path_reanalise_ncepI': '/WX2TB/Documentos/dados/reanI-ncep/diarios/dados_climatologia_frentes',
 
-    'path_subbacias_shapefile': './tmp',
+    # 'path_subbacias_shapefile': './tmp',
 
     'novas_subbacias': [
 
