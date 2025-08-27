@@ -18,8 +18,11 @@ class ColorFormatter(logging.Formatter):
         return message.replace(record.levelname, colored_level, 1)
 
 
-def setup_logger(log_path: str = None):
-    logger_name = "app_logger" if log_path else "default_logger"
+def setup_logger(log_path: str = None, external_logger=None):
+    if external_logger:
+        return external_logger
+
+    logger_name = log_path.replace("\\", "/").split("/")[-1] if log_path else "default_logger"
     logger = logging.getLogger(logger_name)
     logger.setLevel(logging.INFO)
     logger.propagate = False
@@ -30,16 +33,16 @@ def setup_logger(log_path: str = None):
 
     if logger.hasHandlers():
         logger.handlers.clear()
+    if not logger.handlers:
+        if log_path:
+            os.makedirs(os.path.dirname(log_path), exist_ok=True)
+            fh = logging.FileHandler(log_path, mode='w')
+            fh.setFormatter(plain_formatter)
+            logger.addHandler(fh)
 
-    if log_path:
-        os.makedirs(os.path.dirname(log_path), exist_ok=True)
-        fh = logging.FileHandler(log_path, mode='w')
-        fh.setFormatter(plain_formatter)
-        logger.addHandler(fh)
-
-    sh = logging.StreamHandler(sys.stdout)
-    sh.setFormatter(color_formatter)
-    logger.addHandler(sh)
+        sh = logging.StreamHandler(sys.stdout)
+        sh.setFormatter(color_formatter)
+        logger.addHandler(sh)
 
     return logger
 
