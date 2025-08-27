@@ -30,7 +30,7 @@ CONSTANTES = {
         '[hPa]': ['pnmm_vento']
     },
 
-    'path_save_netcdf': './tmp/data', # '/WX2TB/Documentos/saidas-modelos-novo'
+    'path_save_netcdf': '/projetos/arquivos/meteorologia/dados_modelos/netcdf_salvos', # '/WX2TB/Documentos/saidas-modelos-novo'
 
     'path_reanalise_ncepI': '/WX2TB/Documentos/dados/reanI-ncep/diarios/dados_climatologia_frentes',
 
