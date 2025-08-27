@@ -1012,7 +1012,7 @@ class GeraProdutosPrevisao:
                 )
 
                 # Acumulado com MERGE
-                path_merge = './tmp/downloads/merge'
+                path_merge = '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
                 ano_mes_atual = pd.to_datetime(self.tp.time.values).strftime('%Y%m')
                 files = os.listdir(path_merge)
 
@@ -1591,7 +1591,7 @@ class GeraProdutosPrevisao:
                 tp_estacao = self.tp_mean.sel(latitude=slice(latf, lati), longitude=slice(loni, lonf))
 
                 # Aplicando a mascara sobre o oceano
-                ds_mask = xr.open_dataset('./tmp/data/land.nc').isel(time=0).isel(nbnds=0)
+                ds_mask = xr.open_dataset('/projetos/arquivos/meteorologia/land.nc').isel(time=0).isel(nbnds=0)
                 ds_mask = ds_mask.rename({'lat': 'latitude', 'lon': 'longitude'})
                 ds_mask = ds_mask.interp(latitude=tp_estacao.latitude, longitude=tp_estacao.longitude)
                 tp_estacao = tp_estacao['tp']*ds_mask['land']
@@ -2171,7 +2171,7 @@ class GeraProdutosPrevisao:
                     })
 
                     tempo_ini = pd.to_datetime(n_24h.item())
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
                     titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo=f'Prec6h, Geo{level_geop}hPa, Vento{level_vento}hPa', cond_ini=self.cond_ini,
