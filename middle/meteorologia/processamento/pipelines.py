@@ -311,6 +311,16 @@ def pipelines(modelo, produtos, tipo):
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
             ]
 
+    elif modelo == 'pconjunto-ons':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_prec_db(plot_semana=True, acumulado_total=True),
+            ]
+
+        elif tipo == 'pl':
+            return []
+
     return 
 
 ###################################################################################################################
