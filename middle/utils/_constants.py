@@ -462,11 +462,11 @@ class Constants:
 
     @property 
     def LOGO_RAIZEN(self):
-        return './tmp/raizen-logo.png'
+        return '/projetos/arquivos/meteorologia/raizen-logo.png' # './tmp/raizen-logo.png'
 
     @property 
     def PATH_SUBBACIAS_JSON(self):
-        return './tmp/subbacias.json'
+        return '/projetos/arquivos/meteorologia/subbacias.json'
     
     @property 
     def PATH_HINDCAST_ECMWF_EST(self):
