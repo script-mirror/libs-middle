@@ -1,6 +1,6 @@
 import logging
 import os
-
+import sys
 class ColorFormatter(logging.Formatter):
     COLORS = {
         'DEBUG': '\033[37m',    # Branco
@@ -37,7 +37,7 @@ def setup_logger(log_path: str = None):
         fh.setFormatter(plain_formatter)
         logger.addHandler(fh)
 
-    sh = logging.StreamHandler()
+    sh = logging.StreamHandler(sys.stdout)
     sh.setFormatter(color_formatter)
     logger.addHandler(sh)
 
