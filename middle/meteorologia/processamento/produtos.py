@@ -3214,8 +3214,43 @@ class GeraProdutosObservacao:
                     except Exception as e:
                         print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
 
+        elif modo == 'bacias_smap':
+
+            from datetime import datetime
+            API_URL = Constants().API_URL_APIV2
+
+            # Vou usar para pegar as informações das subbacias
+            df_ons = get_df_ons()
+
+            # Abrindo o json arrumado
+            shp = ajusta_shp_json()
+
+            # Adicionando alguns pontos que não estão no arquivo
+            novas_subbacias = CONSTANTES['novas_subbacias']
+            shp = pd.concat([shp, pd.DataFrame(novas_subbacias)], ignore_index=True)
+
+            # Abrindo arquivo
+            self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+
+            chuva_media = []
+            
+            # Sem membros individuais
+            for lat, lon, bacia, codigo in zip(shp['lat'], shp['lon'], shp['nome'], shp['cod']):
+                chuva_media.append(calcula_media_bacia(self.tp, lat, lon, bacia, codigo, shp))
+
+            # Concatenando os xarrays com a média nas bacias e transformando em um dataframe
+            ds_to_df = xr.concat(chuva_media, dim='id').to_dataframe().reset_index()
+            ds_to_df = ds_to_df.rename(columns={'id': 'cod_psat', 'time': 'dt_observado', 'tp': 'vl_chuva'})
+            ds_to_df = ds_to_df[['cod_psat', 'dt_observado', 'vl_chuva']]
+            ds_to_df = ds_to_df.applymap(lambda x: 0 if isinstance(x, float) and x < 0 else x).round(2)
+            dt_observado = list(set(ds_to_df['dt_observado']))[0]
+            dt_observado = dt_observado.isoformat()
+            ds_to_df['dt_observado'] = dt_observado
+            ds_to_df = converter_psat_para_cd_subbacia(ds_to_df)
+            print(ds_to_df)
+    
         # except Exception as e:
-        #     print(f'Erro ao processar {modo}: {e}')
+        #    print(f'Erro ao processar {modo}: {e}')
 
     def _processar_temperatura(self, modo, **kwargs):
 
@@ -3372,6 +3407,9 @@ class GeraProdutosObservacao:
 
     def gerar_dif_prev(self, **kwargs):
         self._processar_precipitacao('dif_prev', **kwargs)
+
+    def gerar_bacias_smap(self, **kwargs):
+        self._processar_precipitacao('bacias_smap', **kwargs)
 
     def gerar_temp_diario(self, **kwargs):
         self._processar_temperatura('temp_diario', **kwargs)
