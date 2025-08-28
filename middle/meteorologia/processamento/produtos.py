@@ -3046,7 +3046,9 @@ class GeraProdutosObservacao:
                     cond_ini = self.cond_ini
 
                 # Acumulando no mes
+                print(self.tp)
                 tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                print(tp_plot_acc)
 
                 tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
@@ -3171,7 +3173,7 @@ class GeraProdutosObservacao:
                                 plot_df_to_mapa(dif, 
                                                 titulo=titulo, 
                                                 shapefiles=self.shapefiles, 
-                                                filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
+                                                filename=f'dif_{modelo_prev}-gpm_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
                                                 path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
                                                 )
 
@@ -3202,6 +3204,7 @@ class GeraProdutosObservacao:
                                     variavel_plotagem='dif_prev',
                                     title=titulo,
                                     filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}',
+                                    path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
                                     shapefiles=self.shapefiles,
                                     **kwargs
                                 )
