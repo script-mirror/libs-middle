@@ -2997,225 +2997,225 @@ class GeraProdutosObservacao:
 
         print(f'Processando precipitação no modo: {modo}')
 
-        try:
+        # try:
 
-            if modo == '24h':
+        if modo == '24h':
 
-                self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+            self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
 
-                for index, n in enumerate(self.tp['valid_time']):
+            for index, n in enumerate(self.tp['valid_time']):
 
-                    if len(self.cond_ini) > 0:
-                        cond_ini = self.cond_ini[index]
-                    else:
-                        cond_ini = self.cond_ini
+                if len(self.cond_ini) > 0:
+                    cond_ini = self.cond_ini[index]
+                else:
+                    cond_ini = self.cond_ini
 
-                    print(f'Processando {index}')
+                print(f'Processando {index}')
 
-                    tp_plot = self.tp.sel(valid_time=n)
-                    tempo_ini = pd.to_datetime(n.item()) - pd.Timedelta(days=1)
-                    tempo_fim = pd.to_datetime(n.item())
+                tp_plot = self.tp.sel(valid_time=n)
+                tempo_ini = pd.to_datetime(n.item()) - pd.Timedelta(days=1)
+                tempo_fim = pd.to_datetime(n.item())
 
-                    titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo='PREC24HRS', cond_ini=cond_ini,
-                            data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            sem_intervalo_semana=True, condicao_inicial='Data arquivo'
-                        )
-
-                    plot_campos(
-                        ds=tp_plot['tp'],
-                        variavel_plotagem='chuva_ons',
-                        title=titulo,
-                        filename=f'mergegpm_rain_{tempo_fim.strftime("%Y%m%d")}',
-                        path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario',
-                        shapefiles=self.shapefiles,
-                        **kwargs
+                titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo='PREC24HRS', cond_ini=cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        sem_intervalo_semana=True, condicao_inicial='Data arquivo'
                     )
 
-            elif modo == 'acumulado_mensal':
-
-                from calendar import monthrange
-                path_to_save = Constants().PATH_DOWNLOAD_ARQUIVOS_MERGE
-
-                self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
-                self.tp = self.tp.sortby("valid_time")
-                self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
-                print(self.tp)
-
-                # if len(self.cond_ini) > 0:
-                #     cond_ini = self.cond_ini[-1]
-
-                # else:
-                cond_ini = get_inicializacao_fmt(self.data, format='%d/%m/%Y')
-
-                # Acumulando no mes
-                tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
-
-                tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
-                tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
-
-                # Abrindo a climatologia
-                if self.modelo_fmt == 'mergegpm':
-                    path_clim = Constants().PATH_CLIMATOLOGIA_MERGE
-                    mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
-                    tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
-                    tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
-                
-                # Anomalia total
-                tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
-
-                # Anomalia parcial
-                dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
-                tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time'])
-
-                # Porcentagem da anomalia
-                tp_plot_anomalia_percentual = (tp_plot_acc['tp'].values / tp_plot_clim['tp'].values) * 100
-
-                # Porcentagem da anomalia parcial
-                tp_plot_anomalia_percentual_parcial = (tp_plot_acc['tp'].values / ((tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time']))) * 100
-
-                # Criando um xarray para colocar as anomalias
-                ds_total = xr.Dataset(
-                    {
-                        "acumulado_ate": tp_plot_acc["tp"],
-                        "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
-                        "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
-                        "pct_climatologia": (("latitude", "longitude"), tp_plot_anomalia_percentual),
-                        "pct_climatologia_parcial": (("latitude", "longitude"), tp_plot_anomalia_percentual_parcial),
-                    }
+                plot_campos(
+                    ds=tp_plot['tp'],
+                    variavel_plotagem='chuva_ons',
+                    title=titulo,
+                    filename=f'mergegpm_rain_{tempo_fim.strftime("%Y%m%d")}',
+                    path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario',
+                    shapefiles=self.shapefiles,
+                    **kwargs
                 )
-                
-                for data_var in ds_total.data_vars:
 
-                    print(f'Processando {data_var}')
+        elif modo == 'acumulado_mensal':
 
-                    if data_var == 'acumulado_ate':
-                        tipo = 'Acumulado total'
-                        variavel_plotagem = 'chuva_ons'
+            from calendar import monthrange
+            path_to_save = Constants().PATH_DOWNLOAD_ARQUIVOS_MERGE
 
-                    elif data_var == 'anomalia_total':
-                        tipo = 'Anomalia total'
-                        variavel_plotagem = 'tp_anomalia'
+            self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
+            self.tp = self.tp.sortby("valid_time")
+            self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
+            print(self.tp)
 
-                    elif data_var == 'anomalia_parcial':
-                        tipo = 'Anomalia parcial'
-                        variavel_plotagem = 'tp_anomalia'
+            # if len(self.cond_ini) > 0:
+            #     cond_ini = self.cond_ini[-1]
 
-                    elif data_var == 'pct_climatologia':
-                        tipo = '% da climatologia'
-                        variavel_plotagem = 'pct_climatologia'
+            # else:
+            cond_ini = get_inicializacao_fmt(self.data, format='%d/%m/%Y')
 
-                    elif data_var == 'pct_climatologia_parcial':
-                        tipo = '% da climatologia parcial'
-                        variavel_plotagem = 'pct_climatologia'
+            # Acumulando no mes
+            tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
 
-                    titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
-                            data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            sem_intervalo_semana=True, condicao_inicial='Data arquivo'
-                    )
+            tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
+            tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
 
-                    plot_campos(
-                        ds=ds_total[data_var],
-                        variavel_plotagem=variavel_plotagem,
-                        title=titulo,
-                        path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim',
-                        filename=f'mergegpm_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
-                        shapefiles=self.shapefiles,
-                        **kwargs
-                    )
+            # Abrindo a climatologia
+            if self.modelo_fmt == 'mergegpm':
+                path_clim = Constants().PATH_CLIMATOLOGIA_MERGE
+                mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
+                tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
+                tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
+            
+            # Anomalia total
+            tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
 
-            elif modo == 'dif_prev':
+            # Anomalia parcial
+            dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
+            tp_plot_anomalia_parcial = tp_plot_acc['tp'].values - (tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time'])
 
-                self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+            # Porcentagem da anomalia
+            tp_plot_anomalia_percentual = (tp_plot_acc['tp'].values / tp_plot_clim['tp'].values) * 100
 
-                # Dia atual 
-                cond_ini = pd.to_datetime(self.cond_ini, format='%d/%m/%Y %H UTC')[0]
+            # Porcentagem da anomalia parcial
+            tp_plot_anomalia_percentual_parcial = (tp_plot_acc['tp'].values / ((tp_plot_clim['tp'].values/dias_no_mes)*len(self.tp['valid_time']))) * 100
 
-                # Dias para trás
-                date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
+            # Criando um xarray para colocar as anomalias
+            ds_total = xr.Dataset(
+                {
+                    "acumulado_ate": tp_plot_acc["tp"],
+                    "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
+                    "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
+                    "pct_climatologia": (("latitude", "longitude"), tp_plot_anomalia_percentual),
+                    "pct_climatologia_parcial": (("latitude", "longitude"), tp_plot_anomalia_percentual_parcial),
+                }
+            )
+            
+            for data_var in ds_total.data_vars:
 
-                for index, n_dia in enumerate(date_range[::-1]):
+                print(f'Processando {data_var}')
 
-                    dateprev = n_dia.strftime('%Y%m%d%H')
+                if data_var == 'acumulado_ate':
+                    tipo = 'Acumulado total'
+                    variavel_plotagem = 'chuva_ons'
 
-                    for modelo_prev in ['gfs', 'ecmwf', 'ecmwf-ens', 'gefs', 'pconjunto-ons', 'ecmwf-aifs']:
+                elif data_var == 'anomalia_total':
+                    tipo = 'Anomalia total'
+                    variavel_plotagem = 'tp_anomalia'
 
-                        try:
+                elif data_var == 'anomalia_parcial':
+                    tipo = 'Anomalia parcial'
+                    variavel_plotagem = 'tp_anomalia'
 
-                            print(f'Abrindo arquivo de previsão: {modelo_prev} e {dateprev}')
+                elif data_var == 'pct_climatologia':
+                    tipo = '% da climatologia'
+                    variavel_plotagem = 'pct_climatologia'
 
-                            if tipo_plot == 'tp_db':
+                elif data_var == 'pct_climatologia_parcial':
+                    tipo = '% da climatologia parcial'
+                    variavel_plotagem = 'pct_climatologia'
 
-                                tp_prev = get_prec_db(modelo_prev, n_dia.strftime('%Y-%m-%d'), str(n_dia.hour).zfill(2))
-                                tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
-                                tp_obs = get_prec_db(self.modelo_fmt, (cond_ini - pd.Timedelta(days=1)).strftime('%Y-%m-%d'))
-                                tp_obs['dt_observado'] = pd.to_datetime(tp_obs['dt_observado']) + pd.Timedelta(days=1)
-                                tp_prev = tp_prev[tp_prev['dt_prevista'] == tp_obs['dt_observado'].unique()[0]]
-                                tp_prev = tp_prev.rename(columns={'dt_prevista': 'dt_observado'})
-                                tp_prev = tp_prev[['dt_observado', 'vl_chuva', 'geometry']]
-                                dif = tp_obs.merge(tp_prev, on='geometry')
-                                dif['dif'] = dif['vl_chuva_y'] - dif['vl_chuva_x'] # previsao - observado
+                titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        sem_intervalo_semana=True, condicao_inicial='Data arquivo'
+                )
 
-                                tempo_ini = tp_obs['dt_observado'].unique()[0] - pd.Timedelta(hours=12)
-                                tempo_fim = tp_obs['dt_observado'].unique()[0] + pd.Timedelta(hours=12)
+                plot_campos(
+                    ds=ds_total[data_var],
+                    variavel_plotagem=variavel_plotagem,
+                    title=titulo,
+                    path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim',
+                    filename=f'mergegpm_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
+                    shapefiles=self.shapefiles,
+                    **kwargs
+                )
 
-                                titulo = gerar_titulo(
-                                    modelo=f'{modelo_prev} - {self.modelo_fmt}',
-                                    tipo='Dif. de precipitação',
-                                    cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
+        elif modo == 'dif_prev':
+
+            self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+
+            # Dia atual 
+            cond_ini = pd.to_datetime(self.cond_ini, format='%d/%m/%Y %H UTC')[0]
+
+            # Dias para trás
+            date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
+
+            for index, n_dia in enumerate(date_range[::-1]):
+
+                dateprev = n_dia.strftime('%Y%m%d%H')
+
+                for modelo_prev in ['gfs', 'ecmwf', 'ecmwf-ens', 'gefs', 'pconjunto-ons', 'ecmwf-aifs']:
+
+                    try:
+
+                        print(f'Abrindo arquivo de previsão: {modelo_prev} e {dateprev}')
+
+                        if tipo_plot == 'tp_db':
+
+                            tp_prev = get_prec_db(modelo_prev, n_dia.strftime('%Y-%m-%d'), str(n_dia.hour).zfill(2))
+                            tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
+                            tp_obs = get_prec_db(self.modelo_fmt, (cond_ini - pd.Timedelta(days=1)).strftime('%Y-%m-%d'))
+                            tp_obs['dt_observado'] = pd.to_datetime(tp_obs['dt_observado']) + pd.Timedelta(days=1)
+                            tp_prev = tp_prev[tp_prev['dt_prevista'] == tp_obs['dt_observado'].unique()[0]]
+                            tp_prev = tp_prev.rename(columns={'dt_prevista': 'dt_observado'})
+                            tp_prev = tp_prev[['dt_observado', 'vl_chuva', 'geometry']]
+                            dif = tp_obs.merge(tp_prev, on='geometry')
+                            dif['dif'] = dif['vl_chuva_y'] - dif['vl_chuva_x'] # previsao - observado
+
+                            tempo_ini = tp_obs['dt_observado'].unique()[0] - pd.Timedelta(hours=12)
+                            tempo_fim = tp_obs['dt_observado'].unique()[0] + pd.Timedelta(hours=12)
+
+                            titulo = gerar_titulo(
+                                modelo=f'{modelo_prev} - {self.modelo_fmt}',
+                                tipo='Dif. de precipitação',
+                                cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
+                                data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                sem_intervalo_semana=True,
+                                condicao_inicial=f'Prev {modelo_prev.replace("pconjunto", "pconj").upper()}'
+                            )
+
+                            plot_df_to_mapa(dif, 
+                                            titulo=titulo, 
+                                            shapefiles=self.shapefiles, 
+                                            filename=f'dif_{modelo_prev}-gpm_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
+                                            path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
+                                            )
+
+                        elif tipo_plot == 'tp_netcdf':
+
+                            # Abrindo o arquivo de previsao
+                            tp_prev = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{modelo_prev}_tp_{dateprev}.nc')
+                            tp_prev = resample_variavel(tp_prev, modelo_prev, 'tp', '24h').isel(tempo=index)
+                            tp_prev = interpola_ds(tp_prev, self.tp)
+
+                            # Calculando a diferença
+                            dif = tp_prev['tp'] - self.tp['tp'].sel(valid_time=cond_ini)
+                            
+                            tempo_ini = dif.data_inicial - pd.Timedelta(hours=6)
+                            tempo_fim = dif.data_final
+                            tempo_ini = pd.to_datetime(tempo_ini.item())
+                            tempo_fim = pd.to_datetime(tempo_fim.item())
+
+                            titulo = gerar_titulo(
+                                    modelo=f'{modelo_prev.upper()} - {self.modelo_fmt.upper()}', tipo='Dif. de precipitação', cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
                                     data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                                     data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                                    sem_intervalo_semana=True,
-                                    condicao_inicial=f'Prev {modelo_prev.replace("pconjunto", "pconj").upper()}'
-                                )
+                                    sem_intervalo_semana=True, condicao_inicial=f'Prev {modelo_prev.upper()}'
+                            )
 
-                                plot_df_to_mapa(dif, 
-                                                titulo=titulo, 
-                                                shapefiles=self.shapefiles, 
-                                                filename=f'dif_{modelo_prev}-gpm_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
-                                                path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
-                                                )
+                            plot_campos(
+                                ds=dif,
+                                variavel_plotagem='dif_prev',
+                                title=titulo,
+                                filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}',
+                                path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
+                                shapefiles=self.shapefiles,
+                                **kwargs
+                            )
 
-                            elif tipo_plot == 'tp_netcdf':
+                    except Exception as e:
+                        print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
 
-                                # Abrindo o arquivo de previsao
-                                tp_prev = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{modelo_prev}_tp_{dateprev}.nc')
-                                tp_prev = resample_variavel(tp_prev, modelo_prev, 'tp', '24h').isel(tempo=index)
-                                tp_prev = interpola_ds(tp_prev, self.tp)
-
-                                # Calculando a diferença
-                                dif = tp_prev['tp'] - self.tp['tp'].sel(valid_time=cond_ini)
-                                
-                                tempo_ini = dif.data_inicial - pd.Timedelta(hours=6)
-                                tempo_fim = dif.data_final
-                                tempo_ini = pd.to_datetime(tempo_ini.item())
-                                tempo_fim = pd.to_datetime(tempo_fim.item())
-
-                                titulo = gerar_titulo(
-                                        modelo=f'{modelo_prev.upper()} - {self.modelo_fmt.upper()}', tipo='Dif. de precipitação', cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
-                                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                                        sem_intervalo_semana=True, condicao_inicial=f'Prev {modelo_prev.upper()}'
-                                )
-
-                                plot_campos(
-                                    ds=dif,
-                                    variavel_plotagem='dif_prev',
-                                    title=titulo,
-                                    filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}',
-                                    path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
-                                    shapefiles=self.shapefiles,
-                                    **kwargs
-                                )
-
-                        except Exception as e:
-                            print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
-
-        except Exception as e:
-            print(f'Erro ao processar {modo}: {e}')
+        # except Exception as e:
+        #     print(f'Erro ao processar {modo}: {e}')
 
     def _processar_temperatura(self, modo, **kwargs):
 
