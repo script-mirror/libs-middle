@@ -3038,6 +3038,7 @@ class GeraProdutosObservacao:
                 path_to_save = Constants().PATH_DOWNLOAD_ARQUIVOS_MERGE
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
+                self.tp = self.tp.sortby("valid_time")
 
                 if len(self.cond_ini) > 0:
                     cond_ini = self.cond_ini[-1]
@@ -3046,9 +3047,7 @@ class GeraProdutosObservacao:
                     cond_ini = self.cond_ini
 
                 # Acumulando no mes
-                print(self.tp)
                 tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
-                print(tp_plot_acc)
 
                 tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])

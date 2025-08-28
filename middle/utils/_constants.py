@@ -942,7 +942,7 @@ class Constants:
     #==============================================================================================================================================================
     @property 
     def LOGO_RAIZEN(self):
-        return '/projetos/arquivos/meteorologia/raizen-logo.png' # './tmp/raizen-logo.png'
+        return '/projetos/arquivos/meteorologia/raizen-logo.png'
 
     @property 
     def PATH_SUBBACIAS_JSON(self):
@@ -950,11 +950,11 @@ class Constants:
     
     @property 
     def PATH_HINDCAST_ECMWF_EST(self):
-        return './tmp/data'
+        return '/WX4TB/Documentos/saidas-modelos/ecmwf-estendido/data-netcdf'
 
     @property 
     def PATH_HINDCAST_GEFS_EST(self):
-        return './tmp/data'
+        return '/WX4TB/Documentos/reforecast_gefs/dados'
     
     @property 
     def PATH_FTP_ECMWF(self):
