@@ -2954,7 +2954,7 @@ class GeraProdutosObservacao:
         self.produto_config = produto_config
         self.shapefiles = shapefiles
         self.modelo_fmt = self.produto_config.modelo
-        self.data = pd.to_datetime(self.produto_config.data)
+        self.data = pd.to_datetime(self.produto_config.data) + pd.Timedelta(hours=12)
 
         if self.modelo_fmt == 'merge':
             self.modelo_fmt = self.modelo_fmt + 'gpm'
@@ -3043,11 +3043,11 @@ class GeraProdutosObservacao:
                 self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
                 print(self.tp)
 
-                if len(self.cond_ini) > 0:
-                    cond_ini = self.cond_ini[-1]
+                # if len(self.cond_ini) > 0:
+                #     cond_ini = self.cond_ini[-1]
 
-                else:
-                    cond_ini = self.cond_ini
+                # else:
+                cond_ini = get_inicializacao_fmt(self.data, format='%d/%m/%Y')
 
                 # Acumulando no mes
                 tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
