@@ -3016,7 +3016,7 @@ class GeraProdutosObservacao:
                     tempo_fim = pd.to_datetime(n.item())
 
                     titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo='PREC24', cond_ini=cond_ini,
+                            modelo=self.modelo_fmt, tipo='PREC24HRS', cond_ini=cond_ini,
                             data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                             data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                             sem_intervalo_semana=True, condicao_inicial='Data arquivo'
