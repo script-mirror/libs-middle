@@ -3075,7 +3075,7 @@ class GeraProdutosObservacao:
                 # Criando um xarray para colocar as anomalias
                 ds_total = xr.Dataset(
                     {
-                        "acumulado_total": tp_plot_acc["tp"],
+                        "acumulado_ate": tp_plot_acc["tp"],
                         "anomalia_total": (("latitude", "longitude"), tp_plot_anomalia_total),
                         "anomalia_parcial": (("latitude", "longitude"), tp_plot_anomalia_parcial),
                         "pct_climatologia": (("latitude", "longitude"), tp_plot_anomalia_percentual),
