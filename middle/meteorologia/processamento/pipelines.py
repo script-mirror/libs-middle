@@ -325,8 +325,8 @@ def pipelines(modelo, produtos, tipo=None):
 
         return [
             lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-            # lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
-            # lambda: produtos.gerar_dif_prev(),
+            lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
+            lambda: produtos.gerar_dif_prev(),
         ]
         
     return 
