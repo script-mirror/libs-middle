@@ -544,7 +544,7 @@ class ConfigProdutosObservado:
         dia_fmt = self.data.strftime('%d')
 
         # Caminho para salvar os arquivos
-        caminho_para_salvar = f'{output_path}/{modelo_fmt}/'
+        caminho_para_salvar = f'{output_path}/' #{modelo_fmt}/'
         os.makedirs(caminho_para_salvar, exist_ok=True)
 
         if modelo_fmt == 'merge':
