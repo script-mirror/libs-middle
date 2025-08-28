@@ -599,7 +599,7 @@ class ConfigProdutosObservado:
         modelo_fmt = self.modelo.lower()
 
         # Caminho para salvar os arquivos
-        caminho_para_salvar = f'{output_path}/{modelo_fmt}'
+        caminho_para_salvar = f'{output_path}/'
         files = os.listdir(caminho_para_salvar)
 
         if variavel is not None:
