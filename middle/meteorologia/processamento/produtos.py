@@ -520,7 +520,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
 class ConfigProdutosObservado:
 
-    def __init__(self, modelo: str, data: datetime, output_path='./tmp/downloads'):
+    def __init__(self, modelo: str, data: datetime, output_path=Constants().PATH_DOWNLOAD_ARQUIVOS_MERGE):
         
         self.modelo = modelo
         self.data = pd.to_datetime(data)
@@ -3026,7 +3026,8 @@ class GeraProdutosObservacao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=f'{index}_tp_24h_{self.modelo_fmt}',
+                        filename=f'mergegpm_rain_{tempo_fim.strftime("%Y%m%d")}',
+                        path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario',
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
@@ -3034,6 +3035,7 @@ class GeraProdutosObservacao:
             elif modo == 'acumulado_mensal':
 
                 from calendar import monthrange
+                path_to_save = Constants().PATH_DOWNLOAD_ARQUIVOS_MERGE
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
 
@@ -3084,7 +3086,7 @@ class GeraProdutosObservacao:
 
                     print(f'Processando {data_var}')
 
-                    if data_var == 'acumulado_total':
+                    if data_var == 'acumulado_ate':
                         tipo = 'Acumulado total'
                         variavel_plotagem = 'chuva_ons'
 
@@ -3115,7 +3117,8 @@ class GeraProdutosObservacao:
                         ds=ds_total[data_var],
                         variavel_plotagem=variavel_plotagem,
                         title=titulo,
-                        filename=f'tp_{data_var}_{self.modelo_fmt}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}',
+                        path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim',
+                        filename=f'mergegpm_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
@@ -3165,7 +3168,12 @@ class GeraProdutosObservacao:
                                     condicao_inicial=f'Prev {modelo_prev.replace("pconjunto", "pconj").upper()}'
                                 )
 
-                                plot_df_to_mapa(dif, titulo=titulo, shapefiles=self.shapefiles, filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}')
+                                plot_df_to_mapa(dif, 
+                                                titulo=titulo, 
+                                                shapefiles=self.shapefiles, 
+                                                filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
+                                                path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
+                                                )
 
                             elif tipo_plot == 'tp_netcdf':
 

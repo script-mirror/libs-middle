@@ -2,7 +2,7 @@ from ..consts.constants import CONSTANTES
 
 ###################################################################################################################
 
-def pipelines(modelo, produtos, tipo):
+def pipelines(modelo, produtos, tipo=None):
 
     if modelo == 'gfs':
 
@@ -321,6 +321,14 @@ def pipelines(modelo, produtos, tipo):
         elif tipo == 'pl':
             return []
 
+    elif modelo == 'merge':
+
+        return [
+            lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
+            # lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
+            # lambda: produtos.gerar_dif_prev(),
+        ]
+        
     return 
 
 ###################################################################################################################

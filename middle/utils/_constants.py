@@ -487,11 +487,15 @@ class Constants:
     @property 
     def PATH_SAVE_FIGS_METEOROLOGIA(self):
         return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
-    
+
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
         return '/projetos/arquivos/meteorologia/dados_modelos' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
-    
+
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_MERGE(self):
+        return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+
     @property 
     def PATH_CLIMATOLOGIA_SAMET(self):
         return '/WX2TB/Documentos/dados/temp_samet/climatologia/'
