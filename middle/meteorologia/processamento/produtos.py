@@ -2954,6 +2954,7 @@ class GeraProdutosObservacao:
         self.produto_config = produto_config
         self.shapefiles = shapefiles
         self.modelo_fmt = self.produto_config.modelo
+        self.data = pd.to_datetime(self.produto_config.data)
 
         if self.modelo_fmt == 'merge':
             self.modelo_fmt = self.modelo_fmt + 'gpm'
@@ -3039,6 +3040,7 @@ class GeraProdutosObservacao:
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
                 self.tp = self.tp.sortby("valid_time")
+                self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
 
                 if len(self.cond_ini) > 0:
                     cond_ini = self.cond_ini[-1]
