@@ -3241,12 +3241,13 @@ class GeraProdutosObservacao:
             # Concatenando os xarrays com a média nas bacias e transformando em um dataframe
             ds_to_df = xr.concat(chuva_media, dim='id').to_dataframe().reset_index()
             ds_to_df = ds_to_df.rename(columns={'id': 'cod_psat', 'time': 'dt_observado', 'tp': 'vl_chuva'})
-            ds_to_df = ds_to_df[['cod_psat', 'dt_observado', 'vl_chuva']]
             ds_to_df = ds_to_df.applymap(lambda x: 0 if isinstance(x, float) and x < 0 else x).round(2)
-            dt_observado = list(set(ds_to_df['dt_observado']))[0]
+            dt_observado = pd.to_datetime(ds_to_df['dt_observado']) - pd.Timedelta(hours=36)
+            dt_observado = list(set(dt_observado))[0]
             dt_observado = dt_observado.isoformat()
             ds_to_df['dt_observado'] = dt_observado
             ds_to_df = converter_psat_para_cd_subbacia(ds_to_df)
+            ds_to_df = ds_to_df[['cd_subbacia', 'dt_observado', 'vl_chuva']]
             print(ds_to_df)
     
         # except Exception as e:
