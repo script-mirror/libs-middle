@@ -3041,6 +3041,7 @@ class GeraProdutosObservacao:
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
                 self.tp = self.tp.sortby("valid_time")
                 self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
+                print(self.tp)
 
                 if len(self.cond_ini) > 0:
                     cond_ini = self.cond_ini[-1]
