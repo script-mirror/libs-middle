@@ -3047,7 +3047,7 @@ class GeraProdutosObservacao:
             #     cond_ini = self.cond_ini[-1]
 
             # else:
-            cond_ini = get_inicializacao_fmt(self.data, format='%d/%m/%Y')
+            cond_ini = self.data.strftime('%d/%m/%Y')
 
             # Acumulando no mes
             tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
