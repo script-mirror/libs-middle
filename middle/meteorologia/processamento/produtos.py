@@ -3245,11 +3245,18 @@ class GeraProdutosObservacao:
             dt_observado = pd.to_datetime(ds_to_df['dt_observado']) - pd.Timedelta(hours=36)
             dt_observado = list(set(dt_observado))[0]
             dt_observado = dt_observado.isoformat()
-            ds_to_df['dt_observado'] = dt_observado
             ds_to_df = converter_psat_para_cd_subbacia(ds_to_df)
             ds_to_df = ds_to_df[['cd_subbacia', 'dt_observado', 'vl_chuva']]
+            ds_to_df['dt_observado'] = dt_observado
             print(ds_to_df)
+            
+            salva_db = kwargs.get('salva_db', False)
     
+            if salva_db:
+                print('Salvando dados no db')
+                response = requests.post(f'{API_URL}/rodadas/chuva/observada', verify=False, json=ds_to_df.to_dict('records'), headers=get_auth_header())
+                print(f'Código POST: {response.status_code}')
+
         # except Exception as e:
         #    print(f'Erro ao processar {modo}: {e}')
 
