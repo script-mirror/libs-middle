@@ -970,7 +970,7 @@ class Constants:
 
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
-        return '/projetos/arquivos/meteorologia/dados_modelos' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+        return '/projetos/arquivos/meteorologia/dados_modelos/brutos' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
 
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_MERGE(self):
