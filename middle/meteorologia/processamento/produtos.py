@@ -2222,14 +2222,18 @@ class GeraProdutosPrevisao:
 
         elif modo == 'psi':
 
+            import pdb
+
             if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
                 self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
             us_mean = ajusta_lon_0_360(self.us_mean)
             vs_mean = ajusta_lon_0_360(self.vs_mean)
 
-            print(us_mean)
-            print(vs_mean)
+            us_mean['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+            vs_mean['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+
+            # pdb.set_trace()
 
             us_24h_200 = resample_variavel(us_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_200 = resample_variavel(vs_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
@@ -2237,10 +2241,10 @@ class GeraProdutosPrevisao:
             us_24h_850 = resample_variavel(us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_850 = resample_variavel(vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time"})
-            psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time"})
-            chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time"})
-            chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time"})
+            psi_clim200 = open_hindcast_file('psi200', path_clim='./tmp/data').rename({"time": "valid_time"})
+            psi_clim850 = open_hindcast_file('psi850', path_clim='./tmp/data').rename({"time": "valid_time"})
+            chi_clim200 = open_hindcast_file('chi200', path_clim='./tmp/data').rename({"time": "valid_time"})
+            chi_clim850 = open_hindcast_file('chi850', path_clim='./tmp/data').rename({"time": "valid_time"})
 
             ano_ini = pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%Y')
             ano_fim = pd.to_datetime(psi_clim200.valid_time[-1].values).strftime('%Y')

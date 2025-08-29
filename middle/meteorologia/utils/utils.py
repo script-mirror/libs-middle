@@ -116,7 +116,7 @@ def ajusta_lon_0_360(ds, var='longitude'):
     if var in ds.dims:
         ds[var] = (ds[var] + 360) % 360
 
-    return ds
+    return ds.sortby('longitude')
 
 ###################################################################################################################
 
