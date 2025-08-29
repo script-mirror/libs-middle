@@ -4,3 +4,4 @@ pandas
 requests
 python-magic
 python-dotenv
+pdf2image
