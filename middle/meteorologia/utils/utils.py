@@ -120,6 +120,15 @@ def ajusta_lon_0_360(ds, var='longitude'):
 
 ###################################################################################################################
 
+def ajusta_lon_180_180(ds, var='longitude'):
+
+    if var in ds.dims:
+        ds[var] = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
+    return ds
+
+###################################################################################################################
+
 def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().PATH_HINDCAST_ECMWF_EST, inicio_mes=False, modelo='ecmwf-ens-estendido', mesdia=None):
 
     from datetime import datetime

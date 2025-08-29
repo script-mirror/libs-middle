@@ -978,7 +978,7 @@ class Constants:
 
     @property 
     def PATH_CLIMATOLOGIA_SAMET(self):
-        return '/WX2TB/Documentos/dados/temp_samet/climatologia/'
+        return '/WX2TB/Documentos/dados/temp_samet/climatologia'
 
     @property 
     def PATH_COORDENADAS_CIDADES(self):
@@ -990,9 +990,17 @@ class Constants:
     
     @property 
     def PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL(self):
-        return '/projetos/arquivos/meteorologia/' # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
+        return '/projetos/arquivos/meteorologia' # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
     
     @property 
     def PATH_CLIMATOLOGIA_UV100(self):
-        return '/projetos/arquivos/meteorologia/' # '/WX2TB/Documentos/dados/UVCLIM/'
-     
+        return '/projetos/arquivos/meteorologia' # '/WX2TB/Documentos/dados/UVCLIM/'
+    
+    @property 
+    def PATH_ARQUIVOS_TEMP(self):
+        return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp' # '/WX2TB/Documentos/dados/UVCLIM/'
+    
+    @property 
+    def PATH_ARQUIVOS_UTILS(self):
+        return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_utils' # '/WX2TB/Documentos/dados/UVCLIM/'
+
