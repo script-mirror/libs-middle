@@ -171,7 +171,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     date_range = pd.date_range(self.data, datafinal.strftime('%Y%m%d'), freq='D')
                     
                     for fcst_fmt, dates in enumerate(date_range):
-                        
+
                         dia_mes_prev = dates.strftime('%m%d')
                         fcst_fmt = str(fcst_fmt + 1).zfill(2)
                         print(f'Copiando ECMWF - Estendido {fcst_fmt}')
@@ -180,7 +180,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         src_file = f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1'
 
                         # Loop com número máximo de tentativas
-                        max_attempts = 5
+                        max_attempts = 100
                         attempt = 0
 
                         while not os.path.isfile(dest_file) and attempt < max_attempts:
@@ -2232,7 +2232,7 @@ class GeraProdutosPrevisao:
                 us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
                 vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-                # pdb.set_trace()
+                pdb.set_trace()
 
                 psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
                 psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
