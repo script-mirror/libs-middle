@@ -2263,11 +2263,11 @@ class GeraProdutosPrevisao:
                 chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
                 chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
 
-                u200_plot.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
-                v200_plot.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
+                u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
+                v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
 
-                u850_plot.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
-                v850_plot.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
+                u850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
+                v850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
 
                 # Grads parar calcular PSI e CHI e gerar um .nc
                 os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP}/gera_psi_chi.gs')
