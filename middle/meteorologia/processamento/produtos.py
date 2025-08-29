@@ -2230,11 +2230,6 @@ class GeraProdutosPrevisao:
             us_mean = ajusta_lon_0_360(self.us_mean)
             vs_mean = ajusta_lon_0_360(self.vs_mean)
 
-            us_mean['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-            vs_mean['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-
-            pdb.set_trace()
-
             us_24h_200 = resample_variavel(us_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_200 = resample_variavel(vs_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
@@ -2270,6 +2265,11 @@ class GeraProdutosPrevisao:
                 psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
                 chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
                 chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+
+                u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
 
                 u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
                 v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
