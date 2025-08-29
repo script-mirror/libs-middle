@@ -171,25 +171,49 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     date_range = pd.date_range(self.data, datafinal.strftime('%Y%m%d'), freq='D')
                     
                     for fcst_fmt, dates in enumerate(date_range):
-
+                        
+                        dia_mes_prev = dates.strftime('%m%d')
                         fcst_fmt = str(fcst_fmt + 1).zfill(2)
                         print(f'Copiando ECMWF - Estendido {fcst_fmt}')
 
-                        while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
+                        dest_file = f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2'
+                        src_file = f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1'
 
-                            dia_mes_prev = dates.strftime('%m%d')
+                        # Loop com número máximo de tentativas
+                        max_attempts = 5
+                        attempt = 0
 
+                        while not os.path.isfile(dest_file) and attempt < max_attempts:
                             try:
-
-                                if self.name_prefix:
-                                    shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/{self.name_prefix}_ecmwf-est_{fcst_fmt}.grib2')
-
-                                else:
-                                    shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
-
-                            except:
-                                print('tentando')
+                                shutil.copyfile(src_file, dest_file)
+                                print(f'Arquivo {dest_file} copiado com sucesso')
+                                break
+                            except FileNotFoundError:
+                                attempt += 1
+                                print(f'Arquivo {src_file} não encontrado. Tentativa {attempt}/{max_attempts}')
                                 time.sleep(10)
+                            except Exception as e:
+                                print(f'Erro ao copiar: {e}')
+                                break  # sai do loop se for outro erro
+
+                        if not os.path.isfile(dest_file):
+                            print(f'Falha ao copiar {src_file} depois de {max_attempts} tentativas.')
+
+                        # while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
+
+                        #     dia_mes_prev = dates.strftime('%m%d')
+
+                        #     try:
+
+                        #         if self.name_prefix:
+                        #             shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/{self.name_prefix}_ecmwf-est_{fcst_fmt}.grib2')
+
+                        #         else:
+                        #             shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
+
+                        #     except:
+                        #         print('tentando')
+                        #         time.sleep(10)
 
                 # elif modelo_fmt in ['ecmwf-mensal']:
 
