@@ -2233,7 +2233,7 @@ class GeraProdutosPrevisao:
             us_mean['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
             vs_mean['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
 
-            # pdb.set_trace()
+            pdb.set_trace()
 
             us_24h_200 = resample_variavel(us_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_200 = resample_variavel(vs_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
