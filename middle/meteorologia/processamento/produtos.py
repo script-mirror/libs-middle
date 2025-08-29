@@ -2236,10 +2236,10 @@ class GeraProdutosPrevisao:
             us_24h_850 = resample_variavel(us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_850 = resample_variavel(vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-            psi_clim200 = open_hindcast_file('psi200', path_clim='./tmp/data').rename({"time": "valid_time"})
-            psi_clim850 = open_hindcast_file('psi850', path_clim='./tmp/data').rename({"time": "valid_time"})
-            chi_clim200 = open_hindcast_file('chi200', path_clim='./tmp/data').rename({"time": "valid_time"})
-            chi_clim850 = open_hindcast_file('chi850', path_clim='./tmp/data').rename({"time": "valid_time"})
+            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time"})
+            psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time"})
+            chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time"})
+            chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time"})
 
             ano_ini = pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%Y')
             ano_fim = pd.to_datetime(psi_clim200.valid_time[-1].values).strftime('%Y')
@@ -2261,11 +2261,6 @@ class GeraProdutosPrevisao:
                 intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
                 intervalo2 = data_final.replace(data_final[:4], ano_ini)
 
-                psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-
                 u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                 v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                 u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
@@ -2286,6 +2281,11 @@ class GeraProdutosPrevisao:
 
                 ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi200.nc')
                 ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi850.nc')
+
+                psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
 
                 anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_plot['psi']
                 anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_plot['psi']
