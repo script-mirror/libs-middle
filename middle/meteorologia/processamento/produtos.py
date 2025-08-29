@@ -2230,7 +2230,7 @@ class GeraProdutosPrevisao:
             us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude' })
+            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
             psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
             chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
             chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
