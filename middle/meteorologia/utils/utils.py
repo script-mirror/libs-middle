@@ -123,7 +123,7 @@ def ajusta_lon_0_360(ds, var='longitude'):
 def ajusta_lon_180_180(ds, var='longitude'):
 
     if var in ds.dims:
-        ds[var] = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+        ds = ds.assign_coords(longitude=(((ds.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
     return ds
 
