@@ -2230,15 +2230,13 @@ class GeraProdutosPrevisao:
             us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
             vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
-            psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
-            chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
-            chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time", 'lon': 'longitude', 'lat': 'latitude'})
+            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time"})
+            psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time"})
+            chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time"})
+            chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time"})
 
-            psi_clim200 = ajusta_lon_180_180(psi_clim200)
-            psi_clim850 = ajusta_lon_180_180(psi_clim850)
-            chi_clim200 = ajusta_lon_180_180(chi_clim200)
-            chi_clim850 = ajusta_lon_180_180(chi_clim850)
+            us_24h_200 = ajusta_lon_0_360(us_24h_200)
+            vs_24h_200 = ajusta_lon_0_360(vs_24h_200)
 
             ano_ini = pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%Y')
             ano_fim = pd.to_datetime(psi_clim200.valid_time[-1].values).strftime('%Y')
@@ -2316,6 +2314,12 @@ class GeraProdutosPrevisao:
                     'chi200': anomalia_chi200_semana,
                     'chi850': anomalia_chi850_semana
                 })
+
+                anomalias_psi.append(anomalia_psi)
+                anomalias_chi.append(anomalia_chi)
+
+            anomalias_psi = xr.concat(anomalias_psi, dim='semana')
+            anomalias_chi = xr.concat(anomalias_chi, dim='semana')
 
         elif modo == 'geada-inmet':
 
