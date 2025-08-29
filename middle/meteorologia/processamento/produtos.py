@@ -173,6 +173,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     for fcst_fmt, dates in enumerate(date_range):
 
                         fcst_fmt = str(fcst_fmt + 1).zfill(2)
+                        print(f'Copiando ECMWF - Estendido {fcst_fmt}')
 
                         while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
 
