@@ -2354,21 +2354,24 @@ class GeraProdutosPrevisao:
                     intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
                     intervalo2 = data_final.replace(data_final[:4], ano_ini)
 
-                    intervalo_inicial_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][0])).strftime('%Y-%m-%d %H UTC')
-                    intervalo_final_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][1])).strftime('%Y-%m-%d %H UTC')
-                    intervalo = f'{intervalo_inicial_fmt} a {intervalo_final_fmt}'
-                    intervalo = intervalo.replace(' ', '\ ')
+                    # intervalo_inicial_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][0])).strftime('%Y-%m-%d %H UTC')
+                    # intervalo_final_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][1])).strftime('%Y-%m-%d %H UTC')
+                    # intervalo = f'{intervalo_inicial_fmt} a {intervalo_final_fmt}'
+                    # intervalo = intervalo.replace(' ', '\ ')
+
+                    intervalo = u200_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = u200_plot.days_of_weeks.item()     
 
                     u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                     v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                     u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                     v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
 
-                    u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
-                    v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
+                    u200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
+                    v200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
 
-                    u850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
-                    v850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
+                    u850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
+                    v850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
 
                     # Grads parar calcular PSI e CHI e gerar um .nc
                     os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP}/gera_psi_chi.gs')
