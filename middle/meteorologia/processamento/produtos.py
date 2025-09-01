@@ -178,7 +178,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         fcst_fmt = str(fcst_fmt + 1).zfill(2)
                         print(f'Copiando ECMWF - Estendido {fcst_fmt}')
 
-                        dest_file = f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2'
+                        dest_file = f'{caminho_para_salvar}/{self.name_prefix}_ecmwf-est_{fcst_fmt}.grib2' if self.name_prefix else f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2'
                         src_file = f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1'
 
                         # Loop com número máximo de tentativas
