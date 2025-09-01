@@ -2354,6 +2354,11 @@ class GeraProdutosPrevisao:
                     intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
                     intervalo2 = data_final.replace(data_final[:4], ano_ini)
 
+                    intervalo_inicial_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][0])).strftime('%Y-%m-%d %H UTC')
+                    intervalo_final_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][1])).strftime('%Y-%m-%d %H UTC')
+                    intervalo = f'{intervalo_inicial_fmt} a {intervalo_final_fmt}'
+                    intervalo = intervalo.replace(' ', '\ ')
+
                     u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                     v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                     u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
@@ -2405,7 +2410,7 @@ class GeraProdutosPrevisao:
 
                     titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo=f'Anom PSI 200 (shaded) e PSI 850 (lines) - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_weeks[index],
                         semana_operativa=True
                     )
 
