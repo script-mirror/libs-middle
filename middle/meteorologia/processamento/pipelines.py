@@ -1,5 +1,3 @@
-from encodings.punycode import T
-from pickle import TRUE
 from ..consts.constants import CONSTANTES
 
 ###################################################################################################################
