@@ -388,8 +388,9 @@ def plot_campos(
             plt.clabel(cf2, inline=True, fmt=mticker.FuncFormatter(lambda x, _: skip_zero_formatter(x)), fontsize=10)
 
         elif variavel_contour == 'psi':
+            levels_clabel = np.arange(-4, 14, 2)
             # contornos negativos (tracejado)
-            neg_levels = [lev for lev in levels if lev < 0]
+            neg_levels = [lev for lev in levels_clabel if lev < 0]
             cf_neg = ax.contour(
                 lon, lat, ds_contour,
                 transform=ccrs.PlateCarree(),
@@ -400,7 +401,7 @@ def plot_campos(
             )
 
             # contornos positivos e zero (sólido)
-            pos_levels = [lev for lev in levels if lev >= 0]
+            pos_levels = [lev for lev in levels_clabel if lev >= 0]
             cf_pos = ax.contour(
                 lon, lat, ds_contour,
                 transform=ccrs.PlateCarree(),
@@ -413,6 +414,35 @@ def plot_campos(
             # rótulos
             plt.clabel(cf_neg, inline=True, fmt='%.0f', fontsize=10, colors='black')
             plt.clabel(cf_pos, inline=True, fmt='%.0f', fontsize=10, colors='black')
+
+        elif variavel_contour == 'chi':
+            levels_clabel = np.arange(-4, 5, 1)
+            # contornos negativos (tracejado)
+            neg_levels = [lev for lev in levels_clabel if lev < 0]
+            cf_neg = ax.contour(
+                lon, lat, ds_contour,
+                transform=ccrs.PlateCarree(),
+                colors='black',
+                linestyles='dashed',
+                levels=neg_levels,
+                linewidths=1.2
+            )
+
+            # contornos positivos e zero (sólido)
+            pos_levels = [lev for lev in levels_clabel if lev >= 0]
+            cf_pos = ax.contour(
+                lon, lat, ds_contour,
+                transform=ccrs.PlateCarree(),
+                colors='black',
+                linestyles='solid',
+                levels=pos_levels,
+                linewidths=1.2
+            )
+
+            # rótulos
+            plt.clabel(cf_neg, inline=True, fmt='%.0f', fontsize=10, colors='black')
+            plt.clabel(cf_pos, inline=True, fmt='%.0f', fontsize=10, colors='black')
+
 
         elif variavel_contour == 'olr':
             cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(220, 250, 10))

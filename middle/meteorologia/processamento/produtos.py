@@ -2207,8 +2207,6 @@ class GeraProdutosPrevisao:
 
         elif modo == 'psi':
 
-            import pdb
-
             if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
                 self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
@@ -2299,6 +2297,7 @@ class GeraProdutosPrevisao:
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
 
+                # PSI
                 titulo = self._ajustar_tempo_e_titulo(
                     u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PSI 200/850', semana, self.cond_ini,
                 )
@@ -2317,6 +2316,7 @@ class GeraProdutosPrevisao:
                     **kwargs
                 )
 
+                # CHI
                 titulo = self._ajustar_tempo_e_titulo(
                     u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}CHI 200/850', semana, self.cond_ini,
                 )
