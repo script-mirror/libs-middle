@@ -2481,10 +2481,10 @@ class GeraProdutosPrevisao:
                     tempo_fim = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%Y-%m-%d %H')
                     t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
                     t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
-                    psi_clim200_sel = psi_clim200.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
-                    psi_clim850_sel = psi_clim850.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
-                    chi_clim200_sel = chi_clim200.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
-                    chi_clim850_sel = chi_clim850.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
+                    psi_clim200_sel = psi_clim200.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['latitude'])
+                    psi_clim850_sel = psi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['latitude'])
+                    chi_clim200_sel = chi_clim200.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['latitude'])
+                    chi_clim850_sel = chi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['latitude'])
 
                     # Anomalia psi e chi
                     ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi200.nc')
