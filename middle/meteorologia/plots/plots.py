@@ -526,9 +526,9 @@ def plot_campos(
             gdf = gpd.read_file(shapefile)
             if 'Nome_Bacia' in gdf.columns:
                 if plot_bacias:
-                    gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
+                    gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5, transform=ccrs.PlateCarree())
             else:
-                gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
+                gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5, transform=ccrs.PlateCarree())
 
     if add_valor_bacias:
 

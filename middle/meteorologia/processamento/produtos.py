@@ -2230,7 +2230,7 @@ class GeraProdutosPrevisao:
             anomalias_psi = []
             anomalias_chi = []
 
-            for n_24h in us_24h_200.tempo[:10]:
+            for n_24h in us_24h_200.tempo:
 
                 u200_plot = us_24h_200.sel(tempo=n_24h)
                 v200_plot = vs_24h_200.sel(tempo=n_24h)
@@ -2356,17 +2356,72 @@ class GeraProdutosPrevisao:
 
             anomalias_psi = xr.concat(anomalias_psi, dim='semana')
             anomalias_chi = xr.concat(anomalias_chi, dim='semana')
-            anomalias_psi.to_netcdf('anomalias_psi.nc')
+        
+            # Agrupando e plotando por semanal
+            anomalias_psi_semanal = anomalias_psi.groupby('semana').mean("semana")
+            anomalias_chi_semanal = anomalias_chi.groupby('semana').mean("semana")
 
-            print(anomalias_psi)
+            # Semanas e labels do plot semanal
+            semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)
 
-            # # Agrupando e plotando por semanal
-            # anomalias_psi_semanal = anomalias_psi.groupby('semana').mean("semana")
-            # anomalias_chi_semanal = anomalias_chi.groupby('semana').mean("semana")
+            # Plotando as semanas
+            for index, n_semana in enumerate(anomalias_psi_semanal.semana):
 
-            # anomalias_psi_semanal.to_netcdf("anomalias_psi_semanal.nc")
-            # anomalias_chi_semanal.to_netcdf("anomalias_chi_semanal.nc")
+                print(f'Processando Semana: {index}...')
+                intervalo_inicial_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][0])).strftime('%Y-%m-%d %H UTC')
+                intervalo_final_fmt = ajustar_hora_utc(pd.to_datetime(intervalos_fmt[index][1])).strftime('%Y-%m-%d %H UTC')
 
+                intervalo = f'{intervalo_inicial_fmt} a {intervalo_final_fmt}'
+                intervalo = intervalo.replace(' ', '\ ')
+                days_of_week = days_of_weeks[index]
+
+                print(f'Processando {n_semana.item()}...')
+
+                psi200_plot = anomalias_psi_semanal['psi200'].sel(semana=n_semana)
+                psi850_plot = anomalias_psi_semanal['psi850'].sel(semana=n_semana)
+
+                chi200_plot = anomalias_chi_semanal['chi200'].sel(semana=n_semana)
+                chi850_plot = anomalias_chi_semanal['chi850'].sel(semana=n_semana)
+                  
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, tipo=f'Anom PSI 200 (shaded) e PSI 850 (lines) - Semana{n_24h.item()}',
+                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                    semana_operativa=True
+                )
+
+                plot_campos(
+                    ds=psi200_plot/1e6,
+                    variavel_plotagem='psi',
+                    title=titulo,
+                    filename=f'psi_200_850_{self.modelo_fmt}_semanal_{n_semana.item()}',
+                    ds_contour=psi850_plot/1e6,
+                    variavel_contour='psi',
+                    color_contour='black',
+                    plot_bacias=False,
+                    shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
+                    **kwargs
+                )
+                      
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, tipo=f'Anom CHI 200 (shaded) e CHI 850 (lines) - Semana{n_24h.item()}',
+                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True
+                )
+
+                plot_campos(
+                    ds=chi200_plot/1e6,
+                    variavel_plotagem='chi',
+                    title=titulo,
+                    filename=f'chi_200_850_{self.modelo_fmt}_semanal_{n_semana.item()}',
+                    ds_contour=chi850_plot/1e6,
+                    variavel_contour='chi',
+                    color_contour='black',
+                    plot_bacias=False,
+                    shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
+                    **kwargs
+                )
 
         elif modo == 'geada-inmet':
 
