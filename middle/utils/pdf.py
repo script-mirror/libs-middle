@@ -12,4 +12,4 @@ def pdf_to_jpg(
     :return None: 
     """
     pages = convert_from_path(path, 100)
-    pages[page_number-1].save(path_output, 'JPG')
+    pages[page_number-1].save(path_output, 'JPEG')
