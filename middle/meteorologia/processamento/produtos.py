@@ -2,6 +2,7 @@ from datetime import datetime
 from encodings.punycode import T
 import glob
 import geopandas as gpd
+from netCDF4 import Dimension
 import requests
 import os
 import time
@@ -1685,7 +1686,7 @@ class GeraProdutosPrevisao:
 
                 if resample_freq == '24h':
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
                     titulo = self._ajustar_tempo_e_titulo(
                         us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Jato {level_divergencia}hPa', semana, self.cond_ini,
@@ -1742,7 +1743,7 @@ class GeraProdutosPrevisao:
 
                 if resample_freq == '24h':
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
                     titulo = self._ajustar_tempo_e_titulo(
                         us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Temp. em {level_temp}hPa', semana, self.cond_ini,
@@ -1804,7 +1805,7 @@ class GeraProdutosPrevisao:
 
                 if resample_freq == '24h':
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
                     titulo = self._ajustar_tempo_e_titulo(geop_, f'{self.freqs_map[resample_freq]["prefix_title"]}Vort. e Geop. {level_geop}hPa', semana, self.cond_ini )
 
                 else:
@@ -2066,7 +2067,7 @@ class GeraProdutosPrevisao:
                 if resample_freq == '24h':
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
                     tempo_fim = pd.to_datetime(gh_plot.data_final.item())
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
                     titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV (1000-300)', cond_ini=self.cond_ini,
                             data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
@@ -2124,7 +2125,7 @@ class GeraProdutosPrevisao:
 
                 if resample_freq == '24h':
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
                     titulo = self._ajustar_tempo_e_titulo(
                         us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Divergência {level_divergencia}hPa', semana, self.cond_ini,
                 )
@@ -2231,14 +2232,14 @@ class GeraProdutosPrevisao:
             anomalias_psi = []
             anomalias_chi = []
 
-            for n_24h in us_24h_200.tempo:
+            for n_24h in us_24h_200.tempo[:10]:
 
                 u200_plot = us_24h_200.sel(tempo=n_24h)
                 v200_plot = vs_24h_200.sel(tempo=n_24h)
                 u850_plot = us_24h_850.sel(tempo=n_24h)
                 v850_plot = vs_24h_850.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
                 data_inicial = pd.to_datetime(n_24h.data_inicial.values).strftime('%Y-%m-%d')
                 data_final = pd.to_datetime(n_24h.data_final.values).strftime('%Y-%m-%d')
@@ -2296,7 +2297,7 @@ class GeraProdutosPrevisao:
 
                 # Plot 24h
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
 
                 titulo = self._ajustar_tempo_e_titulo(
                     u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PSI 200/850', semana, self.cond_ini,
@@ -2334,7 +2335,6 @@ class GeraProdutosPrevisao:
                     **kwargs
                 )
                 
-
                 # Colocar a dimensao semana no xarray
                 anomalia_psi200_semana = anomalia_psi200.assign_coords(semana=semana).expand_dims('semana')
                 anomalia_psi850_semana = anomalia_psi850.assign_coords(semana=semana).expand_dims('semana')
@@ -2357,7 +2357,12 @@ class GeraProdutosPrevisao:
             anomalias_psi = xr.concat(anomalias_psi, dim='semana')
             anomalias_chi = xr.concat(anomalias_chi, dim='semana')
 
-            pdb.set_trace()
+            print(anomalias_psi)
+
+            # # Agrupando e plotando por semanal
+            # anomalias_psi_semanal = anomalias_psi.groupby('semana').mean(dim='tempo')
+            # anomalias_chi_semanal = anomalias_chi.groupby('semana').mean(dim='tempo')
+
 
         elif modo == 'geada-inmet':
 
@@ -2718,7 +2723,7 @@ class GeraProdutosPrevisao:
                 })
 
                 tempo_ini = pd.to_datetime(n_24h.item())
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
                 titulo = gerar_titulo(
                     modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,

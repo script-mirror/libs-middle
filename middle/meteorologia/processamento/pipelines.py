@@ -295,6 +295,7 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_jato_div200(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_vento_div850(margin_y=-90, resample_freq='sop', anomalia_sop=True),
+                lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180),
             ]
 
     elif modelo == 'ecmwf-ens-estendido-membros':
