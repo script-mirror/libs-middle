@@ -2305,6 +2305,11 @@ class GeraProdutosPrevisao:
                 anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
                 anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
 
+                anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
+                anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
+                anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
+                anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
+
                 # Plot 24h
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
                 semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
@@ -2326,6 +2331,25 @@ class GeraProdutosPrevisao:
                     path_to_save=path_to_save,
                     **kwargs
                 )
+
+                titulo = self._ajustar_tempo_e_titulo(
+                    u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}CHI 200/850', semana, self.cond_ini,
+                )
+
+                plot_campos(
+                    ds=anomalia_chi200/1e6,
+                    variavel_plotagem='chi',
+                    title=titulo,
+                    filename=f'chi_200_850_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                    ds_contour=anomalia_chi850/1e6,
+                    variavel_contour='chi',
+                    color_contour='black',
+                    plot_bacias=False,
+                    shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
+                    **kwargs
+                )
+                
 
                 # Colocar a dimensao semana no xarray
                 anomalia_psi200_semana = anomalia_psi200.assign_coords(semana=semana).expand_dims('semana')

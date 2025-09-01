@@ -108,7 +108,14 @@ def custom_colorbar(variavel_plotagem):
         colors = ['maroon', 'darkred', 'red', 'orange', 'yellow', 'white', 'cyan', 'dodgerblue', 'blue', 'darkblue', 'indigo']
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
-        cbar_ticks = None
+        cbar_ticks = np.arange(-30, 35, 5)
+
+    elif variavel_plotagem in ['chi']:
+        levels = np.arange(-10, 10.5, 0.5)
+        colors = ['green', 'white', 'brown']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = np.arange(-10, 11, 1)
 
     elif variavel_plotagem in ['geop_500_anomalia']:
         levels = range(-40, 42, 2)
