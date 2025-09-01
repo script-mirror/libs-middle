@@ -819,6 +819,10 @@ class Constants:
     @property
     def GET_NEWAVE_SISTEMA_MMGD_TOTAL(self):
         return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/mmgd_total"
+    
+    @property
+    def PUT_NEWAVE_SISTEMA_MMGD_TOTAL(self):
+        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/mmgd_total"
 
     @property
     def GET_NEWAVE_SISTEMA_CARGAS_TOTAL_CARGA_GLOBAL(self):
@@ -838,6 +842,10 @@ class Constants:
 
     @property
     def GET_NEWAVE_CADIC_TOTAL_MMGD_BASE(self):
+        return "https://tradingenergiarz.com/api/v2/decks/newave/cadic/total_mmgd_base"
+    
+    @property
+    def PUT_NEWAVE_CADIC_TOTAL_MMGD_BASE(self):
         return "https://tradingenergiarz.com/api/v2/decks/newave/cadic/total_mmgd_base"
 
     @property
