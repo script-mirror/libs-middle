@@ -187,7 +187,6 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         while not os.path.isfile(dest_file) and attempt < max_attempts:
                             try:
                                 shutil.copyfile(src_file, dest_file)
-                                print(f'Arquivo {dest_file} copiado com sucesso')
                                 break
                             except FileNotFoundError:
                                 attempt += 1
@@ -200,21 +199,6 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if not os.path.isfile(dest_file):
                             print(f'Falha ao copiar {src_file} depois de {max_attempts} tentativas.')
 
-                        # while os.path.isfile(f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2') == False:
-
-                        #     dia_mes_prev = dates.strftime('%m%d')
-
-                        #     try:
-
-                        #         if self.name_prefix:
-                        #             shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/{self.name_prefix}_ecmwf-est_{fcst_fmt}.grib2')
-
-                        #         else:
-                        #             shutil.copyfile(f'{ftp_dir}/A1F{dia_mes_ini}0000{dia_mes_prev}____1', f'{caminho_para_salvar}/ecmwf-est_{fcst_fmt}.grib2')
-
-                        #     except:
-                        #         print('tentando')
-                        #         time.sleep(10)
 
                 # elif modelo_fmt in ['ecmwf-mensal']:
 

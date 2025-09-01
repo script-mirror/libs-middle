@@ -388,7 +388,7 @@ def plot_campos(
             plt.clabel(cf2, inline=True, fmt=mticker.FuncFormatter(lambda x, _: skip_zero_formatter(x)), fontsize=10)
 
         elif variavel_contour == 'psi':
-            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(-4, 14, 2))
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(-4, 14, 2), linewidths=(1.2, 0.5))
             plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)            
 
         elif variavel_contour == 'olr':
