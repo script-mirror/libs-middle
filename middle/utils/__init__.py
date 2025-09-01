@@ -34,6 +34,10 @@ from .file_manipulation import(
     create_directory,
 )
 
+from .pdf import (
+    pdf_to_jpg,
+)
+
 
 __all__ = [
     "SemanaOperativa",
@@ -48,4 +52,5 @@ __all__ = [
     "extrair_mes_ano",
     "criar_logger",
     "create_directory",
+    "pdf_to_jpg",
 ]
