@@ -2237,7 +2237,7 @@ class GeraProdutosPrevisao:
                 u850_plot = us_24h_850.sel(tempo=n_24h)
                 v850_plot = vs_24h_850.sel(tempo=n_24h)
                 tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
 
                 data_inicial = pd.to_datetime(n_24h.data_inicial.values).strftime('%Y-%m-%d')
                 data_final = pd.to_datetime(n_24h.data_final.values).strftime('%Y-%m-%d')
@@ -2362,7 +2362,7 @@ class GeraProdutosPrevisao:
             anomalias_chi_semanal = anomalias_chi.groupby('semana').mean("semana")
 
             # Semanas e labels do plot semanal
-            semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)
+            semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), pd.to_datetime(self.us.time.values), ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)
 
             # Plotando as semanas
             for index, n_semana in enumerate(anomalias_psi_semanal.semana):
