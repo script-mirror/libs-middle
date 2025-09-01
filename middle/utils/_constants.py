@@ -885,7 +885,24 @@ class Constants:
     @property
     def GET_RESTRICOES_ELETRICAS_HISTORICO(self):
         return "https://tradingenergiarz.com/api/v2/decks/restricoes-eletricas/historico"
+    
+    # Dados Hidraulicos Endpoints
+    @property
+    def POST_DADOS_HIDRAULICOS_UHE(self):
+        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-uhe"
 
+    @property
+    def GET_DADOS_HIDRAULICOS_UHE(self):
+        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-uhe"
+    
+    @property
+    def POST_DADOS_HIDRAULICOS_SUBSISTEMA(self):
+        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-subsistema"
+
+    @property
+    def GET_DADOS_HIDRAULICOS_SUBSISTEMA(self):
+        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-subsistema"
+    
     # Meteorologia Endpoints
     @property
     def GET_METEOROLOGIA_ESTACAO_CHUVOSA(self):
