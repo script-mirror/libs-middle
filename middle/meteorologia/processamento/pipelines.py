@@ -285,16 +285,17 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp'),
-            ]
-
-        elif tipo == 'pl':
-            return [
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop', anomalia_sop=True, anomalia_mensal=True),
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_jato_div200(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_vento_div850(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17), resample_freq='sop', anomalia_mensal=True),
                 lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17)),
+            ]
+
+        elif tipo == 'pl':
+            return [
+
             ]
 
     elif modelo == 'ecmwf-ens-estendido-membros':
