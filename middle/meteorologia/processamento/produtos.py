@@ -2356,12 +2356,16 @@ class GeraProdutosPrevisao:
 
             anomalias_psi = xr.concat(anomalias_psi, dim='semana')
             anomalias_chi = xr.concat(anomalias_chi, dim='semana')
+            anomalias_psi.to_netcdf('anomalias_psi.nc')
 
             print(anomalias_psi)
 
             # # Agrupando e plotando por semanal
-            # anomalias_psi_semanal = anomalias_psi.groupby('semana').mean(dim='tempo')
-            # anomalias_chi_semanal = anomalias_chi.groupby('semana').mean(dim='tempo')
+            # anomalias_psi_semanal = anomalias_psi.groupby('semana').mean("semana")
+            # anomalias_chi_semanal = anomalias_chi.groupby('semana').mean("semana")
+
+            # anomalias_psi_semanal.to_netcdf("anomalias_psi_semanal.nc")
+            # anomalias_chi_semanal.to_netcdf("anomalias_chi_semanal.nc")
 
 
         elif modo == 'geada-inmet':
