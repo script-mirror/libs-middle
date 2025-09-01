@@ -1705,7 +1705,7 @@ class GeraProdutosPrevisao:
 
                     titulo = self._ajustar_tempo_e_titulo(
                         us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Jato {level_divergencia}hPa', semana, self.cond_ini,
-                )
+                    )
 
                 else:
                     intervalo = us_plot.intervalo.item().replace(' ', '\ ')
@@ -2290,8 +2290,6 @@ class GeraProdutosPrevisao:
                 anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_plot['psi']
                 anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_plot['psi']
 
-                print(anomalia_psi200)
-
                 anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_plot['chi']
                 anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_plot['chi']
 
@@ -2306,6 +2304,28 @@ class GeraProdutosPrevisao:
 
                 anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
                 anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
+
+                # Plot 24h
+                tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
+                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=self.us.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+
+                titulo = self._ajustar_tempo_e_titulo(
+                    u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PSI 200/850', semana, self.cond_ini,
+                )
+
+                plot_campos(
+                    ds=anomalia_psi200/1e6,
+                    variavel_plotagem='psi',
+                    title=titulo,
+                    filename=f'psi_200_850_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                    ds_contour=anomalia_psi850/1e6,
+                    variavel_contour='psi',
+                    color_contour='black',
+                    plot_bacias=False,
+                    shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
+                    **kwargs
+                )
 
                 # Colocar a dimensao semana no xarray
                 anomalia_psi200_semana = anomalia_psi200.assign_coords(semana=semana).expand_dims('semana')
@@ -2328,6 +2348,8 @@ class GeraProdutosPrevisao:
 
             anomalias_psi = xr.concat(anomalias_psi, dim='semana')
             anomalias_chi = xr.concat(anomalias_chi, dim='semana')
+
+            pdb.set_trace()
 
         elif modo == 'geada-inmet':
 
