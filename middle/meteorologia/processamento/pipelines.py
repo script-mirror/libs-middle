@@ -18,6 +18,7 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
+                lambda: produtos.salva_netcdf(variavel='tp'),
             ]
 
         elif tipo == 'pl':
@@ -44,7 +45,6 @@ def pipelines(modelo, produtos, tipo=None):
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
-                lambda: produtos.salva_netcdf(variavel='tp'),
                 lambda: produtos.gerar_graficos_chuva(),
                 lambda: produtos.gerar_graficos_temp(),
             ]
@@ -152,6 +152,7 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
+                lambda: produtos.salva_netcdf(variavel='tp'),
             ]
 
         elif tipo == 'pl':
@@ -173,8 +174,6 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_ivt(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.salva_netcdf(variavel='tp'),
-                
                 
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
@@ -194,6 +193,7 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_diferenca_tp(margin_y=-90),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
+                lambda: produtos.salva_netcdf(variavel='tp'),
             ]  
         
         elif tipo == 'pl':
@@ -202,7 +202,7 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90, resample_freq='sop'),
-                lambda: produtos.salva_netcdf(variavel='tp'),
+                
             ]
 
     elif modelo == 'ecmwf-aifs':
@@ -217,13 +217,13 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_diferenca_tp(margin_y=-90),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
+                lambda: produtos.salva_netcdf(variavel='tp'),
             ]  
         
         elif tipo == 'pl':
             return [
                 lambda: produtos.gerar_geop500(margin_y=-90),
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
-                lambda: produtos.salva_netcdf(variavel='tp'),
             ]
 
     elif modelo == 'ecmwf-aifs-ens':
@@ -286,11 +286,10 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp'),
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop', anomalia_sop=True, anomalia_mensal=True),
-                lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_jato_div200(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_vento_div850(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17), resample_freq='sop', anomalia_mensal=True),
-                lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17)),
+                # lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17)),
             ]
 
         elif tipo == 'pl':

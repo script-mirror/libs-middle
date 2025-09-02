@@ -503,7 +503,7 @@ def ajustar_hora_utc(dt):
 
 ###################################################################################################################
 
-def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial'):
+def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial', prefixo_negrito=False, prefixo=None):
 
     modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est').replace('pconjunto', 'pconj')
 
@@ -521,6 +521,14 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
             f'$\\mathbf{{Válido\ de\ {data_ini}\ a\ {data_fim}}}$'
         )
 
+    elif prefixo_negrito:
+
+        titulo = (
+            f'{modelo.upper()} - {tipo} \u2022 '
+            f'{condicao_inicial}: {cond_ini}\n'
+            f'$\\mathbf{{Válido\ de\ {data_ini}\ a\ {data_fim}}}$'
+        )
+     
     elif unico_tempo:
 
         if semana is not None:
@@ -528,7 +536,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
             titulo = (
                 f'{modelo.upper()} - {tipo} \u2022 '
                 f'{condicao_inicial}: {cond_ini}\n'
-                f'$\\mathbf{{Válido\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
+                f'$\\mathbf{{Válido\\ {prefixo}\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
             )
 
         else:
@@ -817,5 +825,11 @@ def get_pontos_localidades():
     target_lat = xr.DataArray(pontos.lat, dims='id',coords={"id": pontos.id})
 
     return target_lon, target_lat, pontos
+
+###################################################################################################################
+
+def formato_filename(modelo, variavel, index=None):
+
+    return f'{index}_{variavel}_{modelo}' if index is not None else f'{variavel}_{modelo}'
 
 ###################################################################################################################

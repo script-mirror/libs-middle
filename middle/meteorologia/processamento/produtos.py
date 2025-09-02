@@ -39,6 +39,7 @@ from ..utils.utils import (
     get_prec_db,
     get_pontos_localidades,
     abrir_modelo_sem_vazios,
+    formato_filename
 )
 ###################################################################################################################
 
@@ -598,6 +599,15 @@ class ConfigProdutosObservado:
                     print(f'⚠️ Erro de conexão ao baixar {filename}: {e}, tentando novamente...')
                     time.sleep(5)
 
+        # Transformando CPC em NETCDF
+        if modelo_fmt == 'cpc':
+
+            nx, ny = 720, 360
+            data = np.fromfile(caminho_arquivo, dtype="<f4")
+            rain = data[:nx*ny].reshape(ny, nx)
+            ds = xr.Dataset({"rain": (("lat","lon"), rain)}, coords={"lon": np.arange(0.25, 360, 0.5), "lat": np.arange(-89.75, 90, 0.5)})
+            ds.to_netcdf(f'{caminho_para_salvar}/{filename.replace(".RT", ".nc")}')
+
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, todo_dir=False, unico=False, ajusta_nome=True, ajusta_longitude=True, apenas_mes_atual=False, variavel=None, ultimos_n_dias=False, n_dias=15):
 
@@ -677,7 +687,7 @@ class ConfigProdutosObservado:
 
 class GeraProdutosPrevisao:
 
-    def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None):
+    def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None, modo_atual=True):
 
         self.produto_config_sf = produto_config_sf
         self.modelo_fmt = self.produto_config_sf.modelo
@@ -690,9 +700,7 @@ class GeraProdutosPrevisao:
         self.produto_config_pl = produto_config_pl
         self.qtdade_max_semanas = CONSTANTES['semanas_operativas'].get(self.modelo_fmt, 3)
         self.path_savefiguras = f'{Constants().PATH_SAVE_FIGS_METEOROLOGIA}/{self.modelo_fmt}/{self.data_fmt}'
-
-        # os.makedirs(self.path_savefiguras, exist_ok=True)
-
+        
         # Inicializando algumas variaveis
         self.us = None
         self.us_mean = None
@@ -729,6 +737,19 @@ class GeraProdutosPrevisao:
             }
         }
 
+        self.modo_atual = modo_atual
+        self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total']
+        self.figs_semana = ['semanas_operativas']
+        self.figs_6h = ['chuva_geop500_vento850', 'pnmm_vento850']
+        self.graficos_vento = ['graficos_vento']
+        self.prob_acm = ['probabilidade_climatologia', 'probabilidade_limiar']
+        self.semana_membros = ['desvpad']
+        self.precip_grafs = ['graficos_precipitacao']
+        self.psi_chi = ['psi']
+        self.temp_geada = ['geada-inmet', 'geada-cana']
+        self.graficos_temp = ['graficos']
+        self.graficos_vento = ['graficos_vento']
+        
     ###################################################################################################################
 
     # --- REMOVE ARQUIVOS BRUTOS
@@ -878,31 +899,34 @@ class GeraProdutosPrevisao:
 
 
         qtdade_max_semanas = self.qtdade_max_semanas
+        
+        if self.modo_atual:
 
-        # Apenas para ficar como no site atual e nao precisar mudar
-        modo_atual = False
-        if modo_atual:
-            figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total']
-            figs_semana = ['semanas_operativas']
-            figs_6h = ['chuva_geop500_vento850']
-            graficos_vento = ['graficos_vento']
-
-            if modo in figs_24h:
+            if modo in self.figs_24h:
                 path_save = '24-em-24-gifs'
 
-            elif modo in figs_semana:
+            elif modo in self.figs_semana:
                 path_save = 'semana-energ'
 
-            elif modo in graficos_vento:
+            elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
 
-            elif modo in figs_6h:
+            elif modo in self.figs_6h:
                 path_save = 'figs-6h'
+
+            elif modo in self.prob_acm:
+                path_save = 'prob-acm'
+
+            elif modo in self.semana_membros:
+                path_save = 'semana-energ-membros'
+
+            elif modo in self.precip_grafs:
+                path_save = 'precip_grafs'
 
         else:
             path_save = modo
 
-        path_to_save = f'{self.path_savefiguras}/{path_save}' if path_save not in ['graficos_vento', 'estacao_chuvosa'] else self.path_savefiguras
+        path_to_save = f'{self.path_savefiguras}/{path_save}'
         os.makedirs(path_to_save, exist_ok=True)
 
         try:
@@ -928,7 +952,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=f'tp_24h_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, 'rain', n_24h.item()),
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
                         **kwargs
@@ -949,7 +973,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=f'tp_24h_polosbiomassa_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, 'rain_bio_logo', n_24h.item()),
                         shapefiles=self.shapefiles,
                         plot_bacias=False,
                         path_to_save=path_to_save,
@@ -990,7 +1014,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=f'tp_24h_pnmm_{self.modelo_fmt}_{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, 'rain_pnmm', n_24h.item()),
                         ds_contour=pnmm_plot,
                         variavel_contour='pnmm',
                         shapefiles=self.shapefiles,
@@ -1017,7 +1041,7 @@ class GeraProdutosPrevisao:
                     ds=tp_plot['tp'],
                     variavel_plotagem='acumulado_total',
                     title=titulo,
-                    filename=f'tp_acumulado_total_{self.modelo_fmt}',
+                    filename=formato_filename(self.modelo_fmt, 'acumulado_total'),    #f'{self.modelo_fmt}_acumulado_total',    # f'tp_acumulado_total_{self.modelo_fmt}',
                     shapefiles=self.shapefiles,
                     path_to_save=path_to_save,
                     **kwargs
@@ -1049,7 +1073,7 @@ class GeraProdutosPrevisao:
                         mes = pd.to_datetime(time.values).strftime('%b/%Y')
 
                         if time.dt.month == ds_obs.time.dt.month:
-                            tipo=f'MERGE + Prev. {mes}'
+                            tipo=f'MERGE + Prev'
                             ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
                             ds_acumulado = ds_acumulado.to_dataset()
 
@@ -1062,14 +1086,13 @@ class GeraProdutosPrevisao:
                                     ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)      
 
-
                                 # Anos iniciais e finais da climatologia
                                 ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
                                 ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
 
                         else:
                             tempo_ini = self.tp_mean.sel(valid_time=self.tp_mean.valid_time.dt.month == time.dt.month).valid_time[0].values
-                            tipo=f'Acumulado total. {mes}'
+                            tipo=f'Acumulado total'
                             ds_acumulado = ds_resample_sel
 
                             if anomalia_mensal:    
@@ -1109,14 +1132,16 @@ class GeraProdutosPrevisao:
                                 cond_ini=self.cond_ini,
                                 data_ini=data_ini,
                                 data_fim=data_fim,
-                                sem_intervalo_semana=True
+                                sem_intervalo_semana=True,
+                                prefixo_negrito=True,
+                                prefixo=f'para\\ {mes.title()}'
                             )
 
                             plot_campos(
                                 ds=ds_anomalia['tp'],
                                 variavel_plotagem='tp_anomalia',
                                 title=titulo,
-                                filename=f'{index}_tp_anomalia_merge_{self.modelo_fmt}',
+                                filename=formato_filename(self.modelo_fmt, 'anomalia_merge', index),
                                 shapefiles=self.shapefiles,
                                 path_to_save=path_to_save,
                                 **kwargs
@@ -1128,14 +1153,16 @@ class GeraProdutosPrevisao:
                             cond_ini=self.cond_ini,
                             data_ini=data_ini,
                             data_fim=data_fim,
-                            sem_intervalo_semana=True
+                            sem_intervalo_semana=True,
+                            prefixo_negrito=True,
+                            prefixo=f'para\\ {mes.title()}'
                         )
 
                         plot_campos(
                             ds=ds_acumulado['tp'],
                             variavel_plotagem='acumulado_total',
                             title=titulo,
-                            filename=f'{index}_tp_acumulado_total_merge_{self.modelo_fmt}',
+                            filename=formato_filename(self.modelo_fmt, 'acumulado_total', index),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
@@ -1164,7 +1191,7 @@ class GeraProdutosPrevisao:
                             ds=tp_plot['tp'],
                             variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia',
                             title=titulo,
-                            filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}' if not anomalia_sop else f'tp_sop_{self.modelo_fmt}_anomalia_semana{n_semana.item()}',
+                            filename=formato_filename(self.modelo_fmt, 'semana_energ', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, 'semana_energ_anomalia', n_semana.item()),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
@@ -1426,7 +1453,7 @@ class GeraProdutosPrevisao:
                             ds=prob,
                             variavel_plotagem='probabilidade',
                             title=titulo,
-                            filename=f'tp_sop_{tipo}_{self.modelo_fmt}_semana{n_semana.item()}',
+                            filename=formato_filename(self.modelo_fmt, f'{tipo}-probclimatologia', f'{n_semana.item()}{index}'),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
@@ -1461,15 +1488,13 @@ class GeraProdutosPrevisao:
                             ds=tp_plot,
                             variavel_plotagem='probabilidade',
                             title=titulo,
-                            filename=f'tp_{freq_prob}_{self.modelo_fmt}_{self.freqs_map[freq_prob]["prefix_filename"]}{n.item()}_probabilidade_{limiar}',
+                            filename=formato_filename(self.modelo_fmt, f'probabilidade{limiar}_{freq_prob}', n.item()),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
                         )
 
             elif modo == 'diferenca':
-
-                import pdb
 
                 # Arquivo atual
                 ds_mean = self.tp_mean.copy()
@@ -1553,7 +1578,7 @@ class GeraProdutosPrevisao:
                         variavel_plotagem='diferenca',
                         title=titulo,
                         shapefiles=self.shapefiles,
-                        filename=f'{index}_dif_{self.modelo_fmt}_{date[0].strftime("%Y%m%d%H")}_{date[1].strftime("%Y%m%d%H")}_{tipo_dif}',
+                        filename=formato_filename(self.modelo_fmt, 'dif', index),
                         path_to_save=path_to_save,
                         **kwargs
                     )
@@ -1579,7 +1604,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='desvpad',
                         title=titulo,
-                        filename=f'tp_{freq_prob}_{self.modelo_fmt}_{self.freqs_map[freq_prob]["prefix_filename"]}{n.item()}_desvpad',
+                        filename=formato_filename(self.modelo_fmt, f'desviopadrao_{freq_prob}', n.item()),
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
                         **kwargs
@@ -1628,7 +1653,7 @@ class GeraProdutosPrevisao:
                 response = requests.post(f'{API_URL}/meteorologia/estacao-chuvosa-prev', verify=False, json=ds_mean.to_dict('records'), headers=get_auth_header())
                 print(f'Código POST: {response.status_code}')
 
-            elif modo == 'graficos':
+            elif modo == 'graficos_precipitacao':
 
                 target_lon, target_lat, _ = get_pontos_localidades()
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -1639,7 +1664,7 @@ class GeraProdutosPrevisao:
 
                     tp_plot = tp_no_ponto[tp_no_ponto['id'] == id]
                     titulo = f"{CONSTANTES['city_dict'][id]}\n{self.modelo_fmt.upper()} - PRECH24HRS - Condição Inicial: {self.cond_ini}"
-                    filename = f'{path_to_save}/{id}_prec24h'
+                    filename = f'{path_to_save}/{id}'
                     plot_graficos_2d(df=tp_plot, tipo='prec24h', titulo=titulo, filename=filename)
 
         except Exception as e:
@@ -1652,7 +1677,45 @@ class GeraProdutosPrevisao:
         """
 
         qtdade_max_semanas = self.qtdade_max_semanas
-        path_to_save = f'{self.path_savefiguras}/{modo}'
+        if self.modo_atual:
+
+            if modo in self.figs_24h:
+                path_save = '24-em-24-gifs'
+
+            elif modo in self.figs_semana:
+                path_save = 'semana-energ'
+
+            elif modo in self.graficos_vento:
+                path_save = 'uv100_grafs'
+
+            elif modo in self.figs_6h:
+                path_save = 'figs-6h'
+
+            elif modo in self.prob_acm:
+                path_save = 'prob-acm'
+
+            elif modo in self.semana_membros:
+                path_save = 'semana-energ-membros'
+
+            elif modo in self.precip_grafs:
+                path_save = 'precip_grafs'
+
+            elif modo in self.psi_chi:
+                path_to_save = 'psi_chi'
+
+            elif modo in self.graficos_temp:
+                path_save = 'temp_grafs'
+
+            elif modo in self.graficos_vento:
+                path_save = 'uv100_grafs'
+
+            else:
+                path_save = modo
+
+        else:
+            path_save = modo
+
+        path_to_save = f'{self.path_savefiguras}/{path_save}'
         os.makedirs(path_to_save, exist_ok=True)
 
         try:
@@ -1705,8 +1768,7 @@ class GeraProdutosPrevisao:
                         ds=ds_streamplot['jato'],
                         variavel_plotagem='wind200',
                         title=titulo,
-                        filename=f'vento_jato_div{level_divergencia}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
-                        ds_streamplot=ds_streamplot,
+                        filename=formato_filename(self.modelo_fmt, f'vento200_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         variavel_streamplot='wind200',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
@@ -1762,7 +1824,7 @@ class GeraProdutosPrevisao:
                         ds=ds_quiver['t850'] - 273.15,  # Kelvin para Celsius
                         variavel_plotagem='temp850',
                         title=titulo,
-                        filename=f'vento_temp{level_temp}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'vento_temp850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_quiver=ds_quiver,
                         variavel_quiver='wind850',
                         plot_bacias=False,
@@ -1821,7 +1883,7 @@ class GeraProdutosPrevisao:
                         ds=ds_plot['vorticidade'],
                         variavel_plotagem='vorticidade',
                         title=titulo,
-                        filename=f'geop_vorticidade_{level_geop}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'vort_geo500_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_contour=ds_plot['gh']/10,
                         variavel_contour='gh_500',
                         plot_bacias=False,
@@ -1831,7 +1893,7 @@ class GeraProdutosPrevisao:
                         **kwargs
                     )
 
-            elif modo == 'frentes_frias':
+            elif modo == 'frentes':
 
                 if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
                     self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
@@ -1847,7 +1909,7 @@ class GeraProdutosPrevisao:
                 vwnd_sel = self.vs_mean.sortby('latitude').sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
                 air_sel = self.t_mean.sortby('latitude').sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')           
 
-                for mes in list(set(pnmm_sel.valid_time.dt.month.values)):
+                for index, mes in enumerate(list(set(pnmm_sel.valid_time.dt.month.values))):
 
                     mes_fmt = str(mes).zfill(2)
 
@@ -1867,7 +1929,7 @@ class GeraProdutosPrevisao:
                         ds=ds_frentes,
                         variavel_plotagem='frentes',
                         title=titulo,
-                        filename=f'frentes_{self.modelo_fmt}',
+                        filename=formato_filename(self.modelo_fmt, f'frentes_{mes_fmt}', index),   
                         ds_contour=ds_frentes,
                         variavel_contour='frentes',
                         shapefiles=self.shapefiles,
@@ -1950,7 +2012,7 @@ class GeraProdutosPrevisao:
                         ds=geop_plot['gh']/10,
                         variavel_plotagem='geop_500' if not anomalia_sop else 'geop_500_anomalia',
                         title=titulo,
-                        filename=f'geopotencial_{level_geop}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}' if not anomalia_sop else f'geopotencial_{level_geop}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}_anomalia',
+                        filename=formato_filename(self.modelo_fmt, f'altgeop500_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'altgeop500_anomalia_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),                        
                         ds_contour=geop_plot['gh']/10 if not anomalia_sop else geop_plot_contour['gh']/10,
                         variavel_contour='gh_500',
                         color_contour='black' if anomalia_sop else 'white',
@@ -2088,7 +2150,7 @@ class GeraProdutosPrevisao:
                         ds=ds_quiver['ivt']*100,
                         variavel_plotagem='ivt',
                         title=titulo,
-                        filename=f'ivt_geop700_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'ivt_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_quiver=ds_quiver,
                         variavel_quiver='ivt',
                         ds_contour=ds_quiver['gh_700'],
@@ -2143,7 +2205,7 @@ class GeraProdutosPrevisao:
                         ds=ds_streamplot['divergencia'],
                         variavel_plotagem='divergencia850',
                         title=titulo,
-                        filename=f'vento_div{level_divergencia}_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'vento_div850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_streamplot=ds_streamplot,
                         variavel_streamplot='wind850',
                         plot_bacias=False,
@@ -2194,7 +2256,7 @@ class GeraProdutosPrevisao:
                     plot_campos(ds=ds_quiver['tp'], 
                                 variavel_plotagem='wind_prec_geop', 
                                 title=titulo, 
-                                filename=f'vento{level_vento}_prec_geop{level_geop}_{self.modelo_fmt}_{index}', 
+                                filename=formato_filename(self.modelo_fmt, 'chuva_geop500_vento850', index),
                                 plot_bacias=False, ds_quiver=ds_quiver, 
                                 variavel_quiver='wind850', 
                                 ds_contour=ds_quiver['geop_500'], 
@@ -2305,7 +2367,7 @@ class GeraProdutosPrevisao:
                             ds=anomalia_psi200/1e6,
                             variavel_plotagem='psi',
                             title=titulo,
-                            filename=f'psi_200_850_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                            filename=formato_filename(self.modelo_fmt, 'psi_diario', index),
                             ds_contour=anomalia_psi850/1e6,
                             variavel_contour='psi',
                             color_contour='black',
@@ -2324,7 +2386,7 @@ class GeraProdutosPrevisao:
                             ds=anomalia_chi200/1e6,
                             variavel_plotagem='chi',
                             title=titulo,
-                            filename=f'chi_200_850_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                            filename=formato_filename(self.modelo_fmt, 'chi_diario', index),
                             ds_contour=anomalia_chi850/1e6,
                             variavel_contour='chi',
                             color_contour='black',
@@ -2417,7 +2479,7 @@ class GeraProdutosPrevisao:
                             ds=anomalia_psi200/1e6,
                             variavel_plotagem='psi',
                             title=titulo,
-                            filename=f'psi_200_850_{self.modelo_fmt}_semanal_{n_semana.item()}',
+                            filename=formato_filename(self.modelo_fmt, 'psi_semanal', index),
                             ds_contour=anomalia_psi850/1e6,
                             variavel_contour='psi',
                             color_contour='black',
@@ -2437,7 +2499,7 @@ class GeraProdutosPrevisao:
                             ds=anomalia_chi200/1e6,
                             variavel_plotagem='chi',
                             title=titulo,
-                            filename=f'chi_200_850_{self.modelo_fmt}_semanal_{n_semana.item()}',
+                            filename=formato_filename(self.modelo_fmt, 'chi_semanal', index),
                             ds_contour=anomalia_chi850/1e6,
                             variavel_contour='chi',
                             color_contour='black',
@@ -2529,7 +2591,7 @@ class GeraProdutosPrevisao:
                             ds=anomalia_psi200/1e6,
                             variavel_plotagem='psi',
                             title=titulo,
-                            filename=f'{index}_psi_anomalia_mensal_{self.modelo_fmt}',
+                            filename=formato_filename(self.modelo_fmt, 'psi_mensal', index),
                             ds_contour=anomalia_psi850/1e6,
                             variavel_contour='psi',
                             color_contour='black',
@@ -2552,7 +2614,7 @@ class GeraProdutosPrevisao:
                             ds=anomalia_chi200/1e6,
                             variavel_plotagem='chi',
                             title=titulo,
-                            filename=f'{index}_chi_anomalia_mensal_{self.modelo_fmt}',
+                            filename=formato_filename(self.modelo_fmt, 'chi_mensal', index),
                             ds_contour=anomalia_chi850/1e6,
                             variavel_contour='chi',
                             color_contour='black',
@@ -2583,7 +2645,7 @@ class GeraProdutosPrevisao:
                         ds=t2m_24h_plot['t2m'],
                         variavel_plotagem='geada-inmet',
                         title=titulo,
-                        filename=f'geada_inmet_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'geada_inmet_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
@@ -2611,7 +2673,7 @@ class GeraProdutosPrevisao:
                         ds=t2m_24h_plot['t2m'],
                         variavel_plotagem='geada-cana',
                         title=titulo,
-                        filename=f'geada_cana_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'geada_cana_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
@@ -2651,7 +2713,7 @@ class GeraProdutosPrevisao:
                         ds=var_24h_plot[varname],
                         variavel_plotagem='olr',
                         title=titulo,
-                        filename=f'olr_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'olr_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         ds_contour=var_24h_plot[varname],
@@ -2702,7 +2764,7 @@ class GeraProdutosPrevisao:
                         ds=magnitude,
                         variavel_plotagem='mag_vento100',
                         title=titulo,
-                        filename=f'mag_vento100_{self.modelo_fmt}_{self.freqs_map[resample_freq]["prefix_filename"]}{n_24h.item()}',
+                        filename=formato_filename(self.modelo_fmt, f'magvento100_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_quiver=ds_quiver,
                         variavel_quiver='wind850',
                         plot_bacias=False,
@@ -2711,7 +2773,7 @@ class GeraProdutosPrevisao:
                         **kwargs
                     )
 
-            elif modo == 'graficos':
+            elif modo == 'graficos_temperatura':
 
                 if self.t2m_mean is None:
                     _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
@@ -2898,51 +2960,51 @@ class GeraProdutosPrevisao:
                 if self.pnmm_mean is None:
                     _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
 
-            # Apenas para combar com o vento    
-            if self.pnmm_mean.longitude.min() >= 0:
-                pnmm_mean = self.pnmm_mean.assign_coords(longitude=(((self.pnmm_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+                # Apenas para combar com o vento    
+                if self.pnmm_mean.longitude.min() >= 0:
+                    pnmm_mean = self.pnmm_mean.assign_coords(longitude=(((self.pnmm_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
-            # Vento
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                # Vento
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-            for index, n_24h in enumerate(pnmm_mean.valid_time):
+                for index, n_24h in enumerate(pnmm_mean.valid_time):
 
-                print(f'Processando {index}...')
+                    print(f'Processando {index}...')
 
-                us_plot = self.us_mean.sel(valid_time=n_24h)
-                vs_plot = self.vs_mean.sel(valid_time=n_24h)
-                pnmm_plot = pnmm_mean.sel(valid_time=n_24h)
+                    us_plot = self.us_mean.sel(valid_time=n_24h)
+                    vs_plot = self.vs_mean.sel(valid_time=n_24h)
+                    pnmm_plot = pnmm_mean.sel(valid_time=n_24h)
 
-                ds_quiver = xr.Dataset({
-                    'u': us_plot['u'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
-                    'v': vs_plot['v'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
-                    'pnmm_plot': pnmm_plot[varname]*1e-2
-                })
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
+                        'v': vs_plot['v'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
+                        'pnmm_plot': pnmm_plot[varname]*1e-2
+                    })
 
-                tempo_ini = pd.to_datetime(n_24h.item())
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                    tempo_ini = pd.to_datetime(n_24h.item())
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,
-                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    semana=semana, unico_tempo=True
-                )
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        semana=semana, unico_tempo=True
+                    )
 
-                plot_campos(ds=ds_quiver['pnmm_plot'], 
-                            variavel_plotagem='pnmm_vento', 
-                            title=titulo, 
-                            filename=f'vento850_pnmm_{self.modelo_fmt}_{index}', 
-                            plot_bacias=False, ds_quiver=ds_quiver, 
-                            variavel_quiver='wind850', 
-                            ds_contour=ds_quiver['pnmm_plot'], 
-                            variavel_contour='pnmm', 
-                            color_contour='black',
-                            shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
-                            with_norm=True,
-                            **kwargs
-                            )         
+                    plot_campos(ds=ds_quiver['pnmm_plot'], 
+                                variavel_plotagem='pnmm_vento', 
+                                title=titulo, 
+                                filename=formato_filename(self.modelo_fmt, 'pnmm_vento850', index),
+                                plot_bacias=False, ds_quiver=ds_quiver, 
+                                variavel_quiver='wind850', 
+                                ds_contour=ds_quiver['pnmm_plot'], 
+                                variavel_contour='pnmm', 
+                                color_contour='black',
+                                shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
+                                with_norm=True,
+                                **kwargs
+                                )         
 
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
@@ -3107,7 +3169,7 @@ class GeraProdutosPrevisao:
         self._processar_varsdinamicas('geop_vort500', **kwargs)
 
     def gerar_frentes_frias(self, **kwargs):
-        self._processar_varsdinamicas('frentes_frias', **kwargs)
+        self._processar_varsdinamicas('frentes', **kwargs)
 
     def gerar_geop500(self, **kwargs):
         self._processar_varsdinamicas('geop500', **kwargs)
@@ -3140,10 +3202,10 @@ class GeraProdutosPrevisao:
         self._processar_varsdinamicas('mag_vento100', **kwargs)
 
     def gerar_graficos_temp(self, **kwargs):
-        self._processar_varsdinamicas('graficos', **kwargs)
+        self._processar_varsdinamicas('graficos_temperatura', **kwargs)
 
     def gerar_graficos_chuva(self, **kwargs):
-        self._processar_precipitacao('graficos', **kwargs)
+        self._processar_precipitacao('graficos_precipitacao', **kwargs)
 
     def gerar_graficos_v100(self, **kwargs):
         self._processar_varsdinamicas('graficos_vento', **kwargs)
