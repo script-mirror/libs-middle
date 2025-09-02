@@ -700,7 +700,7 @@ class GeraProdutosPrevisao:
         self.produto_config_pl = produto_config_pl
         self.qtdade_max_semanas = CONSTANTES['semanas_operativas'].get(self.modelo_fmt, 3)
         self.path_savefiguras = f'{Constants().PATH_SAVE_FIGS_METEOROLOGIA}/{self.modelo_fmt}/{self.data_fmt}'
-        
+
         # Inicializando algumas variaveis
         self.us = None
         self.us_mean = None
@@ -923,10 +923,13 @@ class GeraProdutosPrevisao:
             elif modo in self.precip_grafs:
                 path_save = 'precip_grafs'
 
+            else:
+                path_save = modo
+
         else:
             path_save = modo
 
-        path_to_save = f'{self.path_savefiguras}/{path_save}'
+        path_to_save = f'{self.path_savefiguras}/{path_save}' if modo not in ['bacias_smap'] else self.path_savefiguras
         os.makedirs(path_to_save, exist_ok=True)
 
         try:
