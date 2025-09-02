@@ -868,8 +868,8 @@ def painel_png(path_figs, figsize=(12, 12), output_file=None, path_figs2=None, s
         else:
             lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if '.png' in x]
 
-    # Juntando as duas listas
-    lista_png.extend(lista_png2)
+        # Juntando as duas listas
+        lista_png.extend(lista_png2)
 
     if len(lista_png) <= 3:
         nrows = 1
