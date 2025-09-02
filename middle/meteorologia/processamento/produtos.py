@@ -732,13 +732,13 @@ class GeraProdutosPrevisao:
             },
 
             '24h': {
-                'prefix_filename': 'tempo',
+                'prefix_filename': 'diario',
                 'prefix_title': ''
             }
         }
 
         self.modo_atual = modo_atual
-        self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total']
+        self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total', '24h_biomassa']
         self.figs_semana = ['semanas_operativas']
         self.figs_6h = ['chuva_geop500_vento850', 'pnmm_vento850']
         self.graficos_vento = ['graficos_vento']
@@ -929,7 +929,7 @@ class GeraProdutosPrevisao:
         else:
             path_save = modo
 
-        path_to_save = f'{self.path_savefiguras}/{path_save}' if modo not in ['bacias_smap'] else self.path_savefiguras
+        path_to_save = f'{self.path_savefiguras}/{path_save}' if modo not in ['bacias_smap', 'estacao_chuvosa'] else self.path_savefiguras
         os.makedirs(path_to_save, exist_ok=True)
 
         try:
@@ -2818,12 +2818,14 @@ class GeraProdutosPrevisao:
                 ano_atual = str(self.t2m_mean.time.dt.year.item()).zfill(4)
                 mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
                 ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
-                obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
-                obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
-                obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
-                obs_tmax_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
-                obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
-                obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat']).rename(columns={'time': 'valid_time'})
+
+                obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmax_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+
                 obs_tmax = pd.concat([obs_tmax_anterior, obs_tmax_atual], ignore_index=True)
                 obs_tmin = pd.concat([obs_tmin_anterior, obs_tmin_atual], ignore_index=True)
                 obs_tmed = pd.concat([obs_tmed_anterior, obs_tmed_atual], ignore_index=True)
@@ -3712,9 +3714,9 @@ class GeraProdutosObservacao:
                 t2med_no_ponto = self.tmed['tmed'].sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe().reset_index('valid_time').dropna()
 
                 # Ajustando os labels
-                t2max_no_ponto = t2max_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'}).drop(columns=['valid_time'])
-                t2min_no_ponto = t2min_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'}).drop(columns=['valid_time'])
-                t2med_no_ponto = t2med_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'}).drop(columns=['valid_time'])
+                t2max_no_ponto = t2max_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'})
+                t2min_no_ponto = t2min_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'})
+                t2med_no_ponto = t2med_no_ponto.rename(columns={'latitude': 'lat', 'longitude': 'lon'})
 
                 print(f'gerando csv...')
                 os.makedirs(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files', exist_ok=True)

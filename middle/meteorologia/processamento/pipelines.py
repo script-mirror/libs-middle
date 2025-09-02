@@ -331,7 +331,14 @@ def pipelines(modelo, produtos, tipo=None):
             lambda: produtos.gerar_dif_prev(),
             lambda: produtos.gerar_bacias_smap(salva_db=True),
         ]
-        
+
+    elif modelo == 'samet':
+
+        return [
+            lambda: produtos.gerar_temp_diario(extent=CONSTANTES['extents_mapa']['brasil']),
+            lambda: produtos.temp_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
+        ]
+
     return 
 
 ###################################################################################################################
