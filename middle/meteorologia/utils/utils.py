@@ -879,6 +879,8 @@ def painel_png(path_figs, figsize=(12, 12), output_file=None, path_figs2=None, s
         nrows = len(lista_png)
         ncols = 2
 
+    print(lista_png)
+
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
     axs = axs.flatten()
 
