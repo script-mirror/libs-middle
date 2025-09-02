@@ -1221,7 +1221,9 @@ class GeraProdutosPrevisao:
                 # Criando painel para enviar via wpp
                 if ensemble:
                     lista_png = os.listdir(path_to_save)
+                    print(lista_png)
                     lista_png = [f'{path_to_save}/{x}' for x in lista_png if f'semana' in x and '.png' in x]
+                    print(lista_png)
                     path_painel = painel_png(lista_png=lista_png, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario='11968606707', mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
 
