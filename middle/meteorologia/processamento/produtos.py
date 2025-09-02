@@ -1783,6 +1783,7 @@ class GeraProdutosPrevisao:
                         title=titulo,
                         filename=formato_filename(self.modelo_fmt, f'vento200_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         variavel_streamplot='wind200',
+                        ds_streamplot=ds_streamplot,
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
@@ -2886,6 +2887,9 @@ class GeraProdutosPrevisao:
 
                 # Grafico por id
                 for id in t2max_no_ponto['id'].unique():
+
+                    print(f'Gráficos temperatura ID: {id}')
+
                     dados_t2max = t2max_no_ponto[t2max_no_ponto['id'] == id]
                     dados_t2min = t2min_no_ponto[t2min_no_ponto['id'] == id]
 
@@ -2898,6 +2902,9 @@ class GeraProdutosPrevisao:
 
                 # Grafico por submercado
                 for submercado in t2med_no_ponto_submercado['regiao'].unique():
+
+                    print(f'Gráficos temperatura Submercado: {submercado}')
+
                     dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado].rename(columns={'t2m_peso': 't2m', 't2m_clim_peso': 't2m_clim'})
 
                     titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"

@@ -526,7 +526,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
         titulo = (
             f'{modelo.upper()} - {tipo} \u2022 '
             f'{condicao_inicial}: {cond_ini}\n'
-            f'$\\mathbf{{Válido\ de\ {data_ini}\ a\ {data_fim}}}$'
+            f'$\\mathbf{{Válido\\ {prefixo}\\ de\\ {data_ini}\\ a\\ {data_fim}}}$'
         )
      
     elif unico_tempo:
@@ -536,7 +536,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
             titulo = (
                 f'{modelo.upper()} - {tipo} \u2022 '
                 f'{condicao_inicial}: {cond_ini}\n'
-                f'$\\mathbf{{Válido\\ {prefixo}\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
+                f'$\\mathbf{{Válido\\  para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
             )
 
         else:
