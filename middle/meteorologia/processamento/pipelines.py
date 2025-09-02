@@ -336,7 +336,7 @@ def pipelines(modelo, produtos, tipo=None):
 
         return [
             lambda: produtos.gerar_temp_diario(extent=CONSTANTES['extents_mapa']['brasil']),
-            lambda: produtos.temp_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
+            lambda: produtos.gerar_temp_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
         ]
 
     return 
