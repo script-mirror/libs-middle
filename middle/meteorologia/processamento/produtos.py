@@ -927,7 +927,7 @@ class GeraProdutosPrevisao:
         else:
             path_save = modo
 
-        path_to_save = f'{self.path_savefiguras}/{path_save}' if modo not in ['bacias_smap', 'estacao_chuvosa'] else self.path_savefiguras
+        path_to_save = f'{self.path_savefiguras}/{path_save}' if modo not in ['estacao_chuvosa'] else self.path_savefiguras
         os.makedirs(path_to_save, exist_ok=True)
 
         try:
@@ -1220,12 +1220,10 @@ class GeraProdutosPrevisao:
 
                 # Criando painel para enviar via wpp
                 if ensemble:
-                    lista_png = os.listdir(path_to_save)
-                    print(lista_png)
-                    lista_png = [f'{path_to_save}/{x}' for x in lista_png if f'semana' in x and '.png' in x]
-                    print(lista_png)
-                    path_painel = painel_png(lista_png=lista_png, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
+                    path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario='11968606707', mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    print(f'Removendo painel ... {path_painel}')
+                    os.remove(path_painel)
 
             elif modo == 'bacias_smap':
 
@@ -1387,6 +1385,11 @@ class GeraProdutosPrevisao:
                                 mes_fmt_svg=mes_fmt_svg,
                                 com_climatologia=True
                             )
+
+                            path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_bacias_smap_{self.modelo_fmt}_{self.data_fmt}.png')
+                            send_whatsapp_message(destinatario='11968606707', mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                            print(f'Removendo painel ... {path_painel}')
+                            os.remove(path_painel)
 
                 else:
 
