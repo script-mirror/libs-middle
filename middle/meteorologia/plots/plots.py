@@ -582,7 +582,7 @@ def plot_campos(
                 if not np.isnan(row['tp']):  # Garante que há valor para exibir
                     lon, lat = row["vl_lon"], row["vl_lat"]  # Extrai coordenadas do centroide
                     lon = lon+360
-                    ax.text(lon, lat, f"{row['tp']:.0f}", fontsize=11, color='black', fontweight='bold', ha='center', va='center', transform=ccrs.PlateCarree())
+                    ax.text(lon, lat, f"{row['tp']:.0f}", fontsize=13, color='black', fontweight='bold', ha='center', va='center', transform=ccrs.PlateCarree())
                             # bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')c
                             # )
 
