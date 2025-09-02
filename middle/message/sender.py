@@ -9,7 +9,7 @@ constants = Constants()
 logger = setup_logger()
 
 
-def send_whatsapp_message(destinatario: str, mensagem: str, arquivo):
+def send_whatsapp_message(destinatario: str, mensagem: str, arquivo = None):
     """
     Envia uma mensagem via WhatsApp para o destinatário especificado.
 
