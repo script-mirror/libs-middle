@@ -882,7 +882,12 @@ def painel_png(path_figs, figsize=(12, 12), output_file=None, path_figs2=None, s
     print(lista_png)
 
     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-    axs = axs.flatten()
+    
+    # ✅ garante que axs seja sempre lista
+    if isinstance(axs, plt.Axes):
+        axs = [axs]
+    else:
+        axs = axs.flatten()
 
     for i, img_path in enumerate(lista_png):
         img = Image.open(img_path)
