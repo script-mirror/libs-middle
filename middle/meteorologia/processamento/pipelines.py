@@ -18,7 +18,7 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
-                lambda: produtos.salva_netcdf(variavel='tp'),
+                lambda: produtos.salva_netcdf(variavel='tp'), 
             ]
 
         elif tipo == 'pl':
