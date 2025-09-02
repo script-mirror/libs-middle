@@ -991,7 +991,7 @@ class Constants:
     
     @property 
     def PATH_SAVE_FIGS_METEOROLOGIA(self):
-        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS' # './tmp/plots'
 
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
