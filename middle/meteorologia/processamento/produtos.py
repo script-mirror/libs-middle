@@ -1,8 +1,5 @@
 from datetime import datetime
-from encodings.punycode import T
-import glob
 import geopandas as gpd
-from netCDF4 import Dimension
 import requests
 import os
 import time
@@ -15,6 +12,7 @@ import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
 from middle.utils import get_auth_header
+from middle.message.sender import send_whatsapp_message
 import scipy.ndimage as nd
 from ..plots.plots import plot_campos, plot_df_to_mapa, plot_graficos_2d, plot_chuva_acumulada
 from ..utils.utils import (
@@ -30,17 +28,17 @@ from ..utils.utils import (
     get_df_ons,
     calcula_media_bacia,
     converter_psat_para_cd_subbacia,
-    calcula_psi_chi,
     open_hindcast_file,
     ajusta_lon_0_360,
-    ajusta_lon_180_180,
     ajusta_acumulado_ds,
     ajusta_shp_json,
     get_prec_db,
     get_pontos_localidades,
     abrir_modelo_sem_vazios,
-    formato_filename
+    formato_filename,
+    painel_png
 )
+
 ###################################################################################################################
 
 class ConfigProdutosPrevisaoCurtoPrazo:
@@ -1219,6 +1217,11 @@ class GeraProdutosPrevisao:
                                 path_to_save=path_to_save,
                                 **kwargs
                             )
+
+                # Criando painel para enviar via wpp
+                if ensemble:
+                    path_painel = painel_png(lista_png=os.listdir(path_to_save), output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
+                    send_whatsapp_message(destinatario='11968606707', mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
 
             elif modo == 'bacias_smap':
 
