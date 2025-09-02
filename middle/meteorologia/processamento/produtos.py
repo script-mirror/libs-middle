@@ -3698,6 +3698,7 @@ class GeraProdutosObservacao:
                             filename=f'{data_var}_{self.modelo_fmt}_{pd.to_datetime(valid_time.item()).strftime("%Y%m%d")}',
                             shapefiles=self.shapefiles,
                             plot_bacias=False,
+                            path_to_save=f'{Constants().PATH_SAVE_FIGS_METEOROLOGIA}/figs_samet',
                             **kwargs
                         )
 
