@@ -605,7 +605,7 @@ class ConfigProdutosObservado:
             nx, ny = 720, 360
             data = np.fromfile(caminho_arquivo, dtype="<f4")
             rain = data[:nx*ny].reshape(ny, nx)
-            ds = xr.Dataset({"rain": (("lat","lon"), rain)}, coords={"lon": np.arange(0.25, 360, 0.5), "lat": np.arange(-89.75, 90, 0.5)})
+            ds = xr.Dataset({"tp": (("lat","lon"), rain/10)}, coords={"lon": np.arange(0.25, 360, 0.5), "lat": np.arange(-89.75, 90, 0.5)})
             ds.to_netcdf(f'{caminho_para_salvar}/{filename.replace(".RT", ".nc")}')
 
     # --- ABERTURA DOS DADOS ---
