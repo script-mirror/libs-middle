@@ -2229,7 +2229,7 @@ class GeraProdutosPrevisao:
                         ds=ds_streamplot['divergencia'],
                         variavel_plotagem='divergencia850',
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, f'vento_div850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        filename=formato_filename(self.modelo_fmt, f'vento850_div850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_streamplot=ds_streamplot,
                         variavel_streamplot='wind850',
                         plot_bacias=False,
