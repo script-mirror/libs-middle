@@ -2905,7 +2905,9 @@ class GeraProdutosPrevisao:
                     filename = f'{path_to_save}/{id}'
                     plot_graficos_2d(df=dados_t2max, tipo='tmax_tmin', df_tmin=dados_t2min, titulo=titulo, filename=filename)
                     
-                    filename = f'{path_to_save}/{id}_geada'
+                    path_to_save_geada = f'{self.path_savefiguras}/geadas_grafs'
+                    os.makedirs(path_to_save_geada, exist_ok=True)
+                    filename = f'{path_to_save_geada}/{id}_geada'
                     plot_graficos_2d(df=dados_t2min, tipo='geada', titulo=titulo, filename=filename)
 
                 # Grafico por submercado
