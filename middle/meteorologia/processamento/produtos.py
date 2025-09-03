@@ -2854,9 +2854,9 @@ class GeraProdutosPrevisao:
                 obs_tmax['type'] = 'observado'
                 obs_tmin['type'] = 'observado'
                 obs_tmed['type'] = 'observado'
-                obs_tmax['valid_time'] = pd.to_datetime(obs_tmax['valid_time'])
-                obs_tmin['valid_time'] = pd.to_datetime(obs_tmin['valid_time'])
-                obs_tmed['valid_time'] = pd.to_datetime(obs_tmed['valid_time'])
+                obs_tmax['valid_time'] = pd.to_datetime(obs_tmax['valid_time']) - pd.Timedelta(hours=pd.to_datetime(t2m.time.item()).hour)
+                obs_tmin['valid_time'] = pd.to_datetime(obs_tmin['valid_time']) - pd.Timedelta(hours=pd.to_datetime(t2m.time.item()).hour)
+                obs_tmed['valid_time'] = pd.to_datetime(obs_tmed['valid_time']) - pd.Timedelta(hours=pd.to_datetime(t2m.time.item()).hour)
                 ultimos_15_dias = pd.date_range(start=pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15), end=pd.to_datetime(self.t2m_mean.time.item()))
                 print(obs_tmax['valid_time'])
                 print(ultimos_15_dias)
