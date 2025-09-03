@@ -1727,9 +1727,6 @@ class GeraProdutosPrevisao:
             elif modo in self.graficos_temp:
                 path_save = 'temp_grafs'
 
-            elif modo in self.graficos_vento:
-                path_save = 'uv100_grafs'
-
             elif modo in self.olr:
                 path_save = 'semana-energ-olr'
 
@@ -2998,8 +2995,6 @@ class GeraProdutosPrevisao:
 
                     # Titulo do plot
                     titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
-                    path_to_save = path_to_save.replace('_vento', '')
-                    os.makedirs(path_to_save, exist_ok=True)
                     filename = f'{path_to_save}/mag_vento100_{area}'
                     plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
 
