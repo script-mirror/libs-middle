@@ -2847,7 +2847,6 @@ class GeraProdutosPrevisao:
                 obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
                 obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
 
-
                 obs_tmax = pd.concat([obs_tmax_anterior, obs_tmax_atual], ignore_index=True)
                 obs_tmin = pd.concat([obs_tmin_anterior, obs_tmin_atual], ignore_index=True)
                 obs_tmed = pd.concat([obs_tmed_anterior, obs_tmed_atual], ignore_index=True)
