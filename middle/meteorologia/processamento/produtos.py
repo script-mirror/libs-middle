@@ -2855,7 +2855,8 @@ class GeraProdutosPrevisao:
                 obs_tmin['type'] = 'observado'
                 obs_tmed['type'] = 'observado'
                 ultimos_15_dias = pd.date_range(start=pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15), end=pd.to_datetime(self.t2m_mean.time.item()))
-                print(obs_tmax)
+                print(obs_tmax['valid_time'])
+                print(ultimos_15_dias)
                 obs_tmax = obs_tmax[obs_tmax['valid_time'].isin(ultimos_15_dias)]
                 obs_tmin = obs_tmin[obs_tmin['valid_time'].isin(ultimos_15_dias)]
                 obs_tmed = obs_tmed[obs_tmed['valid_time'].isin(ultimos_15_dias)]
@@ -2863,12 +2864,10 @@ class GeraProdutosPrevisao:
                 obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
                 obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
                 
-
                 # Juntando com a previsao
                 t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
                 t2min_no_ponto = pd.concat([obs_tmin.rename(columns={'tmin': 't2m'}), t2min_no_ponto], axis=0)
                 t2med_no_ponto = pd.concat([obs_tmed.rename(columns={'tmed': 't2m'}), t2med_no_ponto], axis=0)
-                print(t2max_no_ponto)
 
                 # Abrindo os arquivos de climatologia
                 clim_tmax = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmax_cidades.txt', sep=' ', names=np.arange(1,13))
