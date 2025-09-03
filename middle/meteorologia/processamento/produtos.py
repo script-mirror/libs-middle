@@ -2649,7 +2649,7 @@ class GeraProdutosPrevisao:
             elif modo == 'geada-inmet':
 
                 if self.t2m_mean is None:
-                    _, c, self.cond_ini = self._carregar_t2m_mean()
+                    _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
 
                 t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
 
