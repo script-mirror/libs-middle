@@ -891,7 +891,7 @@ class GeraProdutosPrevisao:
     def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, 
                                 salva_db=True, modelo_obs='merge', limiares_prob=[5, 10, 20, 30, 50, 70, 100], freq_prob='sop', 
                                 timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False,
-                                var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='sudeste',
+                                var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='sudeste', resample_freq='24h',
                                 **kwargs):
         
         """
@@ -989,13 +989,13 @@ class GeraProdutosPrevisao:
                 varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
 
                 # Tp
-                tp_24h = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
+                tp_24h = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', resample_freq)
 
                 # Pnmm
                 if self.pnmm_mean is None:
                     _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
 
-                pnmm_24h = resample_variavel(self.pnmm_mean, self.modelo_fmt, varname, '24h', modo_agrupador='mean')
+                pnmm_24h = resample_variavel(self.pnmm_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean')
 
                 for n_24h, p_24h in zip(tp_24h.tempo, pnmm_24h.tempo):
 
@@ -1004,14 +1004,31 @@ class GeraProdutosPrevisao:
                     pnmm_plot = pnmm_24h.sel(tempo=p_24h)
                     pnmm_plot = nd.gaussian_filter(pnmm_plot[varname]*1e-2, sigma=2)
 
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.tp.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                    # tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
+                    # semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.tp.valid_time[-1].values, modelo=self.modelo_fmt)[0]
 
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo='PREC24, PNMM', cond_ini=self.cond_ini,
-                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=pd.to_datetime(tp_plot.data_final.item()).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        semana=semana
+                    # titulo = gerar_titulo(
+                    #     modelo=self.modelo_fmt, tipo='PREC24, PNMM', cond_ini=self.cond_ini,
+                    #     data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    #     data_fim=pd.to_datetime(tp_plot.data_final.item()).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    #     semana=semana
+                    # )
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            tp_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PREC24, PNMM', semana, self.cond_ini,
+                        )
+
+                    else:
+                        intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = tp_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
                     )
 
                     plot_campos(
