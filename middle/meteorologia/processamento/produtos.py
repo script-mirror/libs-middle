@@ -746,7 +746,7 @@ class GeraProdutosPrevisao:
         self.precip_grafs = ['graficos_precipitacao']
         self.psi_chi = ['psi']
         self.temp_geada = ['geada-inmet', 'geada-cana']
-        self.graficos_temp = ['graficos']
+        self.graficos_temp = ['graficos_temperatura']
         self.graficos_vento = ['graficos_vento']
         self.olr = ['olr']
         self.mag_vento100 = ['mag_vento100']
@@ -1045,7 +1045,7 @@ class GeraProdutosPrevisao:
                     ds=tp_plot['tp'],
                     variavel_plotagem='acumulado_total',
                     title=titulo,
-                    filename=formato_filename(self.modelo_fmt, 'acumulado_total'),    #f'{self.modelo_fmt}_acumulado_total',    # f'tp_acumulado_total_{self.modelo_fmt}',
+                    filename=formato_filename(self.modelo_fmt, 'acumuladototal'),
                     shapefiles=self.shapefiles,
                     path_to_save=path_to_save,
                     **kwargs
@@ -1687,10 +1687,6 @@ class GeraProdutosPrevisao:
             print(f'Erro ao gerar precipitação ({modo}): {e}')
 
     def _processar_varsdinamicas(self, modo, anomalia_frentes=False, resample_freq='24h', anomalia_sop=False, var_anomalia='gh', level_anomalia=500, anomalia_mensal=False,**kwargs):
-
-        """
-        modo: jato_div200, vento_temp850, geop_vort500, frentes_frias, geop500, ivt, vento_div850,  chuva_geop500_vento850
-        """
 
         qtdade_max_semanas = self.qtdade_max_semanas
         if self.modo_atual:
@@ -2653,7 +2649,7 @@ class GeraProdutosPrevisao:
             elif modo == 'geada-inmet':
 
                 if self.t2m_mean is None:
-                    _, self.t2m_mean, _ = self._carregar_t2m_mean()
+                    _, c, self.cond_ini = self._carregar_t2m_mean()
 
                 t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
 
@@ -2664,7 +2660,7 @@ class GeraProdutosPrevisao:
                     t2m_24h_plot = -1*t2m_24h_plot
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
                     titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
                 
                     plot_campos(
