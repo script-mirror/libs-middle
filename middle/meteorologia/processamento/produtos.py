@@ -1231,7 +1231,7 @@ class GeraProdutosPrevisao:
                 # Criando painel para enviar via wpp
                 if ensemble:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
-                    send_whatsapp_message(destinatario='11968606707', mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
 
