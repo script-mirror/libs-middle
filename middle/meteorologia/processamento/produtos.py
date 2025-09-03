@@ -738,7 +738,8 @@ class GeraProdutosPrevisao:
         self.modo_atual = modo_atual
         self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total', '24h_biomassa']
         self.figs_semana = ['semanas_operativas']
-        self.figs_6h = ['chuva_geop500_vento850', 'pnmm_vento850']
+        self.figs_6h = ['chuva_geop500_vento850']
+        self.vento850_pnmm6h = ['pnmm_vento850']
         self.graficos_vento = ['graficos_vento']
         self.prob_acm = ['probabilidade_climatologia', 'probabilidade_limiar']
         self.semana_membros = ['desvpad']
@@ -747,6 +748,8 @@ class GeraProdutosPrevisao:
         self.temp_geada = ['geada-inmet', 'geada-cana']
         self.graficos_temp = ['graficos']
         self.graficos_vento = ['graficos_vento']
+        self.olr = ['olr']
+        self.mag_vento100 = ['mag_vento100']
         
     ###################################################################################################################
 
@@ -1142,7 +1145,7 @@ class GeraProdutosPrevisao:
                                 ds=ds_anomalia['tp'],
                                 variavel_plotagem='tp_anomalia',
                                 title=titulo,
-                                filename=formato_filename(self.modelo_fmt, 'anomalia_merge', index),
+                                filename=formato_filename(self.modelo_fmt, 'anomaliaacumuladomensal', index),
                                 shapefiles=self.shapefiles,
                                 path_to_save=path_to_save,
                                 **kwargs
@@ -1163,7 +1166,7 @@ class GeraProdutosPrevisao:
                             ds=ds_acumulado['tp'],
                             variavel_plotagem='acumulado_total',
                             title=titulo,
-                            filename=formato_filename(self.modelo_fmt, 'acumulado_total', index),
+                            filename=formato_filename(self.modelo_fmt, 'acumuladototal', index),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
@@ -1722,6 +1725,15 @@ class GeraProdutosPrevisao:
             elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
 
+            elif modo in self.olr:
+                path_save = 'semana-energ-olr'
+
+            elif modo in self.mag_vento100:
+                path_save = 'semana-energ-uv100m'
+
+            elif modo in self.vento850_pnmm6h:
+                path_save = 'vento850_pnmm6h'
+
             else:
                 path_save = modo
 
@@ -2164,7 +2176,7 @@ class GeraProdutosPrevisao:
                         ds=ds_quiver['ivt']*100,
                         variavel_plotagem='ivt',
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, f'ivt_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        filename=formato_filename(self.modelo_fmt, f'ivt_geop700_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_quiver=ds_quiver,
                         variavel_quiver='ivt',
                         ds_contour=ds_quiver['gh_700'],
