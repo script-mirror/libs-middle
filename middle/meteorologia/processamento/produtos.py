@@ -2847,6 +2847,7 @@ class GeraProdutosPrevisao:
                 obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
                 obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
 
+
                 obs_tmax = pd.concat([obs_tmax_anterior, obs_tmax_atual], ignore_index=True)
                 obs_tmin = pd.concat([obs_tmin_anterior, obs_tmin_atual], ignore_index=True)
                 obs_tmed = pd.concat([obs_tmed_anterior, obs_tmed_atual], ignore_index=True)
@@ -2854,13 +2855,14 @@ class GeraProdutosPrevisao:
                 obs_tmin['type'] = 'observado'
                 obs_tmed['type'] = 'observado'
                 ultimos_15_dias = pd.date_range(start=pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15), end=pd.to_datetime(self.t2m_mean.time.item()))
+                print(obs_tmax)
                 obs_tmax = obs_tmax[obs_tmax['valid_time'].isin(ultimos_15_dias)]
                 obs_tmin = obs_tmin[obs_tmin['valid_time'].isin(ultimos_15_dias)]
                 obs_tmed = obs_tmed[obs_tmed['valid_time'].isin(ultimos_15_dias)]
                 obs_tmax['mes'] = obs_tmax['valid_time'].dt.month
                 obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
                 obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
-                print(obs_tmax)
+                
 
                 # Juntando com a previsao
                 t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
