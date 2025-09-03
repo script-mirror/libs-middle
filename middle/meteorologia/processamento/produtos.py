@@ -1789,7 +1789,7 @@ class GeraProdutosPrevisao:
                         intervalo = us_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = us_plot.days_of_weeks.item()                        
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Vento e Jato {level_divergencia}hPa - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -1846,7 +1846,7 @@ class GeraProdutosPrevisao:
                         intervalo = us_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = us_plot.days_of_weeks.item()                        
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Vento e Temp. em {level_temp}hPa - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -1905,7 +1905,7 @@ class GeraProdutosPrevisao:
                         intervalo = geop_.intervalo.item().replace(' ', '\ ')
                         days_of_week = geop_.days_of_weeks.item()                        
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Vort. e Geop. {level_geop}hPa - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -2034,7 +2034,7 @@ class GeraProdutosPrevisao:
                         intervalo = geop_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = geop_plot.days_of_weeks.item()                        
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Geopotencial {level_geop}hPa - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -2172,7 +2172,7 @@ class GeraProdutosPrevisao:
                         intervalo = gh_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = gh_plot.days_of_weeks.item()
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Geop 700hPa e TIWV (1000-300) - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -2220,14 +2220,14 @@ class GeraProdutosPrevisao:
                         tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
                         semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
                         titulo = self._ajustar_tempo_e_titulo(
-                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Divergência {level_divergencia}hPa', semana, self.cond_ini,
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Div. {level_divergencia}hPa', semana, self.cond_ini,
                     )
 
                     else:
                         intervalo = us_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = us_plot.days_of_weeks.item()
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Vento e Div. {level_divergencia}hPa - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
