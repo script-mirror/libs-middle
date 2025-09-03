@@ -1035,7 +1035,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'rain_pnmm', n_24h.item()),
+                        filename=formato_filename(self.modelo_fmt, f'rain_pnmm_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         ds_contour=pnmm_plot,
                         variavel_contour='pnmm',
                         shapefiles=self.shapefiles,
