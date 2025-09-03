@@ -1016,7 +1016,7 @@ class GeraProdutosPrevisao:
 
                     if resample_freq == '24h':
                         tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
-                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.tp.valid_time[-1].values, modelo=self.modelo_fmt)[0]
 
                         titulo = self._ajustar_tempo_e_titulo(
                             tp_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PREC24, PNMM', semana, self.cond_ini,
