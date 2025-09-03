@@ -1004,16 +1004,6 @@ class GeraProdutosPrevisao:
                     pnmm_plot = pnmm_24h.sel(tempo=p_24h)
                     pnmm_plot = nd.gaussian_filter(pnmm_plot[varname]*1e-2, sigma=2)
 
-                    # tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
-                    # semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.tp.valid_time[-1].values, modelo=self.modelo_fmt)[0]
-
-                    # titulo = gerar_titulo(
-                    #     modelo=self.modelo_fmt, tipo='PREC24, PNMM', cond_ini=self.cond_ini,
-                    #     data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    #     data_fim=pd.to_datetime(tp_plot.data_final.item()).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    #     semana=semana
-                    # )
-
                     if resample_freq == '24h':
                         tempo_ini = ajustar_hora_utc(pd.to_datetime(tp_plot.data_inicial.item()))
                         semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.tp.valid_time[-1].values, modelo=self.modelo_fmt)[0]
@@ -1745,6 +1735,9 @@ class GeraProdutosPrevisao:
 
             elif modo in self.mag_vento100:
                 path_save = 'semana-energ-uv100m'
+
+            elif modo in self.temp_geada:
+                path_save = 'temp_geada'
 
             elif modo in self.vento850_pnmm6h:
                 path_save = 'vento850_pnmm6h'
@@ -3018,7 +3011,7 @@ class GeraProdutosPrevisao:
                 if self.pnmm_mean is None:
                     _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
 
-                # Apenas para combar com o vento    
+                # Apenas para combar com o vento     
                 if self.pnmm_mean.longitude.min() >= 0:
                     pnmm_mean = self.pnmm_mean.assign_coords(longitude=(((self.pnmm_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
@@ -3041,7 +3034,10 @@ class GeraProdutosPrevisao:
                     })
 
                     tempo_ini = pd.to_datetime(n_24h.item())
+                    print(ds_quiver)
+                    print(tempo_ini)
                     semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                    print(semana)
 
                     titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,
