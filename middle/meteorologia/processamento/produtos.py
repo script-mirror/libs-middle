@@ -1678,6 +1678,8 @@ class GeraProdutosPrevisao:
 
                 for id in tp_no_ponto['id'].unique():
 
+                    print(f'Gráficos chuva ID: {id}')
+
                     tp_plot = tp_no_ponto[tp_no_ponto['id'] == id]
                     titulo = f"{CONSTANTES['city_dict'][id]}\n{self.modelo_fmt.upper()} - PRECH24HRS - Condição Inicial: {self.cond_ini}"
                     filename = f'{path_to_save}/{id}'
@@ -2688,7 +2690,7 @@ class GeraProdutosPrevisao:
                     t2m_24h_plot = -1*t2m_24h_plot
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini)[0]
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
                     titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
                 
                     plot_campos(
@@ -2858,11 +2860,13 @@ class GeraProdutosPrevisao:
                 obs_tmax['mes'] = obs_tmax['valid_time'].dt.month
                 obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
                 obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
+                print(obs_tmax)
 
                 # Juntando com a previsao
                 t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
                 t2min_no_ponto = pd.concat([obs_tmin.rename(columns={'tmin': 't2m'}), t2min_no_ponto], axis=0)
                 t2med_no_ponto = pd.concat([obs_tmed.rename(columns={'tmed': 't2m'}), t2med_no_ponto], axis=0)
+                print(t2max_no_ponto)
 
                 # Abrindo os arquivos de climatologia
                 clim_tmax = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmax_cidades.txt', sep=' ', names=np.arange(1,13))

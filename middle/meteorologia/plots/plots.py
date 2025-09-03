@@ -869,8 +869,8 @@ def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo=None, fil
         plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m'], color='blue', lw=1.5, marker='o', markerfacecolor="None")
         plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m_clim'], color='blue', lw=1, ls='--')
 
-        for x, y in zip(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m']):
-            plt.text(x, y+0.3, f"{y:.0f}", color='blue', ha='right', va='bottom', fontsize=16)
+        # for x, y in zip(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m']):
+        #     plt.text(x, y+0.3, f"{y:.0f}", color='blue', ha='right', va='bottom', fontsize=16)
 
         # tmin prev
         plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m'], color='blue', lw=1.5, marker='o')

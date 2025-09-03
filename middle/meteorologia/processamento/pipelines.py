@@ -42,8 +42,8 @@ def pipelines(modelo, produtos, tipo=None):
                 lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
                 
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
-                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_geada_inmet(),
                 lambda: produtos.gerar_geada_cana(),
                 lambda: produtos.gerar_graficos_chuva(),
