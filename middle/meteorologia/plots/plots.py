@@ -876,8 +876,8 @@ def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo=None, fil
         plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m'], color='blue', lw=1.5, marker='o')
         plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m_clim'], color='blue', lw=1, ls='--')
 
-        for x, y in zip(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m']):
-            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='blue')
+        # for x, y in zip(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m']):
+        #     plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='blue')
 
         limites_geada = [5.5, 1.8, -0.5, -4]
         fraca = [limites_geada[0]] * len(xaxix_l1)
