@@ -2854,6 +2854,9 @@ class GeraProdutosPrevisao:
                 obs_tmax['type'] = 'observado'
                 obs_tmin['type'] = 'observado'
                 obs_tmed['type'] = 'observado'
+                obs_tmax['valid_time'] = pd.to_datetime(obs_tmax['valid_time'])
+                obs_tmin['valid_time'] = pd.to_datetime(obs_tmin['valid_time'])
+                obs_tmed['valid_time'] = pd.to_datetime(obs_tmed['valid_time'])
                 ultimos_15_dias = pd.date_range(start=pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15), end=pd.to_datetime(self.t2m_mean.time.item()))
                 print(obs_tmax['valid_time'])
                 print(ultimos_15_dias)
@@ -2863,6 +2866,7 @@ class GeraProdutosPrevisao:
                 obs_tmax['mes'] = obs_tmax['valid_time'].dt.month
                 obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
                 obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
+                print(obs_tmax)
                 
                 # Juntando com a previsao
                 t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
