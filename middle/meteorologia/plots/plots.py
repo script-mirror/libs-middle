@@ -324,7 +324,7 @@ def plot_campos(
                 loc_title='left', 
                 title_fontsize=16, 
                 posicao_colorbar='horizontal',
-                path_to_save='./tmp/plots',
+                path_to_save=Constants().PATH_SAVE_FIGS_METEOROLOGIA,
                 ds_contour=None,
                 variavel_contour=None,
                 ds_streamplot=None,
