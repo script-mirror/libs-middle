@@ -1200,9 +1200,9 @@ class GeraProdutosPrevisao:
 
                         plot_campos(
                             ds=tp_plot['tp'],
-                            variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia',
+                            variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia', # 1semana_energ-r2025090300.png # 1_semana_energ_gfs.png 1_anom_semana_energ-r2025090300.png
                             title=titulo,
-                            filename=formato_filename(self.modelo_fmt, 'semana_energ', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, 'semana_energ_anomalia', n_semana.item()),
+                            filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'anom_semana_energ-r{self.data_fmt}', n_semana.item()),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
@@ -2670,7 +2670,7 @@ class GeraProdutosPrevisao:
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
                     semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
-                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
+                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada - INMET', semana, self.cond_ini)
                 
                     plot_campos(
                         ds=t2m_24h_plot['t2m'],
@@ -2698,7 +2698,7 @@ class GeraProdutosPrevisao:
 
                     tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
                     semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
-                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada', semana, self.cond_ini)
+                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada - CANA', semana, self.cond_ini)
                 
                     plot_campos(
                         ds=t2m_24h_plot['t2m'],
@@ -2735,7 +2735,7 @@ class GeraProdutosPrevisao:
                         intervalo = var_24h_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = var_24h_plot.days_of_weeks.item()
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'OLR - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -2786,7 +2786,7 @@ class GeraProdutosPrevisao:
                         intervalo = us_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = us_plot.days_of_weeks.item()                        
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Vento e magnitude em 100m - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
@@ -3055,6 +3055,165 @@ class GeraProdutosPrevisao:
                                 **kwargs
                                 )         
 
+            elif modo == 'indices-itcz':
+
+                limiar = 235
+                lon_range=(326, 335)
+
+                if self.olr_mean is None:
+                    _, self.olr_mean, self.cond_ini = self._carregar_olr_mean()
+
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                if self.tp_mean is None or self.cond_ini is None or self.tp is None:
+                    self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
+
+                varname_olr = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
+
+                # Colocando vento em 0 a 360
+                ds_vento = ajusta_lon_0_360(self.vs_mean, 'longitude').sel(isobaricInhPa=925)
+
+                ds_chuva = self.tp_mean
+                ds_olr = ajusta_lon_0_360(self.olr_mean, 'longitude')
+
+                # pegando apenas os dias completos, 12 nao precisa pq tem todos os dias
+                inicializacao = pd.to_datetime(ds_chuva.time.values)
+                if inicializacao.hour == 0:
+                    ds_chuva = ds_chuva.isel(valid_time=slice(None, -2))
+                elif inicializacao.hour == 6:
+                    ds_chuva = ds_chuva.isel(valid_time=slice(None, -3))
+                elif inicializacao.hour == 18:
+                    ds_chuva = ds_chuva.isel(valid_time=slice(None, -1))
+
+                ds_olr_crop = ds_olr_crop.sel(valid_time=ds_chuva.valid_time)
+                ds_vento = ds_vento.sel(valid_time=ds_chuva.valid_time)
+
+                # transformando em diario das 12 as 12
+                tempos = ds_olr_crop.valid_time
+                delta_t = 13
+                tempos_shifted = tempos - pd.Timedelta(hours=delta_t)
+
+                ds_chuva['valid_time'] = tempos_shifted
+                ds_chuva = ds_chuva.sel(valid_time=ds_chuva.valid_time>=inicializacao).resample(valid_time='D').sum()
+                ds_chuva['valid_time'] = ds_chuva['valid_time'] + pd.Timedelta(days=1) 
+
+                ds_olr_crop['valid_time'] = tempos_shifted
+                ds_olr_crop = ds_olr_crop.sel(valid_time=ds_olr_crop.valid_time>=inicializacao).resample(valid_time='D').mean()
+                ds_olr_crop['valid_time'] = ds_olr_crop['valid_time'] + pd.Timedelta(days=1) 
+
+                ds_vento['valid_time'] = tempos_shifted
+                ds_vento = ds_vento.sel(valid_time=ds_vento.valid_time>=inicializacao).resample(valid_time='D').mean()
+                ds_vento['valid_time'] = ds_vento['valid_time'] + pd.Timedelta(days=1) 
+
+                # Inicializando listas que vão guardar os resultados
+                lats_min = []
+                lats_max = []
+                lats_menor_olr = []
+                lats_menor_vento = []
+                intensidades_chuva = []
+                intensidades_olr = []
+                tempos_fmt = []
+                latitudes_media_vento_olr = []
+
+                # Iterando sobre cada tempo fornecido
+                tempos = ds_chuva['valid_time'].values
+                for t in tempos:
+
+                    achou_banda = False
+
+                    for lon_ref in range(lon_range[0], lon_range[1] + 1):
+
+                        ds_olr_mask = xr.where(ds_olr_crop[var_name] < limiar, ds_olr_crop[var_name], np.nan)
+                        ds_olr_mask_longitude_ref = ds_olr_mask.sel(longitude=lon_ref).sel(valid_time=t).sel(latitude=slice(-5.5, 13.5))
+
+                        # Para o vento
+                        ds_vento_crop = ds_vento.sel(longitude=lon_ref, method='nearest').sel(valid_time=t)
+
+                        # Banda da ITCZ pela OLR
+                        valid_latitudes = ds_olr_mask_longitude_ref.dropna(dim="latitude").latitude
+
+                        if valid_latitudes.sizes["latitude"] != 0:
+                            achou_banda = True
+
+                            # Latitude inicial 
+                            lat_min = valid_latitudes.min().item()
+
+                            # Latitude final
+                            lat_max = valid_latitudes.max().item()
+
+                            # Valor da latitude da menor OLR na banda
+                            latitude_min_olr = ds_olr_mask_longitude_ref.argmin(dim='latitude')
+                            latitude_min_value = ds_olr_mask_longitude_ref['latitude'].isel(latitude=latitude_min_olr.values)
+
+                            # Intensidade 
+                            prec_intensidade = ds_chuva.sel(latitude=slice(lat_min, lat_max)).sel(valid_time=t).sel(longitude=lon_ref, method='nearest')
+                            intensidade_chuva = prec_intensidade['tp'].mean(dim='latitude')
+                            ds_olr_intensidade = ds_olr_mask_longitude_ref.sel(latitude=slice(lat_min, lat_max))
+                            intensidade = ds_olr_intensidade.mean(dim='latitude')
+
+                            # Determinar para o vento na banda
+                            ds_vento_crop = ds_vento_crop.sel(latitude=slice(lat_min, lat_max))
+                            indice_lat_vento_min = ds_vento_crop['abs_vwnd'].argmin(dim='latitude')
+                            latitude_min_vento_value = ds_vento_crop['latitude'].isel(latitude=indice_lat_vento_min.values).item()
+
+                            # Valor médio entre a ITCZolr e a ITCZvwnd
+                            latitude_media_vento_olr = np.mean([latitude_min_vento_value, latitude_min_value])
+
+                            # Adicionando os valores calculados às listas
+                            lats_min.append(lat_min)
+                            lats_max.append(lat_max)
+                            lats_menor_olr.append(latitude_min_value.item())
+                            intensidades_chuva.append(intensidade_chuva.values)
+                            intensidades_olr.append(intensidade.values)
+                            lats_menor_vento.append(latitude_min_vento_value)
+                            tempos_fmt.append(t)
+                            latitudes_media_vento_olr.append(latitude_media_vento_olr)
+
+                            break
+
+                    if not achou_banda:
+                        print(f'Não achou a banda para o tempo {t}')
+                        latitude_min_value = np.nan
+                        latitude_media_vento_olr = np.nan
+                        lat_min = np.nan
+                        lat_max = np.nan
+                        intensidade = np.nan
+                        intensidade_chuva = np.nan
+                        latitude_min_vento_value = np.nan
+
+                        # Adicionando os valores calculados às listas
+                        lats_min.append(lat_min)
+                        lats_max.append(lat_max)
+                        lats_menor_olr.append(latitude_min_value)
+                        intensidades_olr.append(intensidade)
+                        intensidades_chuva.append(intensidade_chuva)
+                        lats_menor_vento.append(latitude_min_vento_value)
+                        tempos_fmt.append(t)
+                        latitudes_media_vento_olr.append(latitude_media_vento_olr)
+                
+                # Criando o DataFrame final
+                df_resultado = pd.DataFrame({
+                    'tempo': tempos_fmt,
+                    'lats_min': lats_min,
+                    'lats_max': lats_max,
+                    'lats_menor_olr': lats_menor_olr,
+                    'lats_menor_vento': lats_menor_vento,
+                    'lats_media_vento_olr': latitudes_media_vento_olr,
+                    'intensidades_olr': intensidades_olr,
+                    'intensidades_chuva': intensidades_chuva, 
+                })
+
+                df_resultado['largura'] = df_resultado['lats_max'] - df_resultado['lats_min']
+                df_resultado.rename({'tempo': 'dt_prevista'}, axis=1, inplace=True)
+                df_resultado.fillna(999, inplace=True) # coloca 999 para conseguir subir no banco
+                df_resultado['str_modelo'] = self.modelo_fmt.lower()
+
+                # Adicionando ao db
+                response = requests.post(f'{Constants().API_URL_APIV2}/meteorologia/indices-itcz-previstos', verify=False, json=df_resultado.to_dict('records'), headers=get_auth_header()) 
+                if response.status_code == 200:
+                    print('Indices da ITCZ inseridos no banco com sucesso!')
+
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -3261,6 +3420,9 @@ class GeraProdutosPrevisao:
 
     def gerar_prec_db(self, **kwargs):
         self._processar_chuva_db(**kwargs)
+
+    def gerar_indices_itcz(self, **kwargs):
+        self._processar_varsdinamicas('indices-itcz', **kwargs)
 
     ###################################################################################################################
 

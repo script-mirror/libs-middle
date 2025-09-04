@@ -508,7 +508,7 @@ def plot_campos(
         cb.set_ticks(cbar_ticks)
 
     # Apenas para geada
-    if variavel_plotagem == 'geada':
+    if variavel_plotagem in ['geada-inmet', 'geada-cana']:
         midpoints = [(levels[j] + levels[j + 1]) / 2 for j in range(len(levels) - 1)]
         cb.set_ticks(midpoints)
         cb.set_ticklabels(['Sem risco', 'Fraca', 'Moderada', 'Forte'])
