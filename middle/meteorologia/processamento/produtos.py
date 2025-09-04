@@ -3073,6 +3073,7 @@ class GeraProdutosPrevisao:
 
                 # Colocando vento em 0 a 360
                 ds_vento = ajusta_lon_0_360(self.vs_mean, 'longitude').sel(isobaricInhPa=925)
+                ds_vento['abs_vwnd'] = np.abs(ds_vento['v'])
 
                 ds_chuva = self.tp_mean
                 ds_olr = ajusta_lon_0_360(self.olr_mean, 'longitude')
@@ -3086,7 +3087,7 @@ class GeraProdutosPrevisao:
                 elif inicializacao.hour == 18:
                     ds_chuva = ds_chuva.isel(valid_time=slice(None, -1))
 
-                ds_olr_crop = ds_olr_crop.sel(valid_time=ds_chuva.valid_time)
+                ds_olr_crop = ds_olr.sel(valid_time=ds_chuva.valid_time)
                 ds_vento = ds_vento.sel(valid_time=ds_chuva.valid_time)
 
                 # transformando em diario das 12 as 12
@@ -3124,7 +3125,7 @@ class GeraProdutosPrevisao:
 
                     for lon_ref in range(lon_range[0], lon_range[1] + 1):
 
-                        ds_olr_mask = xr.where(ds_olr_crop[var_name] < limiar, ds_olr_crop[var_name], np.nan)
+                        ds_olr_mask = xr.where(ds_olr_crop[varname_olr] < limiar, ds_olr_crop[varname_olr], np.nan)
                         ds_olr_mask_longitude_ref = ds_olr_mask.sel(longitude=lon_ref).sel(valid_time=t).sel(latitude=slice(-5.5, 13.5))
 
                         # Para o vento
@@ -3208,6 +3209,11 @@ class GeraProdutosPrevisao:
                 df_resultado.rename({'tempo': 'dt_prevista'}, axis=1, inplace=True)
                 df_resultado.fillna(999, inplace=True) # coloca 999 para conseguir subir no banco
                 df_resultado['str_modelo'] = self.modelo_fmt.lower()
+                df_resultado['dt_prevista'] = df_resultado['dt_prevista'].dt.strftime('%Y-%m-%d')
+                df_resultado["intensidades_olr"] = df_resultado["intensidades_olr"].astype(float)
+                df_resultado["intensidades_chuva"] = df_resultado["intensidades_chuva"].astype(float)
+                df_resultado['dt_rodada'] = inicializacao.strftime('%Y-%m-%d')
+                df_resultado['hr_rodada'] = inicializacao.hour
 
                 # Adicionando ao db
                 response = requests.post(f'{Constants().API_URL_APIV2}/meteorologia/indices-itcz-previstos', verify=False, json=df_resultado.to_dict('records'), headers=get_auth_header()) 

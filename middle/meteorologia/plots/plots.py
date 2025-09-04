@@ -308,6 +308,12 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
         cbar_ticks = None
 
+    elif variavel_plotagem == 'mag_vento100_anomalia':
+        levels = np.arange(-3, 3.5, 0.5)
+        colors = None
+        cmap = 'RdBu_r'
+        cbar_ticks = np.arange(-3, 3.5, 0.5)
+
     return levels, colors, cmap, cbar_ticks
 
 ###################################################################################################################
