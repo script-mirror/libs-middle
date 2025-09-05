@@ -555,7 +555,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         # torna isobaricHpa em dimensaon
         if expand_isobaric_dims:
-            if "isobaricInhPa" not in ds.dims:
+            if "isobaricInhPa" not in ds.dims and variavel in isobaric_inhPa:
                 ds = ds.expand_dims({"isobaricInhPa": [ds.isobaricInhPa.item()]})
 
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
