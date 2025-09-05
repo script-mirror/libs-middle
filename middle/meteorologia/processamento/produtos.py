@@ -2224,7 +2224,7 @@ class GeraProdutosPrevisao:
                         tempo_fim = pd.to_datetime(gh_plot.data_final.item())
                         semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
                         titulo = gerar_titulo(
-                                modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV (1000-300)', cond_ini=self.cond_ini,
+                                modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV', cond_ini=self.cond_ini,
                                 data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                                 data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                                 semana=semana
@@ -2234,7 +2234,7 @@ class GeraProdutosPrevisao:
                         intervalo = gh_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = gh_plot.days_of_weeks.item()
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Geop 700hPa e TIWV (1000-300) - Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Geop 700hPa e TIWV - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
