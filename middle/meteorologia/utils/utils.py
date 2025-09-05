@@ -407,7 +407,10 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
     backend_kwargs = backend_kwargs or {}
     datasets = []
 
-    for f in files:
+    for index, f in enumerate(files):
+
+        print(f'Abrindo {f}... ({index+1}/{len(files)})')
+
         try:
             ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
 
@@ -424,7 +427,7 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
             if sel_area:
                 if 'longitude' in ds.dims and 'latitude' in ds.dims:
                     ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
-                    
+
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
             if ds.variables:
