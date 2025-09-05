@@ -513,16 +513,16 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                 ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area)
         
-        # Renomeando lat para latitude e lon para longitude
-        if 'lat' in ds.dims:
-            ds = ds.rename({'lat': 'latitude'})
+        # # # Renomeando lat para latitude e lon para longitude
+        # # if 'lat' in ds.dims:
+        # #     ds = ds.rename({'lat': 'latitude'})
 
-        if 'lon' in ds.dims:
-            ds = ds.rename({'lon': 'longitude'})
+        # # if 'lon' in ds.dims:
+        # #     ds = ds.rename({'lon': 'longitude'})
 
-        # Se step estiver nas dimensions, renomeia para valid_time
-        if 'step' in ds.dims:
-            ds = ds.swap_dims({'step': 'valid_time'})
+        # # Se step estiver nas dimensions, renomeia para valid_time
+        # if 'step' in ds.dims:
+        #     ds = ds.swap_dims({'step': 'valid_time'})
 
         # Pega apenas a hora das 12z
         if sel_12z:

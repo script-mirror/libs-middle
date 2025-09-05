@@ -410,11 +410,21 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
     for f in files:
         try:
             ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
+
+            # Renomeando lat para latitude e lon para longitude
+            if 'lat' in ds.dims:
+                ds = ds.rename({'lat': 'latitude'})
+
+            if 'lon' in ds.dims:
+                ds = ds.rename({'lon': 'longitude'})
+
             if 'longitude' in ds.dims:
                 ds = ajusta_lon_0_360(ds)
+
             if sel_area:
                 if 'longitude' in ds.dims and 'latitude' in ds.dims:
                     ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
+                    
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
             if ds.variables:
