@@ -971,6 +971,7 @@ def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo=None, fil
 
     plt.title(titulo, fontsize=16, fontweight='bold')
     plt.savefig(f'{filename}.png', bbox_inches='tight')
+    plt.close()
 
     return
 
