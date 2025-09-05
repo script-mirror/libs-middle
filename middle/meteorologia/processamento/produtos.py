@@ -745,7 +745,7 @@ class GeraProdutosPrevisao:
     def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None, modo_atual=True):
 
         self.produto_config_sf = produto_config_sf
-        self.modelo_fmt = self.produto_config_sf.modelo
+        self.modelo_fmt = self.produto_config_sf.modelo if 'membros' not in self.produto_config_sf.modelo else self.produto_config_sf.modelo.replace('-membros', '')
         self.output_path = self.produto_config_sf.output_path
         self.resolucao = self.produto_config_sf.resolucao
         self.data_fmt = f'{pd.to_datetime(self.produto_config_sf.data).strftime("%Y%m%d")}{str(self.produto_config_sf.inicializacao).zfill(2)}'
@@ -964,7 +964,7 @@ class GeraProdutosPrevisao:
                 path_save = '24-em-24-gifs'
 
             elif modo in self.figs_semana:
-                path_save = 'semana-energ'
+                path_save = 'semana-energ' if ensemble else 'semana-energ-membros'
 
             elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
