@@ -120,20 +120,72 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
 
+                # while True:
+                #     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                #     for i in steps:
+                #         filename = f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                #         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
+
+                #         # Se o arquivo já existe e está com tamanho esperado, pula
+                #         if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
+                #             print(f'✅ Arquivo {filename} já existe e está OK, pulando download...')
+                #             continue
+
+                #         url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
+                        
+                #         if sub_region_as_gribfilter:
+                #             url += sub_region_as_gribfilter
+
+                #         file = requests.get(url, allow_redirects=True)
+                #         if file.status_code == 200:
+                #             with open(caminho_arquivo, 'wb') as f:
+                #                 f.write(file.content)
+                #         else:
+                #             print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                #             print(url)
+                #             todos_sucesso = False
+                #             time.sleep(5)
+                #             break  # Sai do for e volta ao início do while
+
+                #         # Verifica se o arquivo foi baixado corretamente
+                #         if os.path.exists(caminho_arquivo):
+                #             if os.path.getsize(caminho_arquivo) < file_size:
+                #                 print(f'Arquivo {filename} está vazio/corrompido, removendo...')
+                #                 os.remove(caminho_arquivo)
+                #                 todos_sucesso = False
+                #                 time.sleep(5)
+                #                 break  # Sai do for e tenta de novo no while
+                #             else:
+                #                 print(f'✅ Arquivo {filename} baixado com sucesso!')
+                #         else:
+                #             print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                #             todos_sucesso = False
+                #             time.sleep(5)
+                #             break
+
+                #     if todos_sucesso:
+                #         break  # Sai do while quando tudo estiver certo
+
                 while True:
                     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
 
                     for i in steps:
-                        filename = f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                        filename = (
+                            f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                            if self.name_prefix
+                            else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                        )
                         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
 
-                        # Se o arquivo já existe e está com tamanho esperado, pula
+                        # Se o arquivo já existe e está com tamanho esperado, pula sem printar
                         if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
-                            print(f'✅ Arquivo {filename} já existe e está OK, pulando download...')
                             continue
 
+                        # Só imprime aqui quando realmente for tentar baixar
+                        print(f'⬇️ Baixando {filename} ...')
+
                         url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
-                        
                         if sub_region_as_gribfilter:
                             url += sub_region_as_gribfilter
 
@@ -151,13 +203,13 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         # Verifica se o arquivo foi baixado corretamente
                         if os.path.exists(caminho_arquivo):
                             if os.path.getsize(caminho_arquivo) < file_size:
-                                print(f'Arquivo {filename} está vazio/corrompido, removendo...')
+                                print(f'⚠️ Arquivo {filename} está vazio/corrompido, removendo...')
                                 os.remove(caminho_arquivo)
                                 todos_sucesso = False
                                 time.sleep(5)
                                 break  # Sai do for e tenta de novo no while
                             else:
-                                print(f'✅ Arquivo {filename} baixado com sucesso!')
+                                print(f'✅ {filename} baixado com sucesso!')
                         else:
                             print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
                             todos_sucesso = False
