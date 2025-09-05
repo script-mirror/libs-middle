@@ -1279,7 +1279,7 @@ class GeraProdutosPrevisao:
                                 ds=tp_plot['tp'].sel(number=membro),
                                 variavel_plotagem='chuva_ons',
                                 title=titulo,
-                                filename=f'tp_sop_{self.modelo_fmt}_semana{n_semana.item()}_{membro.item()}',
+                                filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', f'{str(membro.item()).zfill(2)}{n_semana.item()}'),
                                 shapefiles=self.shapefiles,
                                 path_to_save=path_to_save,
                                 **kwargs
