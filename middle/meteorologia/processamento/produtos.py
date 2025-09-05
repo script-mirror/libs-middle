@@ -2999,9 +2999,9 @@ class GeraProdutosPrevisao:
                     filename = f'{path_to_save}/{submercado}'
                     plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
 
-                    path_to_save = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
+                    path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
                     dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
-                    dados_submercado.to_csv(f'{path_to_save}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv')
+                    dados_submercado.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv')
 
             elif modo == 'graficos_vento':
 
