@@ -56,7 +56,7 @@ def criar_logger(nome_logger, caminho_arquivo):
     logger.setLevel(nivel)
     logger.handlers.clear()
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    file_handler = logging.FileHandler(caminho_arquivo, mode='a')
+    file_handler = logging.FileHandler(caminho_arquivo, mode='w')
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
     if console:
