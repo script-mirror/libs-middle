@@ -95,7 +95,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 last_file = files[-1]
 
                 if last_member_file in last_file: #os.path.exists(caminho_arquivo):
-                    tamanho = os.path.getsize(last_file)
+                    tamanho = os.path.getsize(caminho_arquivo + last_file)
                     if tamanho >= tamanho_min_bytes:
                         baixa_arquivos = False
                         break  # Arquivo existe e tem tamanho adequado
