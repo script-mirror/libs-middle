@@ -426,6 +426,7 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
             if sel_area:
                 if 'longitude' in ds.dims and 'latitude' in ds.dims:
+                    ds = ds.sortby(['latitude', 'longitude'])
                     ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
 
             if 'step' in ds.dims:
