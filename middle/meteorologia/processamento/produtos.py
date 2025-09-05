@@ -90,8 +90,11 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if wait_members:
             while True:
                 # caminho_arquivo = f'{caminho_para_salvar}/{last_member_file}'
-                caminho_arquivo = f'{output_path}/{modelo_last_member}/{data_fmt}{inicializacao_fmt}/{last_member_file}'
-                if os.path.exists(caminho_arquivo):
+                caminho_arquivo = f'{output_path}/{modelo_last_member}/{data_fmt}{inicializacao_fmt}/
+                files = sorted(os.listdir(caminho_arquivo))
+                last_file = files[-1]
+
+                if last_member_file in last_file: #os.path.exists(caminho_arquivo):
                     tamanho = os.path.getsize(caminho_arquivo)
                     if tamanho >= tamanho_min_bytes:
                         baixa_arquivos = False
@@ -337,7 +340,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         break  # Sai do while quando tudo estiver certo
 
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False):
+    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
         import xarray as xr
@@ -358,7 +361,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         output_path = self.output_path
 
         # Formatando modelo
-        modelo_fmt = self.modelo.lower()
+        modelo_fmt = self.modelo.lower() if not membros_prefix else self.modelo.lower().replace('-membros', '')
 
         # Caminho para salvar
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
