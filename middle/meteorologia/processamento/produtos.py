@@ -90,12 +90,12 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if wait_members:
             while True:
                 # caminho_arquivo = f'{caminho_para_salvar}/{last_member_file}'
-                caminho_arquivo = f'{output_path}/{modelo_last_member}/{data_fmt}{inicializacao_fmt}/
+                caminho_arquivo = f'{output_path}/{modelo_last_member}/{data_fmt}{inicializacao_fmt}/'
                 files = sorted(os.listdir(caminho_arquivo))
                 last_file = files[-1]
 
                 if last_member_file in last_file: #os.path.exists(caminho_arquivo):
-                    tamanho = os.path.getsize(caminho_arquivo)
+                    tamanho = os.path.getsize(last_file)
                     if tamanho >= tamanho_min_bytes:
                         baixa_arquivos = False
                         break  # Arquivo existe e tem tamanho adequado
