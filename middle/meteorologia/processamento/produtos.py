@@ -61,8 +61,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
     # --- DOWNLOAD ---
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
-                               model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None,
-                               type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
+                               model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
+                               modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', 
+                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -88,7 +89,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         if wait_members:
             while True:
-                caminho_arquivo = f'{caminho_para_salvar}/{last_member_file}'
+                # caminho_arquivo = f'{caminho_para_salvar}/{last_member_file}'
+                caminho_arquivo = f'{output_path}/{modelo_last_member}/{data_fmt}{inicializacao_fmt}/{last_member_file}'
                 if os.path.exists(caminho_arquivo):
                     tamanho = os.path.getsize(caminho_arquivo)
                     if tamanho >= tamanho_min_bytes:
@@ -1397,7 +1399,7 @@ class GeraProdutosPrevisao:
                             )
 
                             path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_bacias_smap_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='chuva_acumulada')
-                            send_whatsapp_message(destinatario='11968606707', mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                            send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                             print(f'Removendo painel ... {path_painel}')
                             os.remove(path_painel)
 
@@ -1605,6 +1607,11 @@ class GeraProdutosPrevisao:
                         path_to_save=path_to_save,
                         **kwargs
                     )
+
+                path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
+                send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Diferença {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                print(f'Removendo painel ... {path_painel}')
+                os.remove(path_painel)
 
             elif modo == 'desvpad':
 

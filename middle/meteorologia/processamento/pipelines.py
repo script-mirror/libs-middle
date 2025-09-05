@@ -9,7 +9,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_prec24h_biomassa(extent=CONSTANTES['extents_mapa']['biomassa']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
@@ -57,7 +57,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
@@ -94,7 +94,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_sop=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True),
                 lambda: produtos.gerar_diferenca_tp(margin_y=-90) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
@@ -111,7 +111,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
                 lambda: produtos.gerar_desvpad(ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
                 lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
@@ -125,7 +125,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
                 lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
                 lambda: produtos.gerar_desvpad(ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
@@ -139,7 +139,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
@@ -182,7 +182,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_diferenca_tp(margin_y=-90) if hora == 0 else None,
@@ -205,7 +205,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
@@ -226,7 +226,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
@@ -244,7 +244,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False, verifica_cache=False),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False, verifica_cache=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True, verifica_cache=False),
                 # lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
                 lambda: produtos.gerar_desvpad(ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
@@ -259,7 +259,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
                 lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
                 lambda: produtos.gerar_desvpad(ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
@@ -273,7 +273,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], dif_01_15d=True, dif_15_final=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_sop=True),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True),
@@ -296,7 +296,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
 
         if tipo == 'sfc':
             return [
-                # lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=False),
+                # lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
                 # lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
                 # lambda: produtos.gerar_desvpad(ensemble=False),
                 # lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
