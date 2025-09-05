@@ -503,7 +503,7 @@ def ajustar_hora_utc(dt):
 
 ###################################################################################################################
 
-def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial'):
+def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial', prefixo_negrito=False, prefixo=None):
 
     modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est').replace('pconjunto', 'pconj')
 
@@ -521,6 +521,14 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
             f'$\\mathbf{{Válido\ de\ {data_ini}\ a\ {data_fim}}}$'
         )
 
+    elif prefixo_negrito:
+
+        titulo = (
+            f'{modelo.upper()} - {tipo} \u2022 '
+            f'{condicao_inicial}: {cond_ini}\n'
+            f'$\\mathbf{{Válido\\ {prefixo}\\ de\\ {data_ini}\\ a\\ {data_fim}}}$'
+        )
+     
     elif unico_tempo:
 
         if semana is not None:
@@ -528,7 +536,7 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
             titulo = (
                 f'{modelo.upper()} - {tipo} \u2022 '
                 f'{condicao_inicial}: {cond_ini}\n'
-                f'$\\mathbf{{Válido\\ para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
+                f'$\\mathbf{{Válido\\  para\\ {data_ini}\\ \u2022\\ S{semana}}}$'
             )
 
         else:
@@ -817,5 +825,85 @@ def get_pontos_localidades():
     target_lat = xr.DataArray(pontos.lat, dims='id',coords={"id": pontos.id})
 
     return target_lon, target_lat, pontos
+
+###################################################################################################################
+
+def formato_filename(modelo, variavel, index=None):
+
+    return f'{index}_{variavel}_{modelo}' if index is not None else f'{variavel}_{modelo}'
+
+###################################################################################################################
+
+def painel_png(path_figs, figsize=(12, 12), output_file=None, path_figs2=None, str_contain='semana', str_contain2=None):
+
+    import matplotlib.pyplot as plt 
+    from PIL import Image
+
+    """
+    Cria um painel com ncols colunas e nrows linhas a partir de uma lista de arquivos .png
+    e salva o resultado se output_file for especificado.
+
+    Parâmetros
+    ----------
+    lista_png : list[str]
+        Lista de caminhos de arquivos PNG.
+    ncols : int
+        Número de colunas.
+    nrows : int
+        Número de linhas.
+    figsize : tuple
+        Tamanho da figura (largura, altura).
+    output_file : str or None
+        Caminho para salvar o painel (ex: "painel.png").
+        Se None, não salva.
+    """
+
+    lista_png = os.listdir(path_figs)
+    lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
+
+    if path_figs2 is not None:
+        lista_png2 = os.listdir(path_figs2)
+        if str_contain2 is not None:
+            lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if f'{str_contain2}' in x and '.png' in x]
+        else:
+            lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if '.png' in x]
+
+        # Juntando as duas listas
+        lista_png.extend(lista_png2)
+
+    if len(lista_png) <= 3:
+        nrows = 1
+        ncols = len(lista_png)
+
+    else:
+        nrows = len(lista_png)
+        ncols = 2
+        
+    fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
+
+    # ✅ garante que axs seja sempre lista
+    if isinstance(axs, plt.Axes):
+        axs = [axs]
+    else:
+        axs = axs.flatten()
+
+    for i, img_path in enumerate(lista_png):
+        img = Image.open(img_path)
+        axs[i].imshow(img)
+        axs[i].axis("off")
+
+    # desliga eixos extras se houver
+    for j in range(len(lista_png), len(axs)):
+        axs[j].axis("off")
+
+    plt.subplots_adjust(wspace=0.01, hspace=0.01, left=0, right=1, top=1, bottom=0)
+
+    if output_file:
+        path_to_save = f'{Constants().PATH_ARQUIVOS_TEMP}/paineis'
+        os.makedirs(path_to_save, exist_ok=True)
+        fig.savefig(f'{path_to_save}/{output_file}', dpi=300, bbox_inches="tight", pad_inches=0)
+        print(f"✅ Painel salvo em: {output_file}")
+
+    return f'{path_to_save}/{output_file}'
 
 ###################################################################################################################

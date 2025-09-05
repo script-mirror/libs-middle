@@ -991,41 +991,45 @@ class Constants:
     
     @property 
     def PATH_SAVE_FIGS_METEOROLOGIA(self):
-        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS' # './tmp/plots'
 
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA(self):
-        return '/projetos/arquivos/meteorologia/dados_modelos/brutos' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+        return '/projetos/arquivos/meteorologia/dados_modelos/brutos'
 
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_MERGE(self):
-        return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm' # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
-
+        return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
+    
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_SAMET(self):
+        return '/WX2TB/Documentos/dados/temp_samet'
+    
     @property 
     def PATH_CLIMATOLOGIA_SAMET(self):
         return '/WX2TB/Documentos/dados/temp_samet/climatologia'
 
     @property 
     def PATH_COORDENADAS_CIDADES(self):
-        return '/projetos/arquivos/meteorologia/' # '/WX2TB/Documentos/fontes/tempo/novos_produtos/COORDENADAS_CIDADES/'
+        return '/projetos/arquivos/meteorologia'
     
     @property 
     def PATH_TO_SAVE_TXT_SAMET(self):
-        return './tmp/plots' # '/WX2TB/Documentos/saidas-modelos-novo/samet'
+        return '/WX2TB/Documentos/dados/temp_samet'
     
     @property 
     def PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL(self):
-        return '/projetos/arquivos/meteorologia' # '/WX2TB/Documentos/saidas-modelos-novo/samet/WX/WX2TB/Documentos/fontes/tempo/novos_produtos/CLIMATOLOGIA_TEMPERATURAS'
+        return '/projetos/arquivos/meteorologia'
     
     @property 
     def PATH_CLIMATOLOGIA_UV100(self):
-        return '/projetos/arquivos/meteorologia' # '/WX2TB/Documentos/dados/UVCLIM/'
+        return '/projetos/arquivos/meteorologia'
     
     @property 
     def PATH_ARQUIVOS_TEMP(self):
-        return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp' # '/WX2TB/Documentos/dados/UVCLIM/'
+        return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp'
     
     @property 
     def PATH_ARQUIVOS_UTILS(self):
-        return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_utils' # '/WX2TB/Documentos/dados/UVCLIM/'
+        return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_utils'
 

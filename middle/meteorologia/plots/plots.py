@@ -308,6 +308,12 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
         cbar_ticks = None
 
+    elif variavel_plotagem == 'mag_vento100_anomalia':
+        levels = np.arange(-3, 3.5, 0.5)
+        colors = None
+        cmap = 'RdBu'
+        cbar_ticks = np.arange(-3, 3.5, 0.5)
+
     return levels, colors, cmap, cbar_ticks
 
 ###################################################################################################################
@@ -324,7 +330,7 @@ def plot_campos(
                 loc_title='left', 
                 title_fontsize=16, 
                 posicao_colorbar='horizontal',
-                path_to_save='./tmp/plots',
+                path_to_save=Constants().PATH_SAVE_FIGS_METEOROLOGIA,
                 ds_contour=None,
                 variavel_contour=None,
                 ds_streamplot=None,
@@ -508,7 +514,7 @@ def plot_campos(
         cb.set_ticks(cbar_ticks)
 
     # Apenas para geada
-    if variavel_plotagem == 'geada':
+    if variavel_plotagem in ['geada-inmet', 'geada-cana']:
         midpoints = [(levels[j] + levels[j + 1]) / 2 for j in range(len(levels) - 1)]
         cb.set_ticks(midpoints)
         cb.set_ticklabels(['Sem risco', 'Fraca', 'Moderada', 'Forte'])
@@ -526,9 +532,9 @@ def plot_campos(
             gdf = gpd.read_file(shapefile)
             if 'Nome_Bacia' in gdf.columns:
                 if plot_bacias:
-                    gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
+                    gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5, transform=ccrs.PlateCarree())
             else:
-                gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5)
+                gdf.plot(ax=ax, facecolor='none', edgecolor='black', linewidths=1, alpha=0.5, transform=ccrs.PlateCarree())
 
     if add_valor_bacias:
 
@@ -582,7 +588,7 @@ def plot_campos(
                 if not np.isnan(row['tp']):  # Garante que há valor para exibir
                     lon, lat = row["vl_lon"], row["vl_lat"]  # Extrai coordenadas do centroide
                     lon = lon+360
-                    ax.text(lon, lat, f"{row['tp']:.0f}", fontsize=11, color='black', fontweight='bold', ha='center', va='center', transform=ccrs.PlateCarree())
+                    ax.text(lon, lat, f"{row['tp']:.0f}", fontsize=13, color='black', fontweight='bold', ha='center', va='center', transform=ccrs.PlateCarree())
                             # bbox=dict(facecolor='white', alpha=0.7, edgecolor='none')c
                             # )
 
@@ -869,15 +875,15 @@ def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo=None, fil
         plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m'], color='blue', lw=1.5, marker='o', markerfacecolor="None")
         plt.plot(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m_clim'], color='blue', lw=1, ls='--')
 
-        for x, y in zip(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m']):
-            plt.text(x, y+0.3, f"{y:.0f}", color='blue', ha='right', va='bottom', fontsize=16)
+        # for x, y in zip(df_tmin_obs['valid_time_fmt'], df_tmin_obs['t2m']):
+        #     plt.text(x, y+0.3, f"{y:.0f}", color='blue', ha='right', va='bottom', fontsize=16)
 
         # tmin prev
         plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m'], color='blue', lw=1.5, marker='o')
         plt.plot(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m_clim'], color='blue', lw=1, ls='--')
 
-        for x, y in zip(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m']):
-            plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='blue')
+        # for x, y in zip(df_tmin_prev['valid_time_fmt'], df_tmin_prev['t2m']):
+        #     plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='blue')
 
         limites_geada = [5.5, 1.8, -0.5, -4]
         fraca = [limites_geada[0]] * len(xaxix_l1)
