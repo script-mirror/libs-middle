@@ -392,7 +392,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         break  # Sai do while quando tudo estiver certo
 
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, variavel: str, sel_area=False, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False):
+    def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
         import xarray as xr
@@ -455,8 +455,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 raise ValueError(f'Variável {variavel} não reconhecida ou não implementada para ensemble model.')
 
             # Abrindo o arquivo com xarray
-            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf)
-            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf)
+            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area)
+            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area)
             ds = xr.concat([cf, pf], dim='number')            
 
         else:
@@ -502,7 +502,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         membro_name = 'gep'
 
                     path_to_files = [x for x in files if f'{membro_name}{membros_fmt}' in x]
-                    prec_membro = abrir_modelo_sem_vazios(path_to_files, backend_kwargs=backend_kwargs)
+                    prec_membro = abrir_modelo_sem_vazios(path_to_files, backend_kwargs=backend_kwargs, sel_area=sel_area)
                     # prec_membro = xr.open_mfdataset(path_to_files, engine='cfgrib', backend_kwargs=backend_kwargs, combine='nested', concat_dim='valid_time', decode_timedelta=True)
                     prec_membro['number'] = membros
                     ds_total.append(prec_membro)
@@ -511,7 +511,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             else:
 
-                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs)
+                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area)
         
         # Renomeando lat para latitude e lon para longitude
         if 'lat' in ds.dims:
