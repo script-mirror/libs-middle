@@ -408,7 +408,7 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time')
 
     for f in files:
         try:
-            ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
+            ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True, chunks={"latitude": 100, "longitude": 100})
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
             if ds.variables:
