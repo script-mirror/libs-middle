@@ -2957,7 +2957,7 @@ class GeraProdutosPrevisao:
                 # Climatologia do vento
                 uv100_clim = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_UV100}/monthly_clim_uv100.nc')
 
-                for area in AREAS:
+                for index, area in enumerate(AREAS):
 
                     latini = AREAS.get(area)[0]
                     latfim = AREAS.get(area)[1]
@@ -2990,13 +2990,29 @@ class GeraProdutosPrevisao:
                     df = pd.DataFrame({
                         'data': valid_times,
                         'magnitude': magnitude,
-                        'magnitude_clim': magnitude_clim
+                        'magnitude_clim': magnitude_clim,
+                        'Climatologia': magnitude_clim
+                        
                     })
+
+                    path_to_save = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
+                    df.to_csv(f'{path_to_save}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv')
 
                     # Titulo do plot
                     titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
                     filename = f'{path_to_save}/mag_vento100_{area}'
                     plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
+
+                    if index > 0:
+                        df_temp = pd.concat([df, df_temp], axis=1)
+
+                    else:
+                        df_temp = df
+
+                colunas = [x for x in df_temp.columns if 'Climatologia' not in x]
+                df_media = pd.DataFrame(df_temp[colunas].mean(axis=1), columns=list(set(colunas)))
+                df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
+                df_media.to_csv(f'{path_to_save}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv')
 
             elif modo == 'pnmm_vento850':
 
