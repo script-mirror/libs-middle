@@ -528,16 +528,16 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if sel_12z:
             ds = ds.isel(valid_time=ds.valid_time.dt.hour == 12)
 
-        # Ajustando a longitude para 0 a 360
-        if 'longitude' in ds.dims and ajusta_longitude:
-           ds = ajusta_lon_0_360(ds)
+        # # Ajustando a longitude para 0 a 360
+        # if 'longitude' in ds.dims and ajusta_longitude:
+        #    ds = ajusta_lon_0_360(ds)
 
         # Sortando as coordenadas
         ds = ds.sortby(['valid_time', 'latitude', 'longitude'])
 
         # Seleciona area especifica (America do Sul)
-        if sel_area:
-            ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
+        # if sel_area:
+        #     ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
 
         # Se for ensemble, faz a média ao longo da dimensão 'number'
         if ensemble_mean:

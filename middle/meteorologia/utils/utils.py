@@ -1,4 +1,5 @@
 
+from encodings.punycode import T
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -409,6 +410,8 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
     for f in files:
         try:
             ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
+            if 'longitude' in ds.dims:
+                ds = ajusta_lon_0_360(ds)
             if sel_area:
                 if 'longitude' in ds.dims and 'latitude' in ds.dims:
                     ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
