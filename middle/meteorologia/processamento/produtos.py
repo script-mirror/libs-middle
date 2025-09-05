@@ -337,7 +337,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if todos_sucesso:
                             break  # Sai do while se tudo deu certo
 
-            elif modelo_fmt == 'gefs-membros':
+            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido']:
                 prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
                 
                 while True:
@@ -358,7 +358,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                             # Se o arquivo já existe e está com tamanho esperado, pula
                             if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
-                                print(f'Arquivo {filename} já existe e está OK, pulando download...')
+                                # print(f'Arquivo {filename} já existe e está OK, pulando download...')
                                 continue
 
                             url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
