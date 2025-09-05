@@ -1269,6 +1269,11 @@ class GeraProdutosPrevisao:
 
                         for membro in self.tp['number']:
 
+                            if membro == 0:
+                                membro_prefix = 'C'
+                            else:
+                                membro_prefix = 'M'
+
                             titulo = gerar_titulo(
                                 modelo=f'{self.modelo_fmt}-M{membro.item()}', tipo=f'Semana{n_semana.item()}',
                                 cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
@@ -1279,7 +1284,7 @@ class GeraProdutosPrevisao:
                                 ds=tp_plot['tp'].sel(number=membro),
                                 variavel_plotagem='chuva_ons',
                                 title=titulo,
-                                filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', f'{str(membro.item()).zfill(2)}{n_semana.item()}'),
+                                filename=formato_filename(f'{self.modelo_fmt}', f'{n_semana.item()}semana_energ-r{self.data_fmt}', f'{membro_prefix}-{str(membro.item()).zfill(2)}'),
                                 shapefiles=self.shapefiles,
                                 path_to_save=path_to_save,
                                 **kwargs
