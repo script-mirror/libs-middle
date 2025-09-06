@@ -1458,10 +1458,10 @@ class GeraProdutosPrevisao:
                                 com_climatologia=True
                             )
 
-                            path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_bacias_smap_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='chuva_acumulada')
-                            send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
-                            print(f'Removendo painel ... {path_painel}')
-                            os.remove(path_painel)
+                        path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_bacias_smap_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='chuva_acumulada')
+                        send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                        print(f'Removendo painel ... {path_painel}')
+                        os.remove(path_painel)
 
                 else:
 
