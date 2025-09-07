@@ -960,7 +960,7 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
 
     for i, img_path in enumerate(lista_png):
         img = Image.open(img_path)
-        axs[i].imshow(img, aspect="auto")
+        axs[i].imshow(img)
         axs[i].axis("off")
 
     for j in range(n_imgs, len(axs)):
