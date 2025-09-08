@@ -337,9 +337,15 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if todos_sucesso:
                             break  # Sai do while se tudo deu certo
 
-            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido']:
-                prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
-                
+            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido', 'gefs-wind', 'gefs-wind-estendido']:
+
+                # Condição para o vento
+                if 'wind' not in modelo_fmt:
+                    prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
+
+                else:
+                    prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}b.pl?dir=%2F'
+                    
                 while True:
                     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
 
@@ -350,7 +356,11 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         else:
                             modelo_name = f'gep{str(membros).zfill(2)}'
 
-                        prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file={modelo_name}.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
+                        if 'wind' not in modelo_fmt:
+                            prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file={modelo_name}.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
+                        
+                        else:
+                            prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2bp5&file={modelo_name}.t{inicializacao_fmt}z.pgrb2b.{resolucao}.f'
 
                         for i in steps:
                             filename = f'{modelo_name}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix is None else f'{self.name_prefix}_{modelo_name}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
@@ -1617,7 +1627,7 @@ class GeraProdutosPrevisao:
                 if 'step' in ds_anterior.dims:
                     ds_anterior = ds_anterior.swap_dims({'step': 'valid_time'})
 
-                ds_anterior = ajusta_acumulado_ds(ds_anterior, m_to_mm=True) if 'ecmwf' in self.modelo_fmt else ds_anterior
+                # ds_anterior = ajusta_acumulado_ds(ds_anterior, m_to_mm=True) if 'ecmwf' in self.modelo_fmt else ds_anterior
 
                 # Listas para plot
                 difs = []
