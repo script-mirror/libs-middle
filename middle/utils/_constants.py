@@ -14,7 +14,7 @@ else:
 class Constants:
     @property
     def BASE_URL(self):
-        return f"{self.BASE_URL}"
+        return "https://tradingenergiarz.com"
     
     @property
     def USER_PLUVIA(self):
