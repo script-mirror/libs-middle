@@ -34,7 +34,7 @@ from .file_manipulation import(
     create_directory,
 )
 
-from .pdf import (
+from .pdf_to_image import (
     pdf_to_jpg,
 )
 
