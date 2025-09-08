@@ -794,6 +794,7 @@ class GeraProdutosPrevisao:
 
         self.modo_atual = modo_atual
         self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total', '24h_biomassa']
+        self.figs_diferenca = ['diferenca']
         self.figs_semana = ['semanas_operativas']
         self.figs_6h = ['chuva_geop500_vento850']
         self.vento850_pnmm6h = ['pnmm_vento850']
@@ -983,6 +984,9 @@ class GeraProdutosPrevisao:
 
             elif modo in self.precip_grafs:
                 path_save = 'precip_grafs'
+
+            elif modo in self.figs_diferenca:
+                path_save = 'dif_prec'
 
             else:
                 path_save = modo
