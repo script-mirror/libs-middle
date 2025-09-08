@@ -1685,7 +1685,7 @@ class GeraProdutosPrevisao:
                     cond_ini = f'[{self.cond_ini}] - [{data_anterior.strftime("%d/%m/%Y %H UTC")}]'
 
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Diferença {tipo_dif}', cond_ini=cond_ini,
+                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'{tipo_dif}', cond_ini=cond_ini,
                         data_ini=date[0].strftime('%d/%m/%Y').replace(' ', '\\ '),
                         data_fim=date[1].strftime('%d/%m/%Y').replace(' ', '\\ '),
                     )
