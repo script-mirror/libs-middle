@@ -299,16 +299,16 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
 
         if tipo == 'sfc':
             return [
-                # lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
-                # lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
-                # lambda: produtos.gerar_desvpad(ensemble=False),
-                # lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
+                lambda: produtos.gerar_desvpad(ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
                 lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
             ]
 
         elif tipo == 'pl':
             return [
-                # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
+
             ]
 
     elif modelo == 'pconjunto-ons':
