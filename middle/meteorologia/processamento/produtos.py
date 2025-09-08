@@ -3003,7 +3003,9 @@ class GeraProdutosPrevisao:
 
                     print(f'Gráficos temperatura Submercado: {submercado}')
 
-                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado].rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
+                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado]
+                    print(dados_submercado)
+                    dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
 
                     titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
                     filename = f'{path_to_save}/{submercado}'
