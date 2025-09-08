@@ -424,6 +424,10 @@ class Constants:
         return self.PATH_PROJETOS +'/arquivos/prospec/prevs/raizen'
     
     @property
+    def PATH_INFO_VAZOES_OBS_JSON(self):
+        return '/home/admin/projetos/arquivos/smap/infos_vazoes/info_vazao_obs.json'
+    
+    @property
     def PATH_TOKEN(self):
         return os.path.expanduser("~")
 
