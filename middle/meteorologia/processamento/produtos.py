@@ -1906,14 +1906,14 @@ class GeraProdutosPrevisao:
                         semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
                         titulo = self._ajustar_tempo_e_titulo(
-                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Temp. em {level_temp}hPa', semana, self.cond_ini,
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}V e Temp. em {level_temp}hPa', semana, self.cond_ini,
                     )
 
                     else:
                         intervalo = us_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = us_plot.days_of_weeks.item()                        
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Vento e Temp. em {level_temp}hPa - Semana{n_24h.item()}',
+                            modelo=self.modelo_fmt, tipo=f'V e Temp. em {level_temp}hPa - Semana{n_24h.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
