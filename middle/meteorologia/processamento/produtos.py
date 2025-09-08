@@ -3076,7 +3076,7 @@ class GeraProdutosPrevisao:
                     })
 
                     path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
-                    df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv')
+                    df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv', index=False)
 
                     # Titulo do plot
                     titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
@@ -3094,7 +3094,7 @@ class GeraProdutosPrevisao:
                 df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
                 df_media.rename(columns={'magnitude' :f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}'}, inplace=True)
                 df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
-                df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv')
+                df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv', index=False)
 
             elif modo == 'pnmm_vento850':
 
