@@ -3067,6 +3067,7 @@ class GeraProdutosPrevisao:
                     df = pd.DataFrame({
                         'data': valid_times,
                         f'': valid_times_fmt,
+                        f'datas_fmt': valid_times_fmt,
                         f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}': magnitude,
                         'magnitude': magnitude,
                         'magnitude_clim': magnitude_clim,
