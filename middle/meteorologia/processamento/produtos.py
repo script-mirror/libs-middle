@@ -964,7 +964,10 @@ class GeraProdutosPrevisao:
                 path_save = '24-em-24-gifs'
 
             elif modo in self.figs_semana:
-                path_save = 'semana-energ' if ensemble else 'semana-energ-membros'
+                if anomalia_sop:
+                    path_save = 'semana-energ-anomalia'
+                else:
+                    path_save = 'semana-energ' if ensemble else 'semana-energ-membros'
 
             elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
@@ -1120,7 +1123,7 @@ class GeraProdutosPrevisao:
                 ano_mes_atual = pd.to_datetime(self.tp.time.values).strftime('%Y%m')
                 files = os.listdir(path_merge)
 
-                files_to_use = [x for x in files if f'{ano_mes_atual}' in x if '.idx' not in x if 'tmp' not in x]
+                files_to_use = [x for x in files if f'{ano_mes_atual}' in x if '.idx' not in x if 'tmp' not in x if x.endswith('.grib2')]
                 files_to_use = sorted(files_to_use)
 
                 if len(files_to_use) > 0:
@@ -1140,20 +1143,21 @@ class GeraProdutosPrevisao:
                         ds_resample_sel = ds_resample.sel(valid_time=time)
                         mes = pd.to_datetime(time.values).strftime('%b/%Y')
 
-                        if time.dt.month == ds_obs.time.dt.month:
+                        if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini).month:
                             tipo=f'MERGE + Prev'
                             ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
                             ds_acumulado = ds_acumulado.to_dataset()
 
                             if anomalia_mensal: 
                                 if 'ecmwf' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True)
+                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
                                 elif 'gefs' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
-                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)      
-
+                                    mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
+                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
+                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                                    
                                 # Anos iniciais e finais da climatologia
                                 ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
                                 ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
@@ -1165,11 +1169,11 @@ class GeraProdutosPrevisao:
 
                             if anomalia_mensal:    
                                 if 'ecmwf' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
                                 elif 'gefs' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
+                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)      
 
                                 # Anos iniciais e finais da climatologia
@@ -1181,6 +1185,9 @@ class GeraProdutosPrevisao:
                         data_fim=pd.to_datetime(tempo_fim).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
 
                         if anomalia_mensal:
+
+                            path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
+
                             inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
                             fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
                             
@@ -1200,7 +1207,6 @@ class GeraProdutosPrevisao:
                                 cond_ini=self.cond_ini,
                                 data_ini=data_ini,
                                 data_fim=data_fim,
-                                sem_intervalo_semana=True,
                                 prefixo_negrito=True,
                                 prefixo=f'para\\ {mes.title()}'
                             )
@@ -1211,7 +1217,7 @@ class GeraProdutosPrevisao:
                                 title=titulo,
                                 filename=formato_filename(self.modelo_fmt, 'anomaliaacumuladomensal', index),
                                 shapefiles=self.shapefiles,
-                                path_to_save=path_to_save,
+                                path_to_save=path_to_save_anomalia,
                                 **kwargs
                             )     
 
@@ -1221,7 +1227,6 @@ class GeraProdutosPrevisao:
                             cond_ini=self.cond_ini,
                             data_ini=data_ini,
                             data_fim=data_fim,
-                            sem_intervalo_semana=True,
                             prefixo_negrito=True,
                             prefixo=f'para\\ {mes.title()}'
                         )
@@ -1291,7 +1296,7 @@ class GeraProdutosPrevisao:
                             )
 
                 # Criando painel para enviar via wpp
-                if ensemble:
+                if ensemble and not anomalia_sop:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     print(f'Removendo painel ... {path_painel}')
@@ -3056,34 +3061,40 @@ class GeraProdutosPrevisao:
 
                     # Tempos para montar o dataframe
                     valid_times = clim_sel_u.data_final.dt.strftime('%d/%m').values
+                    valid_times_fmt = clim_sel_u.data_final.dt.strftime('%Y-%m-%d')
 
-                    # montando o df
+                    # montando o df para gerar o
                     df = pd.DataFrame({
                         'data': valid_times,
+                        f'': valid_times_fmt,
+                        f'datas_fmt': valid_times_fmt,
+                        f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}': magnitude,
                         'magnitude': magnitude,
                         'magnitude_clim': magnitude_clim,
                         'Climatologia': magnitude_clim
                         
                     })
 
-                    # path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
-                    # df.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv')
+                    path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
+                    df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv')
 
                     # Titulo do plot
                     titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
                     filename = f'{path_to_save}/mag_vento100_{area}'
                     plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
 
-                    # if index > 0:
-                    #     df_temp = pd.concat([df, df_temp], axis=1)
+                    if index > 0:
+                        df_temp = pd.concat([df, df_temp], axis=1)
 
-                    # else:
-                    #     df_temp = df
+                    else:
+                        df_temp = df
 
-                # colunas = [x for x in df_temp.columns if 'Climatologia' not in x]
-                # df_media = pd.DataFrame(df_temp[colunas].mean(axis=1), columns=list(set(colunas)))
-                # df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
-                # df_media.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv')
+                colunas = [x for x in df_temp.columns if 'magnitude' in x if 'clim' not in x]
+                df_media = pd.DataFrame(df_temp[colunas].mean(axis=1), columns=list(set(colunas)))
+                df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
+                df_media.rename(columns={'magnitude' :f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}'}, inplace=True)
+                df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
+                df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv')
 
             elif modo == 'pnmm_vento850':
 

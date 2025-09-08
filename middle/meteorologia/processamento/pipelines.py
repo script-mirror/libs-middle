@@ -20,6 +20,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
+                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
@@ -48,8 +49,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_geada_inmet(),
                 lambda: produtos.gerar_geada_cana(),
                 lambda: produtos.gerar_graficos_chuva(),
-                lambda: produtos.gerar_graficos_temp(),
-                lambda: produtos.gerar_indices_itcz(),
+                lambda: produtos.gerar_graficos_temp(),           
             ]
 
     elif modelo == 'gefs':
@@ -65,6 +65,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
+                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
@@ -84,7 +85,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_vento_div850(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_indices_itcz(),
+                
                 
             ]
 
@@ -100,11 +101,11 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
+                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
             return [
-                lambda: produtos.gerar_indices_itcz(),
             ]
 
     elif modelo == 'gefs-membros':
@@ -150,6 +151,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
+                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
@@ -175,8 +177,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
-                lambda: produtos.gerar_indices_itcz(),
-
+                
             ]
 
     elif modelo == 'ecmwf-ens':
@@ -191,6 +192,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
+                lambda: produtos.gerar_indices_itcz(),  
             ]
 
         elif tipo == 'pl':
@@ -199,7 +201,6 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90, resample_freq='sop'),   
-                lambda: produtos.gerar_indices_itcz(),   
             ]
 
     elif modelo == 'ecmwf-aifs':

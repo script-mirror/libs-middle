@@ -168,11 +168,11 @@ def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().
             ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
 
     elif 'gefs' in modelo.lower():
-        # Pegando a última climatologia
-        files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
 
+        files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
         # Abre o arquivo de climatologia
         ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+        ds_clim = ds_clim.rename({'valid_time': 'alvo_previsao'})
 
     return ds_clim
 
@@ -269,10 +269,10 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         if anomalia_sop:
 
             if 'ecmwf' in modelo.lower():
-                ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+                ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=modelo)
 
             elif 'gefs' in modelo.lower():
-                ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'))
+                ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'), modelo=modelo)
     
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
@@ -509,7 +509,7 @@ def interpola_ds(ds_alvo, ds_referencia):
     xarray.Dataset
         Dataset interpolado.
     """
-    return ds_alvo.interp(latitude=ds_referencia.latitude, longitude=ds_referencia.longitude)
+    return ds_alvo.interp(latitude=ds_referencia.latitude.values, longitude=ds_referencia.longitude.values)
 
 ###################################################################################################################
 

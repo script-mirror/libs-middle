@@ -397,7 +397,7 @@ class Constants:
     #==============================================================================================================================================================
     @property
     def PATH_ARQUIVOS(self):
-        return '/projetos/arquivos'
+        return self.PATH_PROJETOS + '/arquivos'
     
     @property
     def PATH_TMP(self):
@@ -413,15 +413,15 @@ class Constants:
 
     @property
     def PATH_PREVS_PROSPEC(self):
-        return '/projetos/arquivos/prospec/prevs'
+        return self.PATH_PROJETOS + '/arquivos/prospec/prevs'
 
     @property
     def PATH_RESULTS_PROSPEC(self):
-        return '/projetos/arquivos/prospec/resultados'
+        return self.PATH_PROJETOS + '/arquivos/prospec/resultados'
 
     @property
     def PATH_PREVS_INTERNO(self):
-        return '/projetos/arquivos/prospec/prevs/raizen'
+        return self.PATH_PROJETOS +'/arquivos/prospec/prevs/raizen'
     
     @property
     def PATH_TOKEN(self):
