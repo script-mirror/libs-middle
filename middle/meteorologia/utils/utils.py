@@ -168,11 +168,11 @@ def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().
             ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
 
     elif 'gefs' in modelo.lower():
-        # Pegando a última climatologia
-        files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
 
+        files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
         # Abre o arquivo de climatologia
         ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
+        ds_clim = ds_clim.rename({'valid_time': 'alvo_previsao'})
 
     return ds_clim
 
@@ -509,7 +509,7 @@ def interpola_ds(ds_alvo, ds_referencia):
     xarray.Dataset
         Dataset interpolado.
     """
-    return ds_alvo.interp(latitude=ds_referencia.latitude, longitude=ds_referencia.longitude)
+    return ds_alvo.interp(latitude=ds_referencia.latitude.values, longitude=ds_referencia.longitude.values)
 
 ###################################################################################################################
 
