@@ -3003,15 +3003,14 @@ class GeraProdutosPrevisao:
 
                     print(f'Gráficos temperatura Submercado: {submercado}')
 
-                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado].rename(columns={'t2m_peso': 't2m', 't2m_clim_peso': 't2m_clim'})
+                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado].rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
 
                     titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
                     filename = f'{path_to_save}/{submercado}'
                     plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
 
                     path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
-                    dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
-                    dados_submercado.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv')
+                    dados_submercado.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv', index=False)
 
             elif modo == 'graficos_vento':
 
