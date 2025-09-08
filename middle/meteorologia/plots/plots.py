@@ -917,17 +917,17 @@ def plot_graficos_2d(df: pd.DataFrame, tipo: str, df_tmin=None, titulo=None, fil
         df_prev = df[df['type'] == 'previsão']
 
         # obs
-        plt.plot(df_obs['valid_time_fmt'], df_obs['t2m'], color='purple', lw=1.5, marker='o', markerfacecolor="None")
-        plt.plot(df_obs['valid_time_fmt'], df_obs['t2m_clim'], color='purple', lw=1, ls='--')
+        plt.plot(df_obs['valid_time_fmt'], df_obs['t2m_w'], color='purple', lw=1.5, marker='o', markerfacecolor="None")
+        plt.plot(df_obs['valid_time_fmt'], df_obs['t2m_clim_w'], color='purple', lw=1, ls='--')
 
-        for x, y in zip(df_obs['valid_time_fmt'], df_obs['t2m']):
+        for x, y in zip(df_obs['valid_time_fmt'], df_obs['t2m_w']):
             plt.text(x, y+0.3, f"{y:.0f}", color='purple', ha='right', va='bottom', fontsize=16)
 
         # prev
-        plt.plot(df_prev['valid_time_fmt'], df_prev['t2m'], color='purple', lw=1.5, marker='o')
-        plt.plot(df_prev['valid_time_fmt'], df_prev['t2m_clim'], color='purple', lw=1, ls='--')
+        plt.plot(df_prev['valid_time_fmt'], df_prev['t2m_w'], color='purple', lw=1.5, marker='o')
+        plt.plot(df_prev['valid_time_fmt'], df_prev['t2m_clim_w'], color='purple', lw=1, ls='--')
 
-        for x, y in zip(df_prev['valid_time_fmt'], df_prev['t2m']):
+        for x, y in zip(df_prev['valid_time_fmt'], df_prev['t2m_w']):
             plt.text(x, y+0.3, f"{y:.0f}", ha='right', va='bottom', fontsize=16, color='purple')
 
        # Ajustes de layout

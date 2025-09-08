@@ -276,8 +276,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], dif_01_15d=True, dif_15_final=True),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_sop=True),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),

@@ -794,6 +794,7 @@ class GeraProdutosPrevisao:
 
         self.modo_atual = modo_atual
         self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total', '24h_biomassa']
+        self.figs_diferenca = ['diferenca']
         self.figs_semana = ['semanas_operativas']
         self.figs_6h = ['chuva_geop500_vento850']
         self.vento850_pnmm6h = ['pnmm_vento850']
@@ -801,7 +802,7 @@ class GeraProdutosPrevisao:
         self.prob_acm = ['probabilidade_climatologia', 'probabilidade_limiar']
         self.semana_membros = ['desvpad']
         self.precip_grafs = ['graficos_precipitacao']
-        self.psi_chi = ['psi']
+        self.psi_chi = ['psi', 'anomalia_psi']
         self.temp_geada = ['geada-inmet', 'geada-cana']
         self.graficos_temp = ['graficos_temperatura']
         self.graficos_vento = ['graficos_vento']
@@ -983,6 +984,9 @@ class GeraProdutosPrevisao:
 
             elif modo in self.precip_grafs:
                 path_save = 'precip_grafs'
+
+            elif modo in self.figs_diferenca:
+                path_save = 'dif_prec'
 
             else:
                 path_save = modo
@@ -1296,7 +1300,7 @@ class GeraProdutosPrevisao:
                             )
 
                 # Criando painel para enviar via wpp
-                if ensemble and not anomalia_sop:
+                if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     print(f'Removendo painel ... {path_painel}')
@@ -1875,7 +1879,7 @@ class GeraProdutosPrevisao:
                         ds_streamplot=ds_streamplot,
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
+                        path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
                         **kwargs
                     )
             
@@ -2313,7 +2317,7 @@ class GeraProdutosPrevisao:
                         variavel_streamplot='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
+                        path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
                         **kwargs
                     )
 
@@ -2700,7 +2704,7 @@ class GeraProdutosPrevisao:
                             color_contour='black',
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
+                            path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
                             **kwargs
                         )
 
@@ -2723,7 +2727,7 @@ class GeraProdutosPrevisao:
                             color_contour='black',
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
+                            path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
                             **kwargs
                         )
 
@@ -3003,15 +3007,18 @@ class GeraProdutosPrevisao:
 
                     print(f'Gráficos temperatura Submercado: {submercado}')
 
-                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado].rename(columns={'t2m_peso': 't2m', 't2m_clim_peso': 't2m_clim'})
+                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado]
+                    print(dados_submercado)
+                    dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
 
                     titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
                     filename = f'{path_to_save}/{submercado}'
                     plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
 
                     path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
-                    dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
-                    dados_submercado.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv')
+                    dados_submercado.set_index("valid_time").to_csv(
+                        f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv'
+                    )
 
             elif modo == 'graficos_vento':
 
@@ -3076,7 +3083,7 @@ class GeraProdutosPrevisao:
                     })
 
                     path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
-                    df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv')
+                    df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv', index=False)
 
                     # Titulo do plot
                     titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
@@ -3094,7 +3101,7 @@ class GeraProdutosPrevisao:
                 df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
                 df_media.rename(columns={'magnitude' :f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}'}, inplace=True)
                 df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
-                df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv')
+                df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv', index=False)
 
             elif modo == 'pnmm_vento850':
 
