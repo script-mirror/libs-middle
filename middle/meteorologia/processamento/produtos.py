@@ -1156,9 +1156,8 @@ class GeraProdutosPrevisao:
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
                                     
                                 # Anos iniciais e finais da climatologia
-                                var_sel = 'valid_time' if 'gefs' in self.modelo_fmt.lower() else 'alvo_previsao'
-                                ano_ini = pd.to_datetime(ds_clim[var_sel][0].values).strftime('%Y')
-                                ano_fim = pd.to_datetime(ds_clim[var_sel][-1].values).strftime('%Y')
+                                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
 
                         else:
                             tempo_ini = self.tp_mean.sel(valid_time=self.tp_mean.valid_time.dt.month == time.dt.month).valid_time[0].values
