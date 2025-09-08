@@ -942,6 +942,19 @@ class GeraProdutosPrevisao:
         # if t_mean.longitude.min() >= 0:
         #     t_mean = t_mean.assign_coords(longitude=(((t_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
+        # Corrigindo a variavel de OLR para o ECMWF
+        if 'ecmwf' in self.modelo_fmt:
+            ds_final = []
+            hr_ini = 6
+            for valid_time in olr_mean.valid_time:
+
+                ds_tmp = olr_mean.sel(valid_time=valid_time)
+                ds_tmp = ds_tmp/(hr_ini*3600)*(-1)
+                ds_final.append(ds_tmp)
+                hr_ini = hr_ini+6
+
+            olr_mean = xr.concat(ds_final, dim='valid_time')
+
         return olr, olr_mean, cond_ini
 
     ###################################################################################################################
