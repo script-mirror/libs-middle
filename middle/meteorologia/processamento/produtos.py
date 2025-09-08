@@ -802,7 +802,7 @@ class GeraProdutosPrevisao:
         self.prob_acm = ['probabilidade_climatologia', 'probabilidade_limiar']
         self.semana_membros = ['desvpad']
         self.precip_grafs = ['graficos_precipitacao']
-        self.psi_chi = ['psi']
+        self.psi_chi = ['psi', 'anomalia_psi']
         self.temp_geada = ['geada-inmet', 'geada-cana']
         self.graficos_temp = ['graficos_temperatura']
         self.graficos_vento = ['graficos_vento']
@@ -1879,7 +1879,7 @@ class GeraProdutosPrevisao:
                         ds_streamplot=ds_streamplot,
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
+                        path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
                         **kwargs
                     )
             
@@ -2317,7 +2317,7 @@ class GeraProdutosPrevisao:
                         variavel_streamplot='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
+                        path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
                         **kwargs
                     )
 
@@ -2704,7 +2704,7 @@ class GeraProdutosPrevisao:
                             color_contour='black',
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
+                            path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
                             **kwargs
                         )
 
@@ -2727,7 +2727,7 @@ class GeraProdutosPrevisao:
                             color_contour='black',
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
+                            path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
                             **kwargs
                         )
 
