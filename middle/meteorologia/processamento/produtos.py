@@ -3010,7 +3010,9 @@ class GeraProdutosPrevisao:
                     plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
 
                     path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
-                    dados_submercado.to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv', index=False)
+                    dados_submercado.set_index("valid_time").to_csv(
+                        f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv'
+                    )
 
             elif modo == 'graficos_vento':
 
