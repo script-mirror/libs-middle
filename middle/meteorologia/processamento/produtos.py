@@ -1634,22 +1634,6 @@ class GeraProdutosPrevisao:
                 dates = []
                 tipos_dif = []
 
-                if dif_total:
-
-                    # Diferença total
-                    ti = ds_mean['valid_time'].values[0]
-                    tf = ds_anterior['valid_time'].values[-1]
-
-                    # Acumulando
-                    ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
-                    ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
-
-                    # Ds diferença
-                    ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
-                    difs.append(ds_diferenca)
-                    dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
-                    tipos_dif.append('Total')
-
                 if dif_01_15d:
                     # Diferença dos dias 1 ao 15
                     ti = ds_mean['valid_time'].values[0]
@@ -1678,7 +1662,24 @@ class GeraProdutosPrevisao:
                     ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
                     difs.append(ds_diferenca)
                     dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
-                    tipos_dif.append('15D-Final')
+                    tipos_dif.append('15D-45D')
+
+                if dif_total:
+
+                    # Diferença total
+                    ti = ds_mean['valid_time'].values[0]
+                    tf = ds_anterior['valid_time'].values[-1]
+
+                    # Acumulando
+                    ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                    ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                    # Ds diferença
+                    ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                    difs.append(ds_diferenca)
+                    dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                    tipos_dif.append('Total')
+
 
                 for index, (dif, date, tipo_dif) in enumerate(zip(difs, dates, tipos_dif)):
 
