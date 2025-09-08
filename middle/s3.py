@@ -38,9 +38,12 @@ def download_from_s3(id_produto: str, filename: str, path_download: str) -> str:
         raise Exception(f"Erro ao obter conteúdo do arquivo: {file_content.text}")
     
     content = file_content.content
-    ext = infer_file_extension(content)
+    # ext = infer_file_extension(content)
     
-    filename = os.path.join(path_download, f"{filename}.{ext}")
+    filename = os.path.basename(filename).strip().replace("/", "_").replace("\\", "_")
+    filename = filename[filename.rfind('/')+1:]
+    os.makedirs(path_download, exist_ok=True)
+    filename = os.path.join(path_download, f"{filename}")
     with open(filename, 'wb') as f:
         f.write(content)
     return filename
@@ -77,3 +80,4 @@ def get_latest_webhook_product(
     else:
         raise Exception(
             f"Erro ao buscar dados: {res.status_code} - {res.text}")
+        
