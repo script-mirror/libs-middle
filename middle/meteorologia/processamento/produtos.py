@@ -1120,7 +1120,7 @@ class GeraProdutosPrevisao:
                 ano_mes_atual = pd.to_datetime(self.tp.time.values).strftime('%Y%m')
                 files = os.listdir(path_merge)
 
-                files_to_use = [x for x in files if f'{ano_mes_atual}' in x if '.idx' not in x if 'tmp' not in x]
+                files_to_use = [x for x in files if f'{ano_mes_atual}' in x if '.idx' not in x if 'tmp' not in x if x.endswith('.grib2')]
                 files_to_use = sorted(files_to_use)
 
                 if len(files_to_use) > 0:
@@ -1140,20 +1140,21 @@ class GeraProdutosPrevisao:
                         ds_resample_sel = ds_resample.sel(valid_time=time)
                         mes = pd.to_datetime(time.values).strftime('%b/%Y')
 
-                        if time.dt.month == ds_obs.time.dt.month:
+                        if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini).month:
                             tipo=f'MERGE + Prev'
                             ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
                             ds_acumulado = ds_acumulado.to_dataset()
 
                             if anomalia_mensal: 
                                 if 'ecmwf' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True)
+                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
                                 elif 'gefs' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
-                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)      
-
+                                    mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
+                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
+                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                                    
                                 # Anos iniciais e finais da climatologia
                                 ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
                                 ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
@@ -1165,11 +1166,11 @@ class GeraProdutosPrevisao:
 
                             if anomalia_mensal:    
                                 if 'ecmwf' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
                                 elif 'gefs' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
+                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)      
 
                                 # Anos iniciais e finais da climatologia
@@ -1200,7 +1201,6 @@ class GeraProdutosPrevisao:
                                 cond_ini=self.cond_ini,
                                 data_ini=data_ini,
                                 data_fim=data_fim,
-                                sem_intervalo_semana=True,
                                 prefixo_negrito=True,
                                 prefixo=f'para\\ {mes.title()}'
                             )
@@ -1221,7 +1221,6 @@ class GeraProdutosPrevisao:
                             cond_ini=self.cond_ini,
                             data_ini=data_ini,
                             data_fim=data_fim,
-                            sem_intervalo_semana=True,
                             prefixo_negrito=True,
                             prefixo=f'para\\ {mes.title()}'
                         )
