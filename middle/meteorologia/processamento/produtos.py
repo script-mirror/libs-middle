@@ -964,7 +964,10 @@ class GeraProdutosPrevisao:
                 path_save = '24-em-24-gifs'
 
             elif modo in self.figs_semana:
-                path_save = 'semana-energ' if ensemble else 'semana-energ-membros'
+                if anomalia_sop:
+                    path_save = 'semana-energ-anomalia'
+                else:
+                    path_save = 'semana-energ' if ensemble else 'semana-energ-membros'
 
             elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
@@ -1182,6 +1185,9 @@ class GeraProdutosPrevisao:
                         data_fim=pd.to_datetime(tempo_fim).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
 
                         if anomalia_mensal:
+
+                            path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
+
                             inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
                             fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
                             
@@ -1211,7 +1217,7 @@ class GeraProdutosPrevisao:
                                 title=titulo,
                                 filename=formato_filename(self.modelo_fmt, 'anomaliaacumuladomensal', index),
                                 shapefiles=self.shapefiles,
-                                path_to_save=path_to_save,
+                                path_to_save=path_to_save_anomalia,
                                 **kwargs
                             )     
 
@@ -1292,7 +1298,8 @@ class GeraProdutosPrevisao:
                 # Criando painel para enviar via wpp
                 if ensemble:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
-                    send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    # send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    send_whatsapp_message(destinatario='11968606707', mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
 

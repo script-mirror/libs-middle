@@ -269,10 +269,10 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         if anomalia_sop:
 
             if 'ecmwf' in modelo.lower():
-                ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+                ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=modelo)
 
             elif 'gefs' in modelo.lower():
-                ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'))
+                ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'), modelo=modelo)
     
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
