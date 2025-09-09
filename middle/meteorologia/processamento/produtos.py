@@ -970,7 +970,7 @@ class GeraProdutosPrevisao:
     ###################################################################################################################
 
     def _processar_precipitacao(self, modo, ensemble=True, plot_graf=True, 
-                                salva_db=True, modelo_obs='merge', limiares_prob=[5, 10, 20, 30, 50, 70, 100], freq_prob='sop', 
+                                salva_db=True, modelo_obs='merge', limiares_prob=[5, 10, 25, 50, 70, 100], freq_prob='sop', 
                                 timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False,
                                 var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='sudeste', resample_freq='24h',
                                 **kwargs):
