@@ -1629,64 +1629,51 @@ class GeraProdutosPrevisao:
 
                 # ds_anterior = ajusta_acumulado_ds(ds_anterior, m_to_mm=True) if 'ecmwf' in self.modelo_fmt else ds_anterior
 
-                # Listas para plot
                 difs = []
                 dates = []
                 tipos_dif = []
 
-                if dif_01_15d:
-                    # Diferença dos dias 1 ao 15
-                    ti = ds_mean['valid_time'].values[0]
-                    tf = pd.to_datetime(ti) + pd.Timedelta(days=15)
+                # Ordem fixa das tarefas
+                tarefas = [
+                    ("15D", dif_01_15d),
+                    ("15D-45D", dif_15_final),
+                    ("Total", dif_total),
+                ]
 
-                    # Acumulando
+                for tipo, condicao in tarefas:
+                    if not condicao:
+                        continue
+                    
+                    if tipo == "15D":
+                        ti = ds_mean['valid_time'].values[0]
+                        tf = pd.to_datetime(ti) + pd.Timedelta(days=15)
+
+                    elif tipo == "15D-45D":
+                        ti = pd.to_datetime(ds_mean['valid_time'].values[0]) + pd.Timedelta(days=15)
+                        tf = ds_anterior['valid_time'].values[-1]
+
+                    elif tipo == "Total":
+                        ti = ds_mean['valid_time'].values[0]
+                        tf = ds_anterior['valid_time'].values[-1]
+
+                    # Acumular e calcular diferença
                     ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
                     ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
 
-                    # Ds diferença
                     ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+
                     difs.append(ds_diferenca)
                     dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
-                    tipos_dif.append('15D')
-
-                if dif_15_final:
-                    # Diferença dos dias 15 ao restante
-                    ti = pd.to_datetime(ds_mean['valid_time'].values[0]) + pd.Timedelta(days=15)
-                    tf = ds_anterior['valid_time'].values[-1]
-
-                    # Acumulando
-                    ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
-                    ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
-
-                    # Ds diferença
-                    ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
-                    difs.append(ds_diferenca)
-                    dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
-                    tipos_dif.append('15D-45D')
-
-                if dif_total:
-
-                    # Diferença total
-                    ti = ds_mean['valid_time'].values[0]
-                    tf = ds_anterior['valid_time'].values[-1]
-
-                    # Acumulando
-                    ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
-                    ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
-
-                    # Ds diferença
-                    ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
-                    difs.append(ds_diferenca)
-                    dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
-                    tipos_dif.append('Total')
-
+                    tipos_dif.append(tipo)
 
                 for index, (dif, date, tipo_dif) in enumerate(zip(difs, dates, tipos_dif)):
-
                     cond_ini = f'[{self.cond_ini}] - [{data_anterior.strftime("%d/%m/%Y %H UTC")}]'
 
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'{tipo_dif}', cond_ini=cond_ini,
+                        modelo=self.modelo_fmt,
+                        sem_intervalo_semana=True,
+                        tipo=f'{tipo_dif}',
+                        cond_ini=cond_ini,
                         data_ini=date[0].strftime('%d/%m/%Y').replace(' ', '\\ '),
                         data_fim=date[1].strftime('%d/%m/%Y').replace(' ', '\\ '),
                     )
@@ -1700,6 +1687,79 @@ class GeraProdutosPrevisao:
                         path_to_save=path_to_save,
                         **kwargs
                     )
+
+
+                # # Listas para plot
+                # difs = []
+                # dates = []
+                # tipos_dif = []
+
+                # if dif_01_15d:
+                #     # Diferença dos dias 1 ao 15
+                #     ti = ds_mean['valid_time'].values[0]
+                #     tf = pd.to_datetime(ti) + pd.Timedelta(days=15)
+
+                #     # Acumulando
+                #     ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                #     ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                #     # Ds diferença
+                #     ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                #     difs.append(ds_diferenca)
+                #     dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                #     tipos_dif.append('15D')
+
+                # if dif_15_final:
+                #     # Diferença dos dias 15 ao restante
+                #     ti = pd.to_datetime(ds_mean['valid_time'].values[0]) + pd.Timedelta(days=15)
+                #     tf = ds_anterior['valid_time'].values[-1]
+
+                #     # Acumulando
+                #     ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                #     ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                #     # Ds diferença
+                #     ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                #     difs.append(ds_diferenca)
+                #     dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                #     tipos_dif.append('15D-45D')
+
+                # if dif_total:
+
+                #     # Diferença total
+                #     ti = ds_mean['valid_time'].values[0]
+                #     tf = ds_anterior['valid_time'].values[-1]
+
+                #     # Acumulando
+                #     ds_acumulado = ds_mean.sel(valid_time=slice(ti, tf)).sum('valid_time')
+                #     ds_acumulado_anterior = ds_anterior.sel(valid_time=slice(ti, tf)).sum('valid_time')
+
+                #     # Ds diferença
+                #     ds_diferenca = ds_acumulado[variavel] - ds_acumulado_anterior[variavel]
+                #     difs.append(ds_diferenca)
+                #     dates.append([pd.to_datetime(ti), pd.to_datetime(tf)])
+                #     tipos_dif.append('Total')
+
+
+                # for index, (dif, date, tipo_dif) in enumerate(zip(difs, dates, tipos_dif)):
+
+                #     cond_ini = f'[{self.cond_ini}] - [{data_anterior.strftime("%d/%m/%Y %H UTC")}]'
+
+                #     titulo = gerar_titulo(
+                #         modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'{tipo_dif}', cond_ini=cond_ini,
+                #         data_ini=date[0].strftime('%d/%m/%Y').replace(' ', '\\ '),
+                #         data_fim=date[1].strftime('%d/%m/%Y').replace(' ', '\\ '),
+                #     )
+
+                #     plot_campos(
+                #         ds=dif,
+                #         variavel_plotagem='diferenca',
+                #         title=titulo,
+                #         shapefiles=self.shapefiles,
+                #         filename=formato_filename(self.modelo_fmt, 'dif', index),
+                #         path_to_save=path_to_save,
+                #         **kwargs
+                #     )
 
                 path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='dif')
                 send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Diferença {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
