@@ -1882,7 +1882,7 @@ class GeraProdutosPrevisao:
                 path_save = 'precip_grafs'
 
             elif modo in self.psi_chi:
-                path_to_save = 'psi_chi'
+                path_save = 'psi_chi'
 
             elif modo in self.graficos_temp:
                 path_save = 'temp_grafs'
@@ -2209,7 +2209,7 @@ class GeraProdutosPrevisao:
                         color_contour='black' if anomalia_sop else 'white',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
+                        path_to_save=path_to_save if anomalia_sop == False else f'{self.path_savefiguras}/semana-energ-geop',
                         **kwargs
                     )
 
@@ -2263,7 +2263,7 @@ class GeraProdutosPrevisao:
                             title=titulo,
                             filename=f'{index}_gh_anomalia_mensal_{self.modelo_fmt}',
                             shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
+                            path_to_save=f'{self.path_savefiguras}/geop_mensal',
                             **kwargs
                         )  
 
