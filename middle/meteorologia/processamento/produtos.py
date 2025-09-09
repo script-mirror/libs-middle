@@ -4034,7 +4034,7 @@ class GeraProdutosObservacao:
 
                 # Adicionando alguns pontos que não estão no arquivo
                 novas_subbacias = CONSTANTES['novas_subbacias']
-                shp = pd.concat([shp, pd.DataFrame(novas_subbacias)], ignore_index=True)
+                # shp = pd.concat([shp, pd.DataFrame(novas_subbacias)], ignore_index=True)
 
                 # Abrindo arquivo
                 self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
