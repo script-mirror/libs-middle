@@ -756,6 +756,7 @@ class GeraProdutosPrevisao:
 
         self.produto_config_sf = produto_config_sf
         self.modelo_fmt = self.produto_config_sf.modelo if 'membros' not in self.produto_config_sf.modelo else self.produto_config_sf.modelo.replace('-membros', '')
+        self.arquivos_com_membros = True if '-membros' in self.produto_config_sf.modelo else False
         self.output_path = self.produto_config_sf.output_path
         self.resolucao = self.produto_config_sf.resolucao
         self.data_fmt = f'{pd.to_datetime(self.produto_config_sf.data).strftime("%Y%m%d")}{str(self.produto_config_sf.inicializacao).zfill(2)}'
@@ -827,8 +828,13 @@ class GeraProdutosPrevisao:
         Remove os arquivos temporários baixados.
         """
 
+        if self.arquivos_com_membros:
+            modelo_fmt = f'{self.produto_config_sf.modelo}-membros'
+        else:
+            modelo_fmt = self.produto_config_sf.modelo
+
         # Diretório para salvar os arquivos
-        caminho_para_salvar = f'{self.output_path}/{self.modelo_fmt}{self.resolucao}/{self.data_fmt}'
+        caminho_para_salvar = f'{self.output_path}/{modelo_fmt}{self.resolucao}/{self.data_fmt}'
 
         shutil.rmtree(caminho_para_salvar, ignore_errors=True)
         print(f'✅ Arquivos removidos com sucesso: {caminho_para_salvar}')
