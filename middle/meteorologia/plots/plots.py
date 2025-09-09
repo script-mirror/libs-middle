@@ -118,7 +118,7 @@ def custom_colorbar(variavel_plotagem):
         cbar_ticks = [-200, -175, -150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150, 175, 200]
 
     elif variavel_plotagem in ['dif_prev']:
-        colors = ['#FF0000', '#Ffa500', '#FFFFFF', '#FFFFFF', '#0000ff', '#800080']
+        colors = ['#FF0000', '#Ffa500', '#FFFFFF', '#0000ff', '#800080']
         levels = np.arange(-50, 55, 5)
         custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
@@ -754,7 +754,7 @@ def plot_chuva_acumulada(
 ###################################################################################################################
 
 # --- PLOT CHUVA A PARTIR DE UM GEODATAFRAME ---
-def plot_df_to_mapa(df, path_to_save='./tmp/plots', filename='filename', column_plot='dif', _type='dif', titulo=None, shapefiles=None, agrupador='mean', variavel_plotagem='dif_prev'):
+def plot_df_to_mapa(df, path_to_save=Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM, filename='filename', column_plot='dif', _type='dif', titulo=None, shapefiles=None, agrupador='mean', variavel_plotagem='dif_prev'):
 
     from PIL import Image
     import pdb
