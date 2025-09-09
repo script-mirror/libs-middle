@@ -89,6 +89,14 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
         cbar_ticks = [-150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150]
 
+    elif variavel_plotagem in ['tp_anomalia_mensal']:
+        colors = ['mediumvioletred', 'maroon', 'firebrick', 'red', 'chocolate', 'orange', 'gold', 'yellow', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
+        levels = range(-300, 305, 5)
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = range(-300, 350, 50)
+
+
     elif variavel_plotagem in ['dif_prev']:
         colors = ['#FF0000', '#Ffa500', '#FFFFFF', '#FFFFFF', '#0000ff', '#800080']
         levels = np.arange(-50, 55, 5)
@@ -344,6 +352,7 @@ def plot_campos(
                 margin_y = -10,
                 add_valor_bacias=False,
                 with_norm=False,
+                footnote_text=False,
     ):
 
     os.makedirs(path_to_save, exist_ok=True)
@@ -599,6 +608,10 @@ def plot_campos(
     xo = bbox.x1 - im_width + margin_x
     yo = bbox.y0 + margin_y
     plt.figimage(img, xo=xo, yo=yo, alpha=0.3)
+
+    # Footnote se existir
+    if footnote_text:
+        ax.text(-79.5, -34, footnote_text, ha='left', va='bottom', fontsize=10, color='#70279C', weight='bold')
 
     plt.savefig(f'{path_to_save}/{filename}.png', bbox_inches='tight')
     plt.close(fig)

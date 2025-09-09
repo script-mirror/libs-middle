@@ -316,18 +316,25 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
                 # Calcula a anomalia
                 if modo_agrupador == 'sum':
-                    if prob_semana:
-                        ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
-                        
-                    else:
-                        ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
+                    ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
 
                 else:
-                    if prob_semana:
-                        ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
+                    ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
+                
+                # Calcula a anomalia
+                # if modo_agrupador == 'sum':
+                #     if prob_semana:
+                #         ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
                         
-                    else:
-                        ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
+                #     else:
+                #         ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
+
+                # else:
+                #     if prob_semana:
+                #         ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
+                        
+                #     else:
+                #         ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
 
             else:
                 ds_sel = ds_sel.sum(dim='valid_time') if modo_agrupador == 'sum' else ds_sel.mean(dim='valid_time')

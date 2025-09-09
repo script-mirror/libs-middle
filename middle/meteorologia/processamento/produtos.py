@@ -1252,11 +1252,12 @@ class GeraProdutosPrevisao:
 
                             plot_campos(
                                 ds=ds_anomalia['tp'],
-                                variavel_plotagem='tp_anomalia',
+                                variavel_plotagem='tp_anomalia_mensal',
                                 title=titulo,
                                 filename=formato_filename(self.modelo_fmt, 'anomaliaacumuladomensal', index),
                                 shapefiles=self.shapefiles,
                                 path_to_save=path_to_save_anomalia,
+                                footnote_text='Hindcast 2004-2023' if 'ecmwf' in self.modelo_fmt.lower() else 'Hindcast 2000-2019',
                                 **kwargs
                             )     
 
@@ -1299,6 +1300,16 @@ class GeraProdutosPrevisao:
                             semana_operativa=True
                         )
 
+                        if anomalia_sop:
+                            if 'ecmwf' in self.modelo_fmt.lower():
+                                footnote_text = 'Hindcast 2004-2023'
+                            elif 'gfs' in self.modelo_fmt.lower():
+                                footnote_text = 'Hindcast 2000-2019'
+                            else:
+                                footnote_text = 'Outro hindcast'
+                        else:
+                            footnote_text = False
+
                         plot_campos(
                             ds=tp_plot['tp'],
                             variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia', # 1semana_energ-r2025090300.png # 1_semana_energ_gfs.png 1_anom_semana_energ-r2025090300.png
@@ -1306,6 +1317,7 @@ class GeraProdutosPrevisao:
                             filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'anom_semana_energ-r{self.data_fmt}', n_semana.item()),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
+                            footnote_text=footnote_text,
                             **kwargs
                         )
 
