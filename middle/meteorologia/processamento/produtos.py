@@ -1560,7 +1560,7 @@ class GeraProdutosPrevisao:
 
             elif modo == 'probabilidade_climatologia':
 
-                tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas, prob_semana=True)
+                tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas, prob_semana=True, anomalia_sop=True)
                 
                 for n_semana in tp_sop.tempo:
 
