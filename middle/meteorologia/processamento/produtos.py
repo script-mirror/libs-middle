@@ -1428,25 +1428,42 @@ class GeraProdutosPrevisao:
                         else:
                             url = f'{API_URL}/rodadas/chuva/observada/psat?dt_observada='
 
+                        df_temp = []
+
                         # Acumulando entre os dias
                         for dt_observada in date_ranges:
 
                             observado = requests.get(f'{url}{dt_observada}', verify=False, headers=get_auth_header())
 
-                            try:
-                                if len(observado.json()) > 0:
-                                    df_obs = pd.DataFrame(observado.json())
-                                    df_obs['dt_observado'] = pd.to_datetime(df_obs['dt_observado']) + pd.Timedelta(days=1)
-                                    chuva = df_obs['vl_chuva'].values
-                                    acumulado = chuva + acumulado if acumulado is not None else chuva
+                            # try:
+                            if len(observado.json()) > 0:
+                                df_obs = pd.DataFrame(observado.json())
+                                df_obs[f'dt_observado'] = pd.to_datetime(df_obs['dt_observado']) + pd.Timedelta(days=1)
+                                dt_obs_unico = list(set(df_obs['dt_observado']))[0]
+                                df_obs[f'vl_chuva_{dt_obs_unico.strftime("%Y-%m-%d")}'] = df_obs['vl_chuva']
+                                df_temp.append(df_obs[[f'vl_chuva_{dt_obs_unico.strftime("%Y-%m-%d")}']])
 
-                            except Exception as e:
-                                print(f"Erro ao processar os dados para a data {dt_observada}: {e}")
-                                dt_final = dt_observada
-                                break
+                        df_temp = pd.concat(df_temp, axis=1)
+
+                        # # Acumulando entre os dias
+                        # for dt_observada in date_ranges:
+
+                        #     observado = requests.get(f'{url}{dt_observada}', verify=False, headers=get_auth_header())
+
+                        #     try:
+                        #         if len(observado.json()) > 0:
+                        #             df_obs = pd.DataFrame(observado.json())
+                        #             df_obs['dt_observado'] = pd.to_datetime(df_obs['dt_observado']) + pd.Timedelta(days=1)
+                        #             chuva = df_obs['vl_chuva'].values
+                        #             acumulado = chuva + acumulado if acumulado is not None else chuva
+
+                        #     except Exception as e:
+                        #         print(f"Erro ao processar os dados para a data {dt_observada}: {e}")
+                        #         dt_final = dt_observada
+                        #         break
         
                         # Colocando os dados em um dataframe
-                        df_obs['chuva_acumulada'] = acumulado
+                        df_obs['chuva_acumulada'] = df_temp.sum(axis=1) #acumulado
                         df_obs = df_obs.merge(df_ons, on='cd_subbacia', how='left')
                         df_merged = df_obs.rename(columns={'cd_bacia_mlt': 'cd_bacia'})
                         df_merged = pd.merge(df_merged, bacias_segmentadas)

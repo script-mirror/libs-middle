@@ -1,10 +1,7 @@
-
-from encodings.punycode import T
 import pandas as pd
 import xarray as xr
 import numpy as np
 import pendulum
-from scipy.fft import fft2, ifft2, fftfreq
 import locale
 import os
 from middle.utils import Constants
@@ -688,91 +685,6 @@ def converter_psat_para_cd_subbacia(df:pd.DataFrame):
     merge = merge.rename(columns={"id":"cd_subbacia"})
 
     return merge
-
-###################################################################################################################
-
-def calcula_psi_chi(u: xr.DataArray, v: xr.DataArray, dim_laco='valid_time', level=200):
-
-    def ddx(f, dx):
-        """Derivada em x"""
-        return np.gradient(f, dx, axis=-1)
-
-    def ddy(f, dy):
-        """Derivada em y"""
-        return np.gradient(f, dy, axis=-2)
-
-    def poisson_solve(rhs, dx, dy):
-        """Resolve a equação de Poisson ∇²φ = rhs usando FFT (condições periódicas)"""
-        ny, nx = rhs.shape
-        kx = 2 * np.pi * fftfreq(nx, dx)
-        ky = 2 * np.pi * fftfreq(ny, dy)
-        kx2, ky2 = np.meshgrid(kx**2, ky**2)
-        denom = kx2 + ky2
-        denom[0, 0] = 1  # evitar divisão por zero
-
-        rhs_hat = fft2(rhs)
-        sol_hat = -rhs_hat / denom
-        sol_hat[0, 0] = 0  # constante arbitrária
-        return np.real(ifft2(sol_hat))
-
-    Re = 6.371e6  # raio da Terra (m)
-    lat_rad = np.deg2rad(u.latitude)
-    dx = (2 * np.pi * Re * np.cos(lat_rad.mean()) / u.sizes['longitude'])
-    dy = (2 * np.pi * Re / 360) * (u.latitude[1] - u.latitude[0])
-    coords = u.sel(isobaricInhPa=level).isel({dim_laco: 0}).coords
-
-    chis = []
-    psis = []
-
-    for tempo in u[dim_laco]:
-        du_dx = ddx(u.sel(isobaricInhPa=level)['u'].sel({dim_laco: tempo}).values, dx.values)
-        dv_dy = ddy(v.sel(isobaricInhPa=level)['v'].sel({dim_laco: tempo}).values, dy.values)
-        du_dy = ddy(u.sel(isobaricInhPa=level)['u'].sel({dim_laco: tempo}).values, dy.values)
-        dv_dx = ddx(v.sel(isobaricInhPa=level)['v'].sel({dim_laco: tempo}).values, dx.values)
-
-        # Divergência e vorticidade
-        div = du_dx + dv_dy
-        vor = dv_dx - du_dy
-
-        # Resolver para chi e psi
-        chi = poisson_solve(div, dx.values, dy.values)
-        psi = poisson_solve(-vor, dx.values, dy.values)
-
-        # Transformando em um xarray
-        chi = xr.DataArray(chi, coords=coords, name="chi")
-        psi = xr.DataArray(psi, coords=coords, name="psi")
-
-        # Atribuindo a variavel tempo ao novo DataArray
-        chi[dim_laco] = tempo
-        psi[dim_laco] = tempo
-
-        chis.append(chi)
-        psis.append(psi)
-
-    # Junto tudo 
-    chi_total = xr.concat(chis, dim=dim_laco)
-    psi_total = xr.concat(psis, dim=dim_laco)
-
-    # Removendo a media zonal
-    chi_total = chi_total - chi_total.mean(dim='latitude').mean(dim='longitude')
-    chi_total = chi_total - chi_total.mean(dim='longitude')
-
-    psi_total = psi_total - psi_total.mean(dim='latitude').mean(dim='longitude')
-    psi_total = psi_total - psi_total.mean(dim='longitude')
-
-    # anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
-    # anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
-
-    # anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
-    # anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
-
-    # anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
-    # anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
-
-    # anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
-    # anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
-
-    return psi_total.to_dataset(), chi_total.to_dataset()
 
 ###################################################################################################################
 
