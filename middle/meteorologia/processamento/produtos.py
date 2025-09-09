@@ -423,7 +423,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         output_path = self.output_path
 
         # Formatando modelo
-        modelo_fmt = self.modelo.lower() if not membros_prefix else self.modelo.lower().replace('-membros', '')
+        modelo_fmt = self.modelo.lower()# if not membros_prefix else self.modelo.lower().replace('-membros', '')
 
         # Caminho para salvar
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
