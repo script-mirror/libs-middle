@@ -918,7 +918,13 @@ class GeraProdutosPrevisao:
         return t, t_mean, cond_ini
 
     def _carregar_gh_mean(self):
-        gh = get_dado_cacheado('gh', self.produto_config_pl, **self.pl_params)
+
+        if self.modelo_fmt in ['ecmwf-ens']:
+            pl_params_tmp = {**self.pl_params, 'cf_pf_members': False}
+        else:
+            pl_params_tmp = self.pl_params
+
+        gh = get_dado_cacheado('gh', self.produto_config_pl, **pl_params_tmp)
         gh_mean = ensemble_mean(gh)
         cond_ini = get_inicializacao_fmt(gh_mean)
         return gh, gh_mean, cond_ini
