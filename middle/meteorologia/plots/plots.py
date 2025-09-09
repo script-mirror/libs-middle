@@ -96,6 +96,26 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
         cbar_ticks = range(-300, 350, 50)
 
+    elif variavel_plotagem in ['chuva_acumualada_merge']:
+        colors = ["#ffffff", "#e6e6e6", "#bebebe", "#969696", 
+                  "#6e6e6e", "#c8ffbe", "#96f58c", "#50f050", 
+                  "#1eb41e", "#057805", "#0a50aa", "#1464d2", 
+                  "#2882f0", "#50a5f5", "#96d2fa", "#e1ffff", 
+                  "#fffaaa", "#ffe878", "#ffc03c", "#ffa000", 
+                  "#ff6000", "#ff3200", "#e11400", "#a50000",
+                  "#c83c3c", "#e67070", "#f8a0a0", "#ffe6e6", 
+                  "#cdcdff", "#b4a0ff", "#8c78ff", "#6455dc",
+                  "#3c28b4"]
+        levels = [0, 1, 2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 24, 28, 32, 36, 40, 50, 60, 80, 100, 120, 140, 160, 180, 200, 220, 240, 260, 280, 300]
+        cmap = None 
+        cbar_ticks = None
+
+    elif variavel_plotagem in ['chuva_acumualada_merge_anomalia']:
+        colors = ['#FF0000', '#Ffa500', '#FFFFFF', '#0000ff', '#800080']
+        levels = np.arange(-200, 210, 10)
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = [-200, -175, -150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150, 175, 200]
 
     elif variavel_plotagem in ['dif_prev']:
         colors = ['#FF0000', '#Ffa500', '#FFFFFF', '#FFFFFF', '#0000ff', '#800080']

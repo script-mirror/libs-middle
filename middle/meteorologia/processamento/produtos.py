@@ -3854,12 +3854,6 @@ class GeraProdutosObservacao:
             self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
             self.tp = self.tp.sortby("valid_time")
             self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
-            print(self.tp)
-
-            # if len(self.cond_ini) > 0:
-            #     cond_ini = self.cond_ini[-1]
-
-            # else:
             cond_ini = self.data.strftime('%d/%m/%Y')
 
             # Acumulando no mes
@@ -3905,15 +3899,15 @@ class GeraProdutosObservacao:
 
                 if data_var == 'acumulado_ate':
                     tipo = 'Acumulado total'
-                    variavel_plotagem = 'chuva_ons'
+                    variavel_plotagem = 'chuva_acumualada_merge'
 
                 elif data_var == 'anomalia_total':
                     tipo = 'Anomalia total'
-                    variavel_plotagem = 'tp_anomalia'
+                    variavel_plotagem = 'chuva_acumualada_merge_anomalia'
 
                 elif data_var == 'anomalia_parcial':
                     tipo = 'Anomalia parcial'
-                    variavel_plotagem = 'tp_anomalia'
+                    variavel_plotagem = 'chuva_acumualada_merge_anomalia'
 
                 elif data_var == 'pct_climatologia':
                     tipo = '% da climatologia'
