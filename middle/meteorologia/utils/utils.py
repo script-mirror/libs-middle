@@ -286,7 +286,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                     hours_timedelta = 6
 
                 else:
-                    hours_timedelta = 30
+                    hours_timedelta = 6
 
             # Selecionando os tempos das SOP
             ds_sel = ds.sel(valid_time=slice(inicio, fim))
@@ -854,80 +854,6 @@ def formato_filename(modelo, variavel, index=None):
 
 ###################################################################################################################
 
-# def painel_png(path_figs, figsize=(12, 12), output_file=None, path_figs2=None, str_contain='semana', str_contain2=None):
-
-#     import matplotlib.pyplot as plt 
-#     from PIL import Image
-
-#     """
-#     Cria um painel com ncols colunas e nrows linhas a partir de uma lista de arquivos .png
-#     e salva o resultado se output_file for especificado.
-
-#     Parâmetros
-#     ----------
-#     lista_png : list[str]
-#         Lista de caminhos de arquivos PNG.
-#     ncols : int
-#         Número de colunas.
-#     nrows : int
-#         Número de linhas.
-#     figsize : tuple
-#         Tamanho da figura (largura, altura).
-#     output_file : str or None
-#         Caminho para salvar o painel (ex: "painel.png").
-#         Se None, não salva.
-#     """
-
-#     lista_png = os.listdir(path_figs)
-#     lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
-
-#     if path_figs2 is not None:
-#         lista_png2 = os.listdir(path_figs2)
-#         if str_contain2 is not None:
-#             lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if f'{str_contain2}' in x and '.png' in x]
-#         else:
-#             lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if '.png' in x]
-
-#         # Juntando as duas listas
-#         lista_png.extend(lista_png2)
-
-#     if len(lista_png) <= 3:
-#         nrows = 1
-#         ncols = len(lista_png)
-
-#     else:
-#         nrows = len(lista_png)
-#         ncols = 2
-        
-#     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-
-#     # ✅ garante que axs seja sempre lista
-#     if isinstance(axs, plt.Axes):
-#         axs = [axs]
-#     else:
-#         axs = axs.flatten()
-
-#     for i, img_path in enumerate(lista_png):
-#         img = Image.open(img_path)
-#         axs[i].imshow(img)
-#         axs[i].axis("off")
-
-#     # desliga eixos extras se houver
-#     for j in range(len(lista_png), len(axs)):
-#         axs[j].axis("off")
-
-#     plt.subplots_adjust(wspace=0.01, hspace=0.01, left=0, right=1, top=1, bottom=0)
-
-#     if output_file:
-#         path_to_save = f'{Constants().PATH_ARQUIVOS_TEMP}/paineis'
-#         os.makedirs(path_to_save, exist_ok=True)
-#         fig.savefig(f'{path_to_save}/{output_file}', dpi=300, bbox_inches="tight", pad_inches=0)
-#         print(f"✅ Painel salvo em: {output_file}")
-
-#     return f'{path_to_save}/{output_file}'
-
-###################################################################################################################
-
 def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana', str_contain2=None, img_size=(6,6)):
     import matplotlib.pyplot as plt 
     from PIL import Image
@@ -974,4 +900,6 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
         return f'{path_to_save}/{output_file}'
 
     return fig
+
+###################################################################################################################
 
