@@ -629,7 +629,7 @@ def plot_campos(
         bbox = plt.gca().get_window_extent()
         xo = bbox.x1 - im_width + margin_x
         yo = bbox.y0 + margin_y
-    plt.figimage(img, xo=xo, yo=yo, alpha=0.3)
+        plt.figimage(img, xo=xo, yo=yo, alpha=0.3)
 
     # Footnote se existir
     if footnote_text:

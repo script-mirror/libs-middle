@@ -2328,8 +2328,8 @@ class GeraProdutosPrevisao:
                 if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
                     self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
 
                 for n_24h in us_24h_850.tempo:
 
@@ -2372,6 +2372,103 @@ class GeraProdutosPrevisao:
                         path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
                         **kwargs
                     )
+
+            elif modo == 'anomalia_vento850':
+
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+
+                ds_clim_u = open_hindcast_file('u', level_anomalia=850)
+                ds_clim_v = open_hindcast_file('v', level_anomalia=850)
+                ds_clim_u = interpola_ds(ds_clim_u, us_mean)
+                ds_clim_v = interpola_ds(ds_clim_v, vs_mean)
+
+                # Anos iniciais e finais da climatologia
+                ano_ini = pd.to_datetime(ds_clim_u.alvo_previsao[0].values).strftime('%Y')
+                ano_fim = pd.to_datetime(ds_clim_u.alvo_previsao[-1].values).strftime('%Y')
+
+                for n_24h in us_24h_850.tempo:
+
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h_850.sel(tempo=n_24h)
+                    vs_plot = vs_24h_850.sel(tempo=n_24h)
+                    magnitude = (us_plot['u']**2 + vs_plot['v']**2)**0.5
+
+                    tempo_ini = pd.to_datetime(us_plot.intervalo.item().split('até')[0].strip(), format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d %H')
+                    tempo_fim = pd.to_datetime(us_plot.intervalo.item().split('até')[1].strip(), format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d %H')
+
+                    t_clim_ini = tempo_ini.replace(tempo_ini[:4], ano_ini)
+                    t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                    ds_clim_sel_u = ds_clim_u.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
+                    ds_clim_sel_v = ds_clim_v.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
+                    magnitude_clim = (ds_clim_sel_u['u']**2 + ds_clim_sel_v['v']**2)**0.5
+
+                    magnitude_anom = magnitude - magnitude_clim
+
+                    intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = us_plot.days_of_weeks.item()
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Anom Mag.850 - Semana{n_24h.item()}',
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=magnitude_anom,
+                        variavel_plotagem='mag_vento100_anomalia',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_{resample_freq}', n_24h.item()),
+                        plot_bacias=False,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
+
+                if anomalia_mensal:
+                    # Dando o resample nos dados de chuva prevista
+                    ds_resample_u = us_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
+                    ds_resample_v = vs_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
+                    ds_resample_mag = (ds_resample_u['u']**2 + ds_resample_v['v']**2)**0.5
+
+                    for index, time in enumerate(ds_resample_mag.valid_time):
+
+                        # Selecionando o mês correspondente
+                        ds_resample_sel_mag = ds_resample_mag.sel(valid_time=time)
+
+                        # Selecionando o mês correspondente
+                        mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
+
+                        # Selecionando o período da climatologia
+                        tempo_ini = pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%Y-%m-%d %H')
+                        tempo_fim = pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%Y-%m-%d %H')
+                        t_clim_ini = tempo_ini.replace(tempo_ini[:4], ano_ini)
+                        t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                        ds_clim_sel_u = ds_clim_u.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
+                        ds_clim_sel_v = ds_clim_v.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
+                        magnitude_clim = (ds_clim_sel_u['u']**2 + ds_clim_sel_v['v']**2)**0.5
+                    
+                        # Anomalia
+                        ds_anomalia = ds_resample_sel_mag - magnitude_clim
+
+                        titulo = gerar_titulo(
+                            modelo=modelo,
+                            tipo=f'Anom Mag.850 - {mes}',
+                            cond_ini=cond_ini,
+                            data_ini=pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True
+                        )
+
+                        plot_campos(
+                            ds=ds_anomalia,
+                            variavel_plotagem='mag_vento100_anomalia',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_mensal', n_24h.item()),
+                            path_to_save=path_to_save,
+                            **kwargs
+                        )  
 
             elif modo == 'chuva_geop500_vento850':
 
@@ -3554,6 +3651,9 @@ class GeraProdutosPrevisao:
 
     def gerar_vento_div850(self, **kwargs):
         self._processar_varsdinamicas('vento_div850', **kwargs)
+
+    def gerar_anomalia_vento850(self, **kwargs):
+        self._processar_varsdinamicas('anomalia_vento850', **kwargs)
 
     def gerar_chuva_geop500_vento850(self, **kwargs):
         self._processar_varsdinamicas('chuva_geop500_vento850', **kwargs)
