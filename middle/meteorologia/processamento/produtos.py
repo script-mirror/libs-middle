@@ -3894,82 +3894,82 @@ class GeraProdutosObservacao:
                 # Dias para trás
                 date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
 
-                # for index, n_dia in enumerate(date_range[::-1]):
+                for index, n_dia in enumerate(date_range[::-1]):
 
-                #     dateprev = n_dia.strftime('%Y%m%d%H')
+                    dateprev = n_dia.strftime('%Y%m%d%H')
 
-                #     for modelo_prev in ['gfs', 'ecmwf', 'ecmwf-ens', 'gefs', 'pconjunto-ons', 'ecmwf-aifs']:
+                    for modelo_prev in ['gfs', 'ecmwf', 'ecmwf-ens', 'gefs', 'pconjunto-ons', 'ecmwf-aifs']:
 
-                #         try:
+                        try:
 
-                #             print(f'Abrindo arquivo de previsão: {modelo_prev} e {dateprev}')
+                            print(f'Abrindo arquivo de previsão: {modelo_prev} e {dateprev}')
 
-                #             if tipo_plot == 'tp_db':
+                            if tipo_plot == 'tp_db':
 
-                #                 tp_prev = get_prec_db(modelo_prev, n_dia.strftime('%Y-%m-%d'), str(n_dia.hour).zfill(2))
-                #                 tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
-                #                 tp_obs = get_prec_db(self.modelo_fmt, (cond_ini - pd.Timedelta(days=1)).strftime('%Y-%m-%d'))
-                #                 tp_obs['dt_observado'] = pd.to_datetime(tp_obs['dt_observado']) + pd.Timedelta(days=1)
-                #                 tp_prev = tp_prev[tp_prev['dt_prevista'] == tp_obs['dt_observado'].unique()[0]]
-                #                 tp_prev = tp_prev.rename(columns={'dt_prevista': 'dt_observado'})
-                #                 tp_prev = tp_prev[['dt_observado', 'vl_chuva', 'geometry']]
-                #                 dif = tp_obs.merge(tp_prev, on='geometry')
-                #                 dif['dif'] = dif['vl_chuva_y'] - dif['vl_chuva_x'] # previsao - observado
+                                tp_prev = get_prec_db(modelo_prev, n_dia.strftime('%Y-%m-%d'), str(n_dia.hour).zfill(2))
+                                tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
+                                tp_obs = get_prec_db(self.modelo_fmt, (cond_ini - pd.Timedelta(days=1)).strftime('%Y-%m-%d'))
+                                tp_obs['dt_observado'] = pd.to_datetime(tp_obs['dt_observado']) + pd.Timedelta(days=1)
+                                tp_prev = tp_prev[tp_prev['dt_prevista'] == tp_obs['dt_observado'].unique()[0]]
+                                tp_prev = tp_prev.rename(columns={'dt_prevista': 'dt_observado'})
+                                tp_prev = tp_prev[['dt_observado', 'vl_chuva', 'geometry']]
+                                dif = tp_obs.merge(tp_prev, on='geometry')
+                                dif['dif'] = dif['vl_chuva_y'] - dif['vl_chuva_x'] # previsao - observado
 
-                #                 tempo_ini = tp_obs['dt_observado'].unique()[0] - pd.Timedelta(hours=12)
-                #                 tempo_fim = tp_obs['dt_observado'].unique()[0] + pd.Timedelta(hours=12)
+                                tempo_ini = tp_obs['dt_observado'].unique()[0] - pd.Timedelta(hours=12)
+                                tempo_fim = tp_obs['dt_observado'].unique()[0] + pd.Timedelta(hours=12)
 
-                #                 titulo = gerar_titulo(
-                #                     modelo=f'{modelo_prev} - {self.modelo_fmt}',
-                #                     tipo='Dif. de precipitação',
-                #                     cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
-                #                     data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                #                     data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                #                     sem_intervalo_semana=True,
-                #                     condicao_inicial=f'Prev {modelo_prev.replace("pconjunto", "pconj").upper()}'
-                #                 )
+                                titulo = gerar_titulo(
+                                    modelo=f'{modelo_prev} - {self.modelo_fmt}',
+                                    tipo='Dif. precipitação',
+                                    cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
+                                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                    data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                    sem_intervalo_semana=True,
+                                    condicao_inicial=f'Prev {modelo_prev.replace("pconjunto", "pconj").upper()}'
+                                )
 
-                #                 plot_df_to_mapa(dif, 
-                #                                 titulo=titulo, 
-                #                                 shapefiles=self.shapefiles, 
-                #                                 filename=f'dif_{modelo_prev}-gpm_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
-                #                                 # path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
-                #                                 )
+                                plot_df_to_mapa(dif, 
+                                                titulo=titulo, 
+                                                shapefiles=self.shapefiles, 
+                                                filename=f'dif_{modelo_prev}-gpm_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}', 
+                                                # path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
+                                                )
 
-                #             elif tipo_plot == 'tp_netcdf':
+                            elif tipo_plot == 'tp_netcdf':
 
-                #                 # Abrindo o arquivo de previsao
-                #                 tp_prev = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{modelo_prev}_tp_{dateprev}.nc')
-                #                 tp_prev = resample_variavel(tp_prev, modelo_prev, 'tp', '24h').isel(tempo=index)
-                #                 tp_prev = interpola_ds(tp_prev, self.tp)
+                                # Abrindo o arquivo de previsao
+                                tp_prev = xr.open_dataset(f'{CONSTANTES["path_save_netcdf"]}/{modelo_prev}_tp_{dateprev}.nc')
+                                tp_prev = resample_variavel(tp_prev, modelo_prev, 'tp', '24h').isel(tempo=index)
+                                tp_prev = interpola_ds(tp_prev, self.tp)
 
-                #                 # Calculando a diferença
-                #                 dif = tp_prev['tp'] - self.tp['tp'].sel(valid_time=cond_ini)
+                                # Calculando a diferença
+                                dif = tp_prev['tp'] - self.tp['tp'].sel(valid_time=cond_ini)
                                 
-                #                 tempo_ini = dif.data_inicial - pd.Timedelta(hours=6)
-                #                 tempo_fim = dif.data_final
-                #                 tempo_ini = pd.to_datetime(tempo_ini.item())
-                #                 tempo_fim = pd.to_datetime(tempo_fim.item())
+                                tempo_ini = dif.data_inicial - pd.Timedelta(hours=6)
+                                tempo_fim = dif.data_final
+                                tempo_ini = pd.to_datetime(tempo_ini.item())
+                                tempo_fim = pd.to_datetime(tempo_fim.item())
 
-                #                 titulo = gerar_titulo(
-                #                         modelo=f'{modelo_prev.upper()} - {self.modelo_fmt.upper()}', tipo='Dif. de precipitação', cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
-                #                         data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                #                         data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                #                         sem_intervalo_semana=True, condicao_inicial=f'Prev {modelo_prev.upper()}'
-                #                 )
+                                titulo = gerar_titulo(
+                                        modelo=f'{modelo_prev.upper()} - {self.modelo_fmt.upper()}', tipo='Dif. de precipitação', cond_ini=n_dia.strftime('%d/%m/%Y %H UTC'),
+                                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                        data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                        sem_intervalo_semana=True, condicao_inicial=f'Prev {modelo_prev.upper()}'
+                                )
 
-                #                 plot_campos(
-                #                     ds=dif,
-                #                     variavel_plotagem='dif_prev',
-                #                     title=titulo,
-                #                     filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}',
-                #                     path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
-                #                     shapefiles=self.shapefiles,
-                #                     **kwargs
-                #                 )
+                                plot_campos(
+                                    ds=dif,
+                                    variavel_plotagem='dif_prev',
+                                    title=titulo,
+                                    filename=f'dif_{modelo_prev}-{self.modelo_fmt}_{n_dia.strftime("%Y%m%d%H")}_f{cond_ini.strftime("%Y%m%d%H")}',
+                                    path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm',
+                                    shapefiles=self.shapefiles,
+                                    **kwargs
+                                )
 
-                #         except Exception as e:
-                #             print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
+                        except Exception as e:
+                            print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
     
                 # Enviando painel de diferença por wpp
                 data_anterior = date_range[0].strftime('%Y%m%d%H')
@@ -3982,9 +3982,8 @@ class GeraProdutosObservacao:
                     f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_gefs-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
                 ]
 
-                # path_painel = send_whatsapp_message(destinatario=Constants().WHATSAPP_CONDICAO_HIDRICA, mensagem=f'MERGE {self.data.strftime("%Y%m%d")}', arquivo=path_painel)
                 path_painel = painel_png(path_figs=figura_obs, output_file=f'dif_modelos-gpm_{self.data.strftime("%Y%m%d%H")}.png', str_contain='gpm')
-                send_whatsapp_message(destinatario='11968606707', mensagem=f'MERGE {self.data.strftime("%Y%m%d")}', arquivo=path_painel)
+                send_whatsapp_message(destinatario=Constants().WHATSAPP_CONDICAO_HIDRICA, mensagem=f'MERGE x Modelos ({self.data.strftime("%d/%m/%Y")})', arquivo=path_painel)
                 print(f'Removendo painel ... {path_painel}')
 
             elif modo == 'bacias_smap':
