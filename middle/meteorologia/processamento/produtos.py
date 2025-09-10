@@ -2423,6 +2423,7 @@ class GeraProdutosPrevisao:
                         filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_{resample_freq}', n_24h.item()),
                         plot_bacias=False,
                         path_to_save=path_to_save,
+                        shapefiles=self.shapefiles,
                         **kwargs
                     )
 
@@ -2467,6 +2468,7 @@ class GeraProdutosPrevisao:
                             title=titulo,
                             filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_mensal', n_24h.item()),
                             path_to_save=path_to_save,
+                            shapefiles=self.shapefiles,
                             **kwargs
                         )  
 
