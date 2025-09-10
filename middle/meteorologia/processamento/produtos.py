@@ -2383,8 +2383,8 @@ class GeraProdutosPrevisao:
 
                 ds_clim_u = open_hindcast_file('u', level_anomalia=850)
                 ds_clim_v = open_hindcast_file('v', level_anomalia=850)
-                ds_clim_u = interpola_ds(ds_clim_u, us_mean)
-                ds_clim_v = interpola_ds(ds_clim_v, vs_mean)
+                ds_clim_u = interpola_ds(ds_clim_u, self.us_mean)
+                ds_clim_v = interpola_ds(ds_clim_v, self.us_mean)
 
                 # Anos iniciais e finais da climatologia
                 ano_ini = pd.to_datetime(ds_clim_u.alvo_previsao[0].values).strftime('%Y')
@@ -2428,8 +2428,8 @@ class GeraProdutosPrevisao:
 
                 if anomalia_mensal:
                     # Dando o resample nos dados de chuva prevista
-                    ds_resample_u = us_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
-                    ds_resample_v = vs_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
+                    ds_resample_u = self.us_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
+                    ds_resample_v = self.vs_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
                     ds_resample_mag = (ds_resample_u['u']**2 + ds_resample_v['v']**2)**0.5
 
                     for index, time in enumerate(ds_resample_mag.valid_time):
@@ -2441,8 +2441,8 @@ class GeraProdutosPrevisao:
                         mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
 
                         # Selecionando o período da climatologia
-                        tempo_ini = pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%Y-%m-%d %H')
-                        tempo_fim = pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%Y-%m-%d %H')
+                        tempo_ini = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%Y-%m-%d %H')
+                        tempo_fim = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%Y-%m-%d %H')
                         t_clim_ini = tempo_ini.replace(tempo_ini[:4], ano_ini)
                         t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
                         ds_clim_sel_u = ds_clim_u.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
@@ -2456,8 +2456,8 @@ class GeraProdutosPrevisao:
                             modelo=modelo,
                             tipo=f'Anom Mag.850 - {mes}',
                             cond_ini=cond_ini,
-                            data_ini=pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            data_fim=pd.to_datetime(us_mean.sel(valid_time=us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                             sem_intervalo_semana=True
                         )
 
