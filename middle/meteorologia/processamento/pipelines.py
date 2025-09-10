@@ -195,10 +195,10 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
 
         elif tipo == 'pl':
             return [
-                lambda: produtos.gerar_geop500(margin_y=-90),
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
-                lambda: produtos.gerar_olr(margin_y=-90),
+                lambda: produtos.gerar_geop500(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90, resample_freq='sop'),   
+                lambda: produtos.gerar_olr(margin_y=-90),
             ]
 
     elif modelo == 'ecmwf-aifs':
