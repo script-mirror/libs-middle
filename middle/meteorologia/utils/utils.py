@@ -778,8 +778,12 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
     from PIL import Image
     import os, math
 
-    lista_png = os.listdir(path_figs)
-    lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
+    if isinstance(path_figs, list):
+        lista_png = path_figs
+    
+    elif isinstance(path_figs, str):
+        lista_png = os.listdir(path_figs)
+        lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
 
     if path_figs2 is not None:
         lista_png2 = os.listdir(path_figs2)
