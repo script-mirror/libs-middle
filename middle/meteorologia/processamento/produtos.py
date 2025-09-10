@@ -1028,8 +1028,7 @@ class GeraProdutosPrevisao:
 
             # Carrega e processa dado
             if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                variavel = kwargs.get('variavel', 'tp')
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
+                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel='tp' if self.modelo_fmt != 'eta' else 'prec')
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
