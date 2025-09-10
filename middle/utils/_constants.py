@@ -14,7 +14,7 @@ else:
 class Constants:
     @property
     def BASE_URL(self):
-        return "https://tradingenergiarz.com"
+        return os.getenv("BASE_URL", "https://tradingenergiarz.com")
     
     @property
     def USER_PLUVIA(self):
