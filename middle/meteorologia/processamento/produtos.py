@@ -372,7 +372,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         for fcst in range(0, 24, 1):
 
                             fcst = str(fcst).zfill(2)
-                            url = f'https://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}{fcst}.grb'
+                            url = f'https://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}+{date}{fcst}.grb'
 
                             while os.path.isfile(f'{caminho_para_salvar}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}{fcst}.grb') == False:
 
@@ -386,7 +386,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                     continue
                     else:
 
-                        url = f'http://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}00.grb'
+                        url = f'http://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}+{date}00.grb'
                         
                         while os.path.isfile(f'{caminho_para_salvar}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}00.grb') == False:
 
