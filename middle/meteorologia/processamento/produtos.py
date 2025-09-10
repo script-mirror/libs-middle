@@ -2466,7 +2466,7 @@ class GeraProdutosPrevisao:
                             ds=ds_anomalia,
                             variavel_plotagem='mag_vento100_anomalia',
                             title=titulo,
-                            filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_mensal', n_24h.item()),
+                            filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_mensal', index),
                             path_to_save=path_to_save,
                             shapefiles=self.shapefiles,
                             **kwargs
