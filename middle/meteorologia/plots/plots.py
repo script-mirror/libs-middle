@@ -373,6 +373,7 @@ def plot_campos(
                 add_valor_bacias=False,
                 with_norm=False,
                 footnote_text=False,
+                whit_logo=True,
     ):
 
     os.makedirs(path_to_save, exist_ok=True)
@@ -622,11 +623,12 @@ def plot_campos(
                             # )
 
     # Logo
-    img = Image.open(Constants().LOGO_RAIZEN)
-    im_width, _ = img.size
-    bbox = plt.gca().get_window_extent()
-    xo = bbox.x1 - im_width + margin_x
-    yo = bbox.y0 + margin_y
+    if whit_logo:
+        img = Image.open(Constants().LOGO_RAIZEN)
+        im_width, _ = img.size
+        bbox = plt.gca().get_window_extent()
+        xo = bbox.x1 - im_width + margin_x
+        yo = bbox.y0 + margin_y
     plt.figimage(img, xo=xo, yo=yo, alpha=0.3)
 
     # Footnote se existir

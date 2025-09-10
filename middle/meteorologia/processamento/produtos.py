@@ -2646,6 +2646,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
+                            whit_logo=False,
                             **kwargs
                         )
                             
@@ -2666,6 +2667,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
+                            whit_logo=False,
                             **kwargs
                         )
 
@@ -2758,6 +2760,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
+                            whit_logo=False,
                             **kwargs
                         )
 
@@ -2781,6 +2784,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
+                            whit_logo=False,
                             **kwargs
                         )
 
