@@ -378,16 +378,14 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                             while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
 
                                 try:
-                                    print(f'Baixando...{url}')
                                     file = requests.get(url, allow_redirects=True)
                                     if file.status_code == 200:
                                         with open(f'{caminho_para_salvar}/{filename}', 'wb') as f:
                                             f.write(file.content)
-
-                                    # os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
+                                        print(f'✅ {filename} baixado com sucesso!')
 
                                 except:
-                                    print(f'Não existe ...{url}, tentando novamente')
+                                    print(f'❌ Não existe ...{url}, tentando novamente')
                                     time.sleep(10)
                                     continue
 
@@ -399,14 +397,11 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
 
                             try:
-                                print(f'Baixando...{url}')
                                 file = requests.get(url, allow_redirects=True)
                                 if file.status_code == 200:
                                     with open(f'{caminho_para_salvar}/{filename}', 'wb') as f:
                                         f.write(file.content)
-                                        print(f'✅ {filename} baixado com sucesso!')
-                                # os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
-
+                                    print(f'✅ {filename} baixado com sucesso!')
                             except:
                                 print(f'❌ Não existe ...{url}, tentando novamente')
                                 time.sleep(10)
