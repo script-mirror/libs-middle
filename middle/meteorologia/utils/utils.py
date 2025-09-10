@@ -780,6 +780,7 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
 
     if isinstance(path_figs, list):
         lista_png = path_figs
+        lista_png = [x for x in lista_png if f'{str_contain}' in x and '.png' in x]
     
     elif isinstance(path_figs, str):
         lista_png = os.listdir(path_figs)

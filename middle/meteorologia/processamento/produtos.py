@@ -3983,7 +3983,8 @@ class GeraProdutosObservacao:
                 ]
 
                 # path_painel = send_whatsapp_message(destinatario=Constants().WHATSAPP_CONDICAO_HIDRICA, mensagem=f'MERGE {self.data.strftime("%Y%m%d")}', arquivo=path_painel)
-                path_painel = send_whatsapp_message(destinatario='11968606707', mensagem=f'MERGE {self.data.strftime("%Y%m%d")}', arquivo=path_painel)
+                path_painel = painel_png(path_figs=figura_obs, output_file=f'dif_modelos-gpm_{self.data.strftime("%Y%m%d%H")}.png', str_contain='gpm')
+                send_whatsapp_message(destinatario='11968606707', mensagem=f'MERGE {self.data.strftime("%Y%m%d")}', arquivo=path_painel)
                 print(f'Removendo painel ... {path_painel}')
 
             elif modo == 'bacias_smap':
