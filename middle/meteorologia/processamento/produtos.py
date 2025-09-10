@@ -62,7 +62,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     # --- DOWNLOAD ---
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
-                               modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', 
+                               modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11,
                                levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
 
         # Formatação da data e inicialização
@@ -357,7 +357,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             elif modelo_fmt == 'eta':
 
                 start = self.data
-                end = self.data + pd.Timedelta(days=11)
+                end = self.data + pd.Timedelta(days=days_eta)
                 dates = pd.date_range(start, end)
                 dates = [x.strftime('%Y%m%d') for x in dates]
 

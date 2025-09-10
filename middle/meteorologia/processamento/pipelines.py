@@ -332,7 +332,6 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
 
             ]
 
-
     elif modelo == 'merge':
 
         return [
