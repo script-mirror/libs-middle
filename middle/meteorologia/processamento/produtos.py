@@ -2453,9 +2453,9 @@ class GeraProdutosPrevisao:
                         ds_anomalia = ds_resample_sel_mag - magnitude_clim
 
                         titulo = gerar_titulo(
-                            modelo=modelo,
+                            modelo=self.modelo_fmt,
                             tipo=f'Anom Mag.850 - {mes}',
-                            cond_ini=cond_ini,
+                            cond_ini=self.cond_ini,
                             data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                             data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                             sem_intervalo_semana=True
