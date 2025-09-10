@@ -3883,8 +3883,7 @@ class GeraProdutosObservacao:
 
                 # Dias para trás
                 date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
-                print(date_range)
-
+                
                 for index, n_dia in enumerate(date_range[::-1]):
 
                     dateprev = n_dia.strftime('%Y%m%d%H')
