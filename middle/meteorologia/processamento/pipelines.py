@@ -323,8 +323,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
 
         if tipo == 'sfc':
             return [
-                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, variavel='prec'),
+                lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil'], variavel='prec'),
             ]
 
         elif tipo == 'pl':

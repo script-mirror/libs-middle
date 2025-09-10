@@ -196,9 +196,9 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         for day in pd.date_range(start=dataini, end=datafim, freq='D'):
 
             if modelo.lower() == 'eta':
-                if pd.to_datetime(dataini).hour == 1:  # rodada das 0
-                    interval_start = day + pd.Timedelta(hours=12)
-                    interval_end = day + pd.Timedelta(hours=35)
+                if pd.to_datetime(dataini).hour == 0:  # rodada das 0
+                    interval_start = day + pd.Timedelta(hours=13)
+                    interval_end = day + pd.Timedelta(hours=36)
                     intervals.append((interval_start, interval_end))
 
             elif any(m in modelo.lower() for m in ['gefs', 'gfs', 'ecmwf']):
@@ -236,7 +236,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             elif modo_agrupador == 'max':
                 daily_sum = filtered_ds[coluna_prev].max(dim='valid_time')
 
-            data_inicial.append(interval_start)
+            data_inicial.append(interval_start - pd.Timedelta(hours=1) if modelo.lower() == 'eta' else interval_start)
             data_final.append(interval_end)
             chuva.append(daily_sum)
 
@@ -435,8 +435,10 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
+                
             if ds.variables:
                 datasets.append(ds)
+
             else:
                 print(f'Arquivo ignorado (sem variáveis): {f}')
         except Exception as e:

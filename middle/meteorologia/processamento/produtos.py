@@ -435,10 +435,10 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
         files = sorted(os.listdir(caminho_para_salvar))
         if self.name_prefix:
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith('.grib2') if self.name_prefix in f]  # Filtra pelo prefixo se existir
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
 
         else:
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith('.grib2')]
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
 
         if len(files) == 0:
             raise FileNotFoundError(f'Nenhum arquivo encontrado no diretório: {caminho_para_salvar}')
@@ -529,31 +529,12 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                 ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area)
         
-        # # # Renomeando lat para latitude e lon para longitude
-        # # if 'lat' in ds.dims:
-        # #     ds = ds.rename({'lat': 'latitude'})
-
-        # # if 'lon' in ds.dims:
-        # #     ds = ds.rename({'lon': 'longitude'})
-
-        # # Se step estiver nas dimensions, renomeia para valid_time
-        # if 'step' in ds.dims:
-        #     ds = ds.swap_dims({'step': 'valid_time'})
-
         # Pega apenas a hora das 12z
         if sel_12z:
             ds = ds.isel(valid_time=ds.valid_time.dt.hour == 12)
 
-        # # Ajustando a longitude para 0 a 360
-        # if 'longitude' in ds.dims and ajusta_longitude:
-        #    ds = ajusta_lon_0_360(ds)
-
         # Sortando as coordenadas
         ds = ds.sortby(['valid_time', 'latitude', 'longitude'])
-
-        # Seleciona area especifica (America do Sul)
-        # if sel_area:
-        #     ds = ds.sel(latitude=slice(-60, 20), longitude=slice(240, 360))    
 
         # Se for ensemble, faz a média ao longo da dimensão 'number'
         if ensemble_mean:
@@ -565,9 +546,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             ds = ajusta_acumulado_ds(ds, m_to_mm=False)
 
         # Ajusta a unidade de medida
-        if m_to_mm and variavel == 'tp':
+        if m_to_mm and variavel in ['tp', 'prec', 'precip']:
             # Converte de metros para milímetros
-            ds['tp'] = ds['tp'] * 1000
+            ds[variavel] = ds[variavel] * 1000
 
         # torna isobaricHpa em dimensaon
         if expand_isobaric_dims:
@@ -868,10 +849,10 @@ class GeraProdutosPrevisao:
 
     ###################################################################################################################
 
-    def _carregar_tp_mean(self, ensemble=True):
+    def _carregar_tp_mean(self, ensemble=True, variavel='tp'):
 
         """Carrega e processa o campo tp apenas uma vez."""
-        tp = get_dado_cacheado('tp', self.produto_config_sf, **self.tp_params)
+        tp = get_dado_cacheado(variavel, self.produto_config_sf, **self.tp_params)
         tp_mean = ensemble_mean(tp) if ensemble else tp.copy()
         cond_ini = get_inicializacao_fmt(tp_mean)
         return tp, tp_mean, cond_ini
@@ -1047,7 +1028,8 @@ class GeraProdutosPrevisao:
 
             # Carrega e processa dado
             if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble)
+                variavel = kwargs.get('variavel', 'tp')
+                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
