@@ -373,29 +373,42 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                             fcst = str(fcst).zfill(2)
                             url = f'https://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}+{date}{fcst}.grb'
+                            filename = f'{self.name_prefix}_eta_40km_{data_fmt}{inicializacao_fmt}+{date}{fcst}.grb' if self.name_prefix else f'eta_40km_{data_fmt}{inicializacao_fmt}+{date}{fcst}.grb'
 
-                            while os.path.isfile(f'{caminho_para_salvar}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}{fcst}.grb') == False:
+                            while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
 
                                 try:
                                     print(f'Baixando...{url}')
-                                    os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
+                                    file = requests.get(url, allow_redirects=True)
+                                    if file.status_code == 200:
+                                        with open(f'{caminho_para_salvar}/{filename}', 'wb') as f:
+                                            f.write(file.content)
+
+                                    # os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
 
                                 except:
                                     print(f'Não existe ...{url}, tentando novamente')
                                     time.sleep(10)
                                     continue
+
                     else:
 
                         url = f'http://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}+{date}00.grb'
-                        
-                        while os.path.isfile(f'{caminho_para_salvar}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}00.grb') == False:
+                        filename = f'{self.name_prefix}_eta_40km_{data_fmt}{inicializacao_fmt}+{date}00.grb' if self.name_prefix else f'eta_40km_{data_fmt}{inicializacao_fmt}+{date}00.grb'
+
+                        while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
 
                             try:
                                 print(f'Baixando...{url}')
-                                os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
+                                file = requests.get(url, allow_redirects=True)
+                                if file.status_code == 200:
+                                    with open(f'{caminho_para_salvar}/{filename}', 'wb') as f:
+                                        f.write(file.content)
+                                        print(f'✅ {filename} baixado com sucesso!')
+                                # os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
 
                             except:
-                                print(f'Não existe ...{url}, tentando novamente')
+                                print(f'❌ Não existe ...{url}, tentando novamente')
                                 time.sleep(10)
                                 continue  
 
