@@ -1371,7 +1371,16 @@ class GeraProdutosPrevisao:
 
                     # Concatenando os xarrays com a média nas bacias e transformando em um dataframe
                     ds_to_df = xr.concat(chuva_media, dim='id').to_dataframe().reset_index()
-                    ds_to_df['modelo'] = self.modelo_fmt
+
+                    # So para ficar igual do db
+                    if self.modelo_fmt == 'ecmwf-ens-estendido':
+                        str_modelo = 'ecmwf-est'
+                    elif self.modelo_fmt == 'gefs-estendido':
+                        str_modelo = 'gefs-est'
+                    else:
+                        str_modelo = self.modelo_fmt
+                        
+                    ds_to_df['modelo'] = str_modelo
                     ds_to_df = ds_to_df.rename(columns={'id': 'cod_psat', 'time': 'dt_rodada', 'data_final': 'dt_prevista', 'tp': 'vl_chuva'})
                     ds_to_df = ds_to_df[['cod_psat', 'dt_rodada', 'dt_prevista', 'modelo', 'vl_chuva']]
                     ds_to_df = ds_to_df.applymap(lambda x: 0 if isinstance(x, float) and x < 0 else x).round(2)
@@ -3883,7 +3892,7 @@ class GeraProdutosObservacao:
 
                 # Dias para trás
                 date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
-                
+
                 for index, n_dia in enumerate(date_range[::-1]):
 
                     dateprev = n_dia.strftime('%Y%m%d%H')
