@@ -3879,7 +3879,7 @@ class GeraProdutosObservacao:
                 self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
 
                 # Dia atual 
-                cond_ini = pd.to_datetime(self.cond_ini, format='%d/%m/%Y %H UTC')[0]
+                cond_ini = self.cond_ini # pd.to_datetime(self.cond_ini, format='%d/%m/%Y %H UTC')[0]
 
                 # Dias para trás
                 date_range = pd.date_range(end=cond_ini - pd.Timedelta(hours=36), periods=N_dias)
