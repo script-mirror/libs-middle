@@ -120,53 +120,6 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
 
-                # while True:
-                #     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
-
-                #     for i in steps:
-                #         filename = f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2' if self.name_prefix else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
-                #         caminho_arquivo = f'{caminho_para_salvar}/{filename}'
-
-                #         # Se o arquivo já existe e está com tamanho esperado, pula
-                #         if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
-                #             print(f'✅ Arquivo {filename} já existe e está OK, pulando download...')
-                #             continue
-
-                #         url = f'{prefix_url}{prefix_modelo}{i:03d}{variables}{levels}'
-                        
-                #         if sub_region_as_gribfilter:
-                #             url += sub_region_as_gribfilter
-
-                #         file = requests.get(url, allow_redirects=True)
-                #         if file.status_code == 200:
-                #             with open(caminho_arquivo, 'wb') as f:
-                #                 f.write(file.content)
-                #         else:
-                #             print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
-                #             print(url)
-                #             todos_sucesso = False
-                #             time.sleep(5)
-                #             break  # Sai do for e volta ao início do while
-
-                #         # Verifica se o arquivo foi baixado corretamente
-                #         if os.path.exists(caminho_arquivo):
-                #             if os.path.getsize(caminho_arquivo) < file_size:
-                #                 print(f'Arquivo {filename} está vazio/corrompido, removendo...')
-                #                 os.remove(caminho_arquivo)
-                #                 todos_sucesso = False
-                #                 time.sleep(5)
-                #                 break  # Sai do for e tenta de novo no while
-                #             else:
-                #                 print(f'✅ Arquivo {filename} baixado com sucesso!')
-                #         else:
-                #             print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
-                #             todos_sucesso = False
-                #             time.sleep(5)
-                #             break
-
-                #     if todos_sucesso:
-                #         break  # Sai do while quando tudo estiver certo
-
                 while True:
                     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
 
@@ -401,8 +354,53 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     if todos_sucesso:
                         break  # Sai do while quando tudo estiver certo
 
+            elif modelo_fmt == 'eta':
+
+                start = self.data
+                end = self.data + pd.Timedelta(days=11)
+                dates = pd.date_range(start, end)
+                dates = [x.strftime('%Y%m%d') for x in dates]
+
+                ano = str(self.data.year)
+                mes = str(self.data.month).zfill(2)
+                dia = str(self.data.day).zfill(2)
+
+                for date in dates:
+
+                    if date != dates[-1]:
+
+                        for fcst in range(0, 24, 1):
+
+                            fcst = str(fcst).zfill(2)
+                            url = f'https://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}{fcst}.grb'
+
+                            while os.path.isfile(f'{caminho_para_salvar}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}{fcst}.grb') == False:
+
+                                try:
+                                    print(f'Baixando...{url}')
+                                    os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
+
+                                except:
+                                    print(f'Não existe ...{url}, tentando novamente')
+                                    time.sleep(10)
+                                    continue
+                    else:
+
+                        url = f'http://ftp.cptec.inpe.br/modelos/tempo/Eta/ams_40km/brutos/{ano}/{mes}/{dia}/{inicializacao_fmt}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}00.grb'
+                        
+                        while os.path.isfile(f'{caminho_para_salvar}/eta_40km_{data_fmt}{inicializacao_fmt}{inicializacao_fmt}+{date}00.grb') == False:
+
+                            try:
+                                print(f'Baixando...{url}')
+                                os.system(f"wget --no-check-certificate -P {caminho_para_salvar} {url}")
+
+                            except:
+                                print(f'Não existe ...{url}, tentando novamente')
+                                time.sleep(10)
+                                continue  
+
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False):
+    def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, rename_var=False, var_dim=None):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
         import xarray as xr
@@ -567,6 +565,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if expand_isobaric_dims:
             if "isobaricInhPa" not in ds.dims and variavel in isobaric_inhPa:
                 ds = ds.expand_dims({"isobaricInhPa": [ds.isobaricInhPa.item()]})
+
+        if rename_var and var_dim:
+            ds = ds.rename({variavel: var_dim})
 
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')
