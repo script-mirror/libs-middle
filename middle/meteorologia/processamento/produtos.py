@@ -819,7 +819,7 @@ class GeraProdutosPrevisao:
         """
 
         if self.arquivos_com_membros:
-            modelo_fmt = f'{self.produto_config_sf.modelo}-membros'
+            modelo_fmt = f'{self.modelo_fmt}-membros'
         else:
             modelo_fmt = self.produto_config_sf.modelo
 
@@ -1379,7 +1379,7 @@ class GeraProdutosPrevisao:
                         str_modelo = 'gefs-est'
                     else:
                         str_modelo = self.modelo_fmt
-                        
+
                     ds_to_df['modelo'] = str_modelo
                     ds_to_df = ds_to_df.rename(columns={'id': 'cod_psat', 'time': 'dt_rodada', 'data_final': 'dt_prevista', 'tp': 'vl_chuva'})
                     ds_to_df = ds_to_df[['cod_psat', 'dt_rodada', 'dt_prevista', 'modelo', 'vl_chuva']]
