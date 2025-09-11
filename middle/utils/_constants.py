@@ -13,6 +13,10 @@ else:
 
 class Constants:
     @property
+    def BASE_URL(self):
+        return os.getenv("BASE_URL", "https://tradingenergiarz.com")
+    
+    @property
     def USER_PLUVIA(self):
         return os.getenv('USER_PLUVIA')
 
@@ -242,10 +246,6 @@ class Constants:
     @property
     def WHATSAPP_TESTE(self):
         return os.getenv('NUM_TESTE')
-
-    @property
-    def BASE_URL(self):
-        return "https://tradingenergiarz.com"
 
     @property
     def WHATSAPP_PMO(self):
@@ -484,103 +484,103 @@ class Constants:
     #==============================================================================================================================================================
     @property
     def GET_RODADAS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/"
+        return f"{self.BASE_URL}/api/v2/rodadas/"
 
     @property
     def GET_RODADAS_POR_ID(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/por-id/{idRodada}"
+        return f"{self.BASE_URL}/api/v2/rodadas/por-id/{{}}"
 
     @property
     def GET_RODADAS_HISTORICO(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/historico"
+        return f"{self.BASE_URL}/api/v2/rodadas/historico"
 
     @property
     def GET_RODADAS_SUBBACIAS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/subbacias"
+        return f"{self.BASE_URL}/api/v2/rodadas/subbacias"
 
     @property
     def GET_RODADAS_CHUVA_PREVISAO(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/previsao"
 
     @property
     def POST_RODADAS_CHUVA_PREVISAO_PESQUISA(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao/pesquisa/{granularidade}"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/previsao/pesquisa/{{}}"
 
     @property
     def POST_RODADAS_CHUVA_PREVISAO_MODELOS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao/modelos"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/previsao/modelos"
 
     @property
     def POST_RODADAS_CHUVA_PREVISAO_MEMBROS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao/membros"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/previsao/membros"
 
     @property
     def GET_RODADAS_CHUVA_PREVISAO_MEMBROS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao/membros"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/previsao/membros"
 
     @property
     def GET_RODADAS_CHUVA_OBSERVADA(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada"
 
     @property
     def POST_RODADAS_CHUVA_OBSERVADA(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada"
 
     @property
     def GET_RODADAS_CHUVA_OBSERVADA_MERGE_CPTEC_DATA_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/merge-cptec/data-entre"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/merge-cptec/data-entre"
 
     @property
     def GET_RODADAS_CHUVA_OBSERVADA_CPC(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/cpc"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/cpc"
 
     @property
     def POST_RODADAS_CHUVA_OBSERVADA_CPC(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/cpc"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/cpc"
 
     @property
     def GET_RODADAS_CHUVA_OBSERVADA_CPC_RANGE_DATAS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/cpc-range-datas"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/cpc-range-datas"
 
     @property
     def GET_RODADAS_CHUVA_OBSERVADA_PSAT(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/psat"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/psat"
 
     @property
     def POST_RODADAS_CHUVA_OBSERVADA_PSAT(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/psat"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/psat"
 
     @property
     def GET_RODADAS_CHUVA_OBSERVADA_PSAT_DATA_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/observada/psat/data-entre"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/observada/psat/data-entre"
 
     @property
     def POST_RODADAS_SMAP_TRIGGER_DAG(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/smap/trigger-dag"
+        return f"{self.BASE_URL}/api/v2/rodadas/smap/trigger-dag"
 
     @property
     def POST_RODADAS_SMAP(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/smap"
+        return f"{self.BASE_URL}/api/v2/rodadas/smap"
 
     @property
     def GET_RODADAS_SMAP(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/smap"
+        return f"{self.BASE_URL}/api/v2/rodadas/smap"
 
     @property
     def GET_RODADAS_EXPORT_RAIN(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/export-rain"
+        return f"{self.BASE_URL}/api/v2/rodadas/export-rain"
 
     @property
     def GET_RODADAS_EXPORT_RAIN_OBS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/export-rain-obs"
+        return f"{self.BASE_URL}/api/v2/rodadas/export-rain-obs"
 
     @property
     def GET_RODADAS_CHUVA_MERGE(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/merge"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/merge"
 
     @property
     def GET_RODADAS_CHUVA_SMAP_SUBMERCADO(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/chuva/smap/submercado"
+        return f"{self.BASE_URL}/api/v2/rodadas/chuva/smap/submercado"
 
     @property
     def GET_RODADAS_VAZAO_OBSERVADA_PDP(self):
@@ -592,383 +592,383 @@ class Constants:
 
     @property
     def GET_RODADAS_POSTOS_PLUVIOMETRICOS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/postos-pluviometricos"
+        return f"{self.BASE_URL}/api/v2/rodadas/postos-pluviometricos"
 
     @property
     def POST_RODADAS_POSTOS_PLUVIOMETRICOS(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/postos-pluviometricos"
+        return f"{self.BASE_URL}/api/v2/rodadas/postos-pluviometricos"
 
     # ONS Endpoints
     @property
     def GET_ONS_BACIAS(self):
-        return "https://tradingenergiarz.com/api/v2/ons/bacias"
+        return f"{self.BASE_URL}/api/v2/ons/bacias"
 
     @property
     def GET_ONS_SUBMERCADOS(self):
-        return "https://tradingenergiarz.com/api/v2/ons/submercados"
+        return f"{self.BASE_URL}/api/v2/ons/submercados"
 
     @property
     def GET_ONS_BACIAS_SEGMENTADAS(self):
-        return "https://tradingenergiarz.com/api/v2/ons/bacias-segmentadas"
+        return f"{self.BASE_URL}/api/v2/ons/bacias-segmentadas"
 
     @property
     def GET_ONS_ACOMPH(self):
-        return "https://tradingenergiarz.com/api/v2/ons/acomph"
+        return f"{self.BASE_URL}/api/v2/ons/acomph"
 
     @property
     def POST_ONS_ACOMPH(self):
-        return "https://tradingenergiarz.com/api/v2/ons/acomph"
+        return f"{self.BASE_URL}/api/v2/ons/acomph"
 
     @property
     def GET_ONS_ACOMPH_DATA_ACOMPH(self):
-        return "https://tradingenergiarz.com/api/v2/ons/acomph/data-acomph"
+        return f"{self.BASE_URL}/api/v2/ons/acomph/data-acomph"
 
     @property
     def GET_ONS_ACOMPH_PRODUCTS_AVAILABLE(self):
-        return "https://tradingenergiarz.com/api/v2/ons/acomph/products-available"
+        return f"{self.BASE_URL}/api/v2/ons/acomph/products-available"
 
     @property
     def POST_ONS_ENA_ACOMPH(self):
-        return "https://tradingenergiarz.com/api/v2/ons/ena-acomph"
+        return f"{self.BASE_URL}/api/v2/ons/ena-acomph"
 
     @property
     def GET_ONS_ENA_ACOMPH_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/ons/ena-acomph/entre"
+        return f"{self.BASE_URL}/api/v2/ons/ena-acomph/entre"
 
     @property
     def GET_ONS_GERACAO_HORARIA(self):
-        return "https://tradingenergiarz.com/api/v2/ons/geracao-horaria"
+        return f"{self.BASE_URL}/api/v2/ons/geracao-horaria"
 
     @property
     def GET_ONS_CARGA_HORARIA(self):
-        return "https://tradingenergiarz.com/api/v2/ons/carga-horaria"
+        return f"{self.BASE_URL}/api/v2/ons/carga-horaria"
 
     @property
     def GET_ONS_GERACAO_HORARIA_DATA_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/ons/geracao-horaria/data-entre"
+        return f"{self.BASE_URL}/api/v2/ons/geracao-horaria/data-entre"
 
     @property
     def GET_ONS_CARGA_HORARIA_DATA_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/ons/carga-horaria/data-entre"
+        return f"{self.BASE_URL}/api/v2/ons/carga-horaria/data-entre"
 
     @property
     def GET_ONS_PRODUTIBILIDADE(self):
-        return "https://tradingenergiarz.com/api/v2/ons/produtibilidade"
+        return f"{self.BASE_URL}/api/v2/ons/produtibilidade"
 
     @property
-    def GET_ONS_ACOMPANHAMENTO_IPDO(self):
-        return "https://tradingenergiarz.com/api/v2/ons/acompanhamento-ipdo"
+    def ENDPOINT_IPDO(self):
+        return f"{self.BASE_URL}/api/v2/ons/ipdo"
 
     @property
     def GET_ONS_RDH(self):
-        return "https://tradingenergiarz.com/api/v2/ons/rdh"
+        return f"{self.BASE_URL}/api/v2/ons/rdh"
 
     @property
     def POST_ONS_RDH(self):
-        return "https://tradingenergiarz.com/api/v2/ons/rdh"
+        return f"{self.BASE_URL}/api/v2/ons/rdh"
 
     # BBCE Endpoints
     @property
     def GET_BBCE_PRODUTOS_INTERESSE(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/produtos-interesse"
+        return f"{self.BASE_URL}/api/v2/bbce/produtos-interesse"
 
     @property
     def POST_BBCE_PRODUTOS_INTERESSE(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/produtos-interesse"
+        return f"{self.BASE_URL}/api/v2/bbce/produtos-interesse"
 
     @property
     def GET_BBCE_PRODUTOS_INTERESSE_HTML(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/produtos-interesse/html"
+        return f"{self.BASE_URL}/api/v2/bbce/produtos-interesse/html"
 
     @property
     def GET_BBCE_NEGOCIACOES_CATEGORIAS(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/negociacoes/categorias"
+        return f"{self.BASE_URL}/api/v2/bbce/negociacoes/categorias"
 
     @property
     def GET_BBCE_RESUMOS_NEGOCIACOES(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/resumos-negociacoes"
+        return f"{self.BASE_URL}/api/v2/bbce/resumos-negociacoes"
 
     @property
     def GET_BBCE_RESUMOS_NEGOCIACOES_INTERESSE(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/resumos-negociacoes/negociacoes-de-interesse"
+        return f"{self.BASE_URL}/api/v2/bbce/resumos-negociacoes/negociacoes-de-interesse"
 
     @property
     def GET_BBCE_RESUMOS_NEGOCIACOES_INTERESSE_FECHAMENTO(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/resumos-negociacoes/negociacoes-de-interesse/fechamento"
+        return f"{self.BASE_URL}/api/v2/bbce/resumos-negociacoes/negociacoes-de-interesse/fechamento"
 
     @property
     def GET_BBCE_RESUMOS_NEGOCIACOES_ULTIMA_ATUALIZACAO(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/resumos-negociacoes/ultima-atualizacao"
+        return f"{self.BASE_URL}/api/v2/bbce/resumos-negociacoes/ultima-atualizacao"
 
     @property
     def GET_BBCE_RESUMOS_NEGOCIACOES_SPREAD_PRECO_MEDIO(self):
-        return "https://tradingenergiarz.com/api/v2/bbce/resumos-negociacoes/spread/preco-medio"
+        return f"{self.BASE_URL}/api/v2/bbce/resumos-negociacoes/spread/preco-medio"
 
     # Decomp Endpoints
     @property
     def POST_DECOMP_WEOL(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol"
+        return f"{self.BASE_URL}/api/v2/decks/weol"
 
     @property
     def GET_DECOMP_WEOL(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol"
+        return f"{self.BASE_URL}/api/v2/decks/weol"
 
     @property
     def GET_DECOMP_WEOL_LAST_DECK_DATE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/last-deck-date"
+        return f"{self.BASE_URL}/api/v2/decks/weol/last-deck-date"
 
     @property
     def GET_DECOMP_WEOL_PRODUCT_DATE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/product-date"
+        return f"{self.BASE_URL}/api/v2/decks/weol/product-date"
 
     @property
     def GET_DECOMP_WEOL_START_WEEK_DATE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/start-week-date"
+        return f"{self.BASE_URL}/api/v2/decks/weol/start-week-date"
 
     @property
     def POST_DECOMP_PATAMARES(self):
-        return "https://tradingenergiarz.com/api/v2/decks/patamares"
+        return f"{self.BASE_URL}/api/v2/decks/patamares"
 
     @property
     def GET_DECOMP_PATAMARES(self):
-        return "https://tradingenergiarz.com/api/v2/decks/patamares"
+        return f"{self.BASE_URL}/api/v2/decks/patamares"
 
     @property
     def GET_DECOMP_WEOL_WEIGHTED_AVERAGE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/weighted-average"
+        return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average"
 
     @property
     def GET_DECOMP_WEOL_DIFF_TABLE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/diff-table"
+        return f"{self.BASE_URL}/api/v2/decks/weol/diff-table"
 
     @property
     def GET_DECOMP_WEOL_WEIGHTED_AVERAGE_MONTH_TABLE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/weighted-average/month/table"
+        return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average/month/table"
 
     @property
     def GET_DECOMP_WEOL_WEIGHTED_AVERAGE_WEEK_TABLE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/weol/weighted-average/week/table"
+        return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average/week/table"
 
     @property
     def POST_DECOMP_CARGA_DECOMP(self):
-        return "https://tradingenergiarz.com/api/v2/decks/carga-decomp"
+        return f"{self.BASE_URL}/api/v2/decks/carga-decomp"
 
     @property
     def GET_DECOMP_CARGA_DECOMP(self):
-        return "https://tradingenergiarz.com/api/v2/decks/carga-decomp"
+        return f"{self.BASE_URL}/api/v2/decks/carga-decomp"
 
     # CVU Endpoints
     @property
     def GET_CVU_USINAS(self):
-        return "https://tradingenergiarz.com/api/v2/decks/cvu/usinas"
+        return f"{self.BASE_URL}/api/v2/decks/cvu/usinas"
 
     @property
     def GET_CVU(self):
-        return "https://tradingenergiarz.com/api/v2/decks/cvu"
+        return f"{self.BASE_URL}/api/v2/decks/cvu"
 
     @property
     def POST_CVU(self):
-        return "https://tradingenergiarz.com/api/v2/decks/cvu"
+        return f"{self.BASE_URL}/api/v2/decks/cvu"
 
     @property
     def POST_CVU_MERCHANT(self):
-        return "https://tradingenergiarz.com/api/v2/decks/cvu/merchant"
+        return f"{self.BASE_URL}/api/v2/decks/cvu/merchant"
 
     @property
     def POST_CHECK_CVU(self):
-        return "https://tradingenergiarz.com/api/v2/decks/check-cvu"
+        return f"{self.BASE_URL}/api/v2/decks/check-cvu"
 
     @property
     def GET_CHECK_CVU(self):
-        return "https://tradingenergiarz.com/api/v2/decks/check-cvu"
+        return f"{self.BASE_URL}/api/v2/decks/check-cvu"
 
     @property
     def GET_CHECK_CVU_BY_ID(self):
-        return "https://tradingenergiarz.com/api/v2/decks/check-cvu/{check_cvu_id}"
+        return f"{self.BASE_URL}/api/v2/decks/check-cvu/{{}}"
 
     @property
     def GET_HISTORICO_CVU(self):
-        return "https://tradingenergiarz.com/api/v2/decks/historico-cvu"
+        return f"{self.BASE_URL}/api/v2/decks/historico-cvu"
 
     # PMO Endpoints
     @property
     def GET_CARGA_PMO(self):
-        return "https://tradingenergiarz.com/api/v2/decks/carga-pmo"
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo"
 
     @property
     def POST_CARGA_PMO(self):
-        return "https://tradingenergiarz.com/api/v2/decks/carga-pmo"
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo"
 
     @property
     def GET_CARGA_PMO_HISTORICO_PREVISAO(self):
-        return "https://tradingenergiarz.com/api/v2/decks/carga-pmo/historico-previsao"
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo/historico-previsao"
 
     # Newave Endpoints
     @property
     def GET_NEWAVE_PREVISOES_CARGAS(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/previsoes-cargas"
+        return f"{self.BASE_URL}/api/v2/decks/newave/previsoes-cargas"
 
     @property
     def POST_NEWAVE_PREVISOES_CARGAS(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/previsoes-cargas"
+        return f"{self.BASE_URL}/api/v2/decks/newave/previsoes-cargas"
 
     @property
     def POST_NEWAVE_SISTEMA(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema"
 
     @property
     def GET_NEWAVE_SISTEMA_LAST_DECK(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/last_deck"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema/last_deck"
 
     @property
     def GET_NEWAVE_SISTEMA_TOTAL_UNSI(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/total_unsi"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema/total_unsi"
 
     @property
     def GET_NEWAVE_SISTEMA_MMGD_TOTAL(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/mmgd_total"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema/mmgd_total"
     
     @property
     def PUT_NEWAVE_SISTEMA_MMGD_TOTAL(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/mmgd_total"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema/mmgd_total"
 
     @property
     def GET_NEWAVE_SISTEMA_CARGAS_TOTAL_CARGA_GLOBAL(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/cargas/total_carga_global"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema/cargas/total_carga_global"
 
     @property
     def GET_NEWAVE_SISTEMA_CARGAS_TOTAL_CARGA_LIQUIDA(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/sistema/cargas/total_carga_liquida"
+        return f"{self.BASE_URL}/api/v2/decks/newave/sistema/cargas/total_carga_liquida"
 
     @property
     def POST_NEWAVE_CADIC(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/cadic"
+        return f"{self.BASE_URL}/api/v2/decks/newave/cadic"
 
     @property
     def GET_NEWAVE_CADIC_LAST_DECK(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/cadic/last_deck"
+        return f"{self.BASE_URL}/api/v2/decks/newave/cadic/last_deck"
 
     @property
     def GET_NEWAVE_CADIC_TOTAL_MMGD_BASE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/cadic/total_mmgd_base"
+        return f"{self.BASE_URL}/api/v2/decks/newave/cadic/total_mmgd_base"
     
     @property
     def PUT_NEWAVE_CADIC_TOTAL_MMGD_BASE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/cadic/total_mmgd_base"
+        return f"{self.BASE_URL}/api/v2/decks/newave/cadic/total_mmgd_base"
 
     @property
     def GET_NEWAVE_CADIC_TOTAL_ANDE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/cadic/total_ande"
+        return f"{self.BASE_URL}/api/v2/decks/newave/cadic/total_ande"
 
     @property
     def POST_NEWAVE_PATAMAR_CARGA_USINAS(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/patamar/carga_usinas"
+        return f"{self.BASE_URL}/api/v2/decks/newave/patamar/carga_usinas"
 
     @property
     def GET_NEWAVE_PATAMAR_CARGA_USINAS_DT_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/patamar/carga_usinas/dt_entre"
+        return f"{self.BASE_URL}/api/v2/decks/newave/patamar/carga_usinas/dt_entre"
 
     @property
     def POST_NEWAVE_PATAMAR_INTERCAMBIO(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/patamar/intercambio"
+        return f"{self.BASE_URL}/api/v2/decks/newave/patamar/intercambio"
 
     @property
     def GET_NEWAVE_PATAMAR_INTERCAMBIO_DT_ENTRE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/newave/patamar/intercambio/dt_entre"
+        return f"{self.BASE_URL}/api/v2/decks/newave/patamar/intercambio/dt_entre"
 
     # Dessem Endpoints
     @property
     def GET_DESSEM_PREVISAO(self):
-        return "https://tradingenergiarz.com/api/v2/decks/dessem/previsao"
+        return f"{self.BASE_URL}/api/v2/decks/dessem/previsao"
 
     # Restricoes Eletricas Endpoints
     @property
     def POST_RESTRICOES_ELETRICAS(self):
-        return "https://tradingenergiarz.com/api/v2/decks/restricoes-eletricas"
+        return f"{self.BASE_URL}/api/v2/decks/restricoes-eletricas"
 
     @property
     def GET_RESTRICOES_ELETRICAS(self):
-        return "https://tradingenergiarz.com/api/v2/decks/restricoes-eletricas"
+        return f"{self.BASE_URL}/api/v2/decks/restricoes-eletricas"
 
     @property
     def GET_RESTRICOES_ELETRICAS_HISTORICO(self):
-        return "https://tradingenergiarz.com/api/v2/decks/restricoes-eletricas/historico"
+        return f"{self.BASE_URL}/api/v2/decks/restricoes-eletricas/historico"
     
     # Dados Hidraulicos Endpoints
     @property
     def POST_DADOS_HIDRAULICOS_UHE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-uhe"
+        return f"{self.BASE_URL}/api/v2/ons-dados-abertos/dados-hidraulicos-uhe"
 
     @property
     def GET_DADOS_HIDRAULICOS_UHE(self):
-        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-uhe"
+        return f"{self.BASE_URL}/api/v2/ons-dados-abertos/dados-hidraulicos-uhe"
     
     @property
     def POST_DADOS_HIDRAULICOS_SUBSISTEMA(self):
-        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-subsistema"
+        return f"{self.BASE_URL}/api/v2/ons-dados-abertos/dados-hidraulicos-subsistema"
 
     @property
     def GET_DADOS_HIDRAULICOS_SUBSISTEMA(self):
-        return "https://tradingenergiarz.com/api/v2/decks/dados-hidraulicos-subsistema"
+        return f"{self.BASE_URL}/api/v2/ons-dados-abertos/dados-hidraulicos-subsistema"
     
     # Meteorologia Endpoints
     @property
     def GET_METEOROLOGIA_ESTACAO_CHUVOSA(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/estacao-chuvosa"
+        return f"{self.BASE_URL}/api/v2/meteorologia/estacao-chuvosa"
 
     @property
     def POST_METEOROLOGIA_ESTACAO_CHUVOSA(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/estacao-chuvosa"
+        return f"{self.BASE_URL}/api/v2/meteorologia/estacao-chuvosa"
 
     @property
     def GET_METEOROLOGIA_ESTACAO_CHUVOSA_PREV(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/estacao-chuvosa-prev"
+        return f"{self.BASE_URL}/api/v2/meteorologia/estacao-chuvosa-prev"
 
     @property
     def POST_METEOROLOGIA_ESTACAO_CHUVOSA_PREV(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/estacao-chuvosa-prev"
+        return f"{self.BASE_URL}/api/v2/meteorologia/estacao-chuvosa-prev"
 
     @property
     def GET_METEOROLOGIA_CLIMATOLOGIA_BACIAS(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/climatologia-bacias"
+        return f"{self.BASE_URL}/api/v2/meteorologia/climatologia-bacias"
 
     @property
     def POST_METEOROLOGIA_VENTO_PREVISTO(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto"
+        return f"{self.BASE_URL}/api/v2/meteorologia/vento-previsto"
 
     @property
     def GET_METEOROLOGIA_VENTO_PREVISTO(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto"
+        return f"{self.BASE_URL}/api/v2/meteorologia/vento-previsto"
 
     @property
     def GET_METEOROLOGIA_VENTO_PREVISTO_RODADAS(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto-rodadas"
+        return f"{self.BASE_URL}/api/v2/meteorologia/vento-previsto-rodadas"
 
     @property
     def GET_METEOROLOGIA_INDICES_DIARIOS_SST(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/indices-diarios-sst"
+        return f"{self.BASE_URL}/api/v2/meteorologia/indices-diarios-sst"
 
     @property
     def POST_METEOROLOGIA_INDICES_DIARIOS_SST(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/indices-diarios-sst"
+        return f"{self.BASE_URL}/api/v2/meteorologia/indices-diarios-sst"
 
     @property
     def POST_METEOROLOGIA_ESTACOES_METEOROLOGICAS(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/estacoes-meteorologicas"
+        return f"{self.BASE_URL}/api/v2/meteorologia/estacoes-meteorologicas"
 
     @property
     def GET_METEOROLOGIA_INFOS_ESTACOES_METEOROLOGICAS(self):
-        return "https://tradingenergiarz.com/api/v2/meteorologia/infos-estacoes-meteorologicas"
+        return f"{self.BASE_URL}/api/v2/meteorologia/infos-estacoes-meteorologicas"
 
     # Pluvia Endpoints
     @property
     def GET_PLUVIA_BACIAS(self):
-        return "https://tradingenergiarz.com/api/v2/pluvia/bacias"
+        return f"{self.BASE_URL}/api/v2/pluvia/bacias"
 
     # Utils Endpoints
     @property
     def GET_UTILS_DATA_ELETRICA(self):
-        return "https://tradingenergiarz.com/api/v2/utils/data-eletrica"
+        return f"{self.BASE_URL}/api/v2/utils/data-eletrica"
    
     
     #METEOROLOGIA
@@ -1008,7 +1008,11 @@ class Constants:
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_MERGE(self):
         return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
-    
+
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_DIFGPM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm'
+
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_SAMET(self):
         return '/WX2TB/Documentos/dados/temp_samet'

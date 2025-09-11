@@ -1,10 +1,7 @@
-
-from encodings.punycode import T
 import pandas as pd
 import xarray as xr
 import numpy as np
 import pendulum
-from scipy.fft import fft2, ifft2, fftfreq
 import locale
 import os
 from middle.utils import Constants
@@ -199,9 +196,9 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
         for day in pd.date_range(start=dataini, end=datafim, freq='D'):
 
             if modelo.lower() == 'eta':
-                if pd.to_datetime(dataini).hour == 1:  # rodada das 0
-                    interval_start = day + pd.Timedelta(hours=12)
-                    interval_end = day + pd.Timedelta(hours=35)
+                if pd.to_datetime(dataini).hour == 0:  # rodada das 0
+                    interval_start = day + pd.Timedelta(hours=13)
+                    interval_end = day + pd.Timedelta(hours=36)
                     intervals.append((interval_start, interval_end))
 
             elif any(m in modelo.lower() for m in ['gefs', 'gfs', 'ecmwf']):
@@ -239,7 +236,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             elif modo_agrupador == 'max':
                 daily_sum = filtered_ds[coluna_prev].max(dim='valid_time')
 
-            data_inicial.append(interval_start)
+            data_inicial.append(interval_start - pd.Timedelta(hours=1) if modelo.lower() == 'eta' else interval_start)
             data_final.append(interval_end)
             chuva.append(daily_sum)
 
@@ -286,7 +283,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                     hours_timedelta = 6
 
                 else:
-                    hours_timedelta = 30
+                    hours_timedelta = 6
 
             # Selecionando os tempos das SOP
             ds_sel = ds.sel(valid_time=slice(inicio, fim))
@@ -316,18 +313,25 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
                 # Calcula a anomalia
                 if modo_agrupador == 'sum':
-                    if prob_semana:
-                        ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
-                        
-                    else:
-                        ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
+                    ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
 
                 else:
-                    if prob_semana:
-                        ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
+                    ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
+                
+                # Calcula a anomalia
+                # if modo_agrupador == 'sum':
+                #     if prob_semana:
+                #         ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
                         
-                    else:
-                        ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
+                #     else:
+                #         ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
+
+                # else:
+                #     if prob_semana:
+                #         ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
+                        
+                #     else:
+                #         ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
 
             else:
                 ds_sel = ds_sel.sum(dim='valid_time') if modo_agrupador == 'sum' else ds_sel.mean(dim='valid_time')
@@ -431,8 +435,10 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
+                
             if ds.variables:
                 datasets.append(ds)
+
             else:
                 print(f'Arquivo ignorado (sem variáveis): {f}')
         except Exception as e:
@@ -684,91 +690,6 @@ def converter_psat_para_cd_subbacia(df:pd.DataFrame):
 
 ###################################################################################################################
 
-def calcula_psi_chi(u: xr.DataArray, v: xr.DataArray, dim_laco='valid_time', level=200):
-
-    def ddx(f, dx):
-        """Derivada em x"""
-        return np.gradient(f, dx, axis=-1)
-
-    def ddy(f, dy):
-        """Derivada em y"""
-        return np.gradient(f, dy, axis=-2)
-
-    def poisson_solve(rhs, dx, dy):
-        """Resolve a equação de Poisson ∇²φ = rhs usando FFT (condições periódicas)"""
-        ny, nx = rhs.shape
-        kx = 2 * np.pi * fftfreq(nx, dx)
-        ky = 2 * np.pi * fftfreq(ny, dy)
-        kx2, ky2 = np.meshgrid(kx**2, ky**2)
-        denom = kx2 + ky2
-        denom[0, 0] = 1  # evitar divisão por zero
-
-        rhs_hat = fft2(rhs)
-        sol_hat = -rhs_hat / denom
-        sol_hat[0, 0] = 0  # constante arbitrária
-        return np.real(ifft2(sol_hat))
-
-    Re = 6.371e6  # raio da Terra (m)
-    lat_rad = np.deg2rad(u.latitude)
-    dx = (2 * np.pi * Re * np.cos(lat_rad.mean()) / u.sizes['longitude'])
-    dy = (2 * np.pi * Re / 360) * (u.latitude[1] - u.latitude[0])
-    coords = u.sel(isobaricInhPa=level).isel({dim_laco: 0}).coords
-
-    chis = []
-    psis = []
-
-    for tempo in u[dim_laco]:
-        du_dx = ddx(u.sel(isobaricInhPa=level)['u'].sel({dim_laco: tempo}).values, dx.values)
-        dv_dy = ddy(v.sel(isobaricInhPa=level)['v'].sel({dim_laco: tempo}).values, dy.values)
-        du_dy = ddy(u.sel(isobaricInhPa=level)['u'].sel({dim_laco: tempo}).values, dy.values)
-        dv_dx = ddx(v.sel(isobaricInhPa=level)['v'].sel({dim_laco: tempo}).values, dx.values)
-
-        # Divergência e vorticidade
-        div = du_dx + dv_dy
-        vor = dv_dx - du_dy
-
-        # Resolver para chi e psi
-        chi = poisson_solve(div, dx.values, dy.values)
-        psi = poisson_solve(-vor, dx.values, dy.values)
-
-        # Transformando em um xarray
-        chi = xr.DataArray(chi, coords=coords, name="chi")
-        psi = xr.DataArray(psi, coords=coords, name="psi")
-
-        # Atribuindo a variavel tempo ao novo DataArray
-        chi[dim_laco] = tempo
-        psi[dim_laco] = tempo
-
-        chis.append(chi)
-        psis.append(psi)
-
-    # Junto tudo 
-    chi_total = xr.concat(chis, dim=dim_laco)
-    psi_total = xr.concat(psis, dim=dim_laco)
-
-    # Removendo a media zonal
-    chi_total = chi_total - chi_total.mean(dim='latitude').mean(dim='longitude')
-    chi_total = chi_total - chi_total.mean(dim='longitude')
-
-    psi_total = psi_total - psi_total.mean(dim='latitude').mean(dim='longitude')
-    psi_total = psi_total - psi_total.mean(dim='longitude')
-
-    # anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
-    # anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
-
-    # anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
-    # anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
-
-    # anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
-    # anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
-
-    # anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
-    # anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
-
-    return psi_total.to_dataset(), chi_total.to_dataset()
-
-###################################################################################################################
-
 def ajusta_acumulado_ds(ds: xr.Dataset, m_to_mm=True):
 
     variaveis_com_valid_time = [v for v in ds.data_vars if 'valid_time' in ds[v].dims]
@@ -854,87 +775,18 @@ def formato_filename(modelo, variavel, index=None):
 
 ###################################################################################################################
 
-# def painel_png(path_figs, figsize=(12, 12), output_file=None, path_figs2=None, str_contain='semana', str_contain2=None):
-
-#     import matplotlib.pyplot as plt 
-#     from PIL import Image
-
-#     """
-#     Cria um painel com ncols colunas e nrows linhas a partir de uma lista de arquivos .png
-#     e salva o resultado se output_file for especificado.
-
-#     Parâmetros
-#     ----------
-#     lista_png : list[str]
-#         Lista de caminhos de arquivos PNG.
-#     ncols : int
-#         Número de colunas.
-#     nrows : int
-#         Número de linhas.
-#     figsize : tuple
-#         Tamanho da figura (largura, altura).
-#     output_file : str or None
-#         Caminho para salvar o painel (ex: "painel.png").
-#         Se None, não salva.
-#     """
-
-#     lista_png = os.listdir(path_figs)
-#     lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
-
-#     if path_figs2 is not None:
-#         lista_png2 = os.listdir(path_figs2)
-#         if str_contain2 is not None:
-#             lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if f'{str_contain2}' in x and '.png' in x]
-#         else:
-#             lista_png2 = [f'{path_figs2}/{x}' for x in lista_png2 if '.png' in x]
-
-#         # Juntando as duas listas
-#         lista_png.extend(lista_png2)
-
-#     if len(lista_png) <= 3:
-#         nrows = 1
-#         ncols = len(lista_png)
-
-#     else:
-#         nrows = len(lista_png)
-#         ncols = 2
-        
-#     fig, axs = plt.subplots(nrows=nrows, ncols=ncols, figsize=figsize)
-
-#     # ✅ garante que axs seja sempre lista
-#     if isinstance(axs, plt.Axes):
-#         axs = [axs]
-#     else:
-#         axs = axs.flatten()
-
-#     for i, img_path in enumerate(lista_png):
-#         img = Image.open(img_path)
-#         axs[i].imshow(img)
-#         axs[i].axis("off")
-
-#     # desliga eixos extras se houver
-#     for j in range(len(lista_png), len(axs)):
-#         axs[j].axis("off")
-
-#     plt.subplots_adjust(wspace=0.01, hspace=0.01, left=0, right=1, top=1, bottom=0)
-
-#     if output_file:
-#         path_to_save = f'{Constants().PATH_ARQUIVOS_TEMP}/paineis'
-#         os.makedirs(path_to_save, exist_ok=True)
-#         fig.savefig(f'{path_to_save}/{output_file}', dpi=300, bbox_inches="tight", pad_inches=0)
-#         print(f"✅ Painel salvo em: {output_file}")
-
-#     return f'{path_to_save}/{output_file}'
-
-###################################################################################################################
-
 def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana', str_contain2=None, img_size=(6,6)):
     import matplotlib.pyplot as plt 
     from PIL import Image
     import os, math
 
-    lista_png = os.listdir(path_figs)
-    lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
+    if isinstance(path_figs, list):
+        lista_png = path_figs
+        lista_png = [x for x in lista_png if f'{str_contain}' in x and '.png' in x]
+    
+    elif isinstance(path_figs, str):
+        lista_png = os.listdir(path_figs)
+        lista_png = [f'{path_figs}/{x}' for x in lista_png if f'{str_contain}' in x and '.png' in x]
 
     if path_figs2 is not None:
         lista_png2 = os.listdir(path_figs2)
@@ -974,4 +826,6 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
         return f'{path_to_save}/{output_file}'
 
     return fig
+
+###################################################################################################################
 
