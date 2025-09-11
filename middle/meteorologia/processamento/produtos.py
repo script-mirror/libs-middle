@@ -12,7 +12,7 @@ import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
 from middle.utils import get_auth_header
-from middle.message.sender import send_whatsapp_message
+from middle.message.sender import send_whatsapp_message, send_email_message
 import scipy.ndimage as nd
 from ..plots.plots import plot_campos, plot_df_to_mapa, plot_graficos_2d, plot_chuva_acumulada
 from ..utils.utils import (
@@ -1345,6 +1345,7 @@ class GeraProdutosPrevisao:
                 if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
 
@@ -3491,11 +3492,10 @@ class GeraProdutosPrevisao:
                 if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
                     self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
 
-                ds = xr.Dataset()
-                ds['u100'] = self.us100_mean
+                ds = self.us100_mean.copy()
                 ds['v100'] = self.vs100_mean
                 ds['magnitude'] = np.sqrt(ds['u100']**2 + ds['v100']**2)
-
+                
                 # Dataframe com os dados dos pontos de grade do modelo 
                 if self.modelo_fmt in ['gefs', 'gefs-estendido']:
                     modelo_weol = 'gefs'
@@ -3527,7 +3527,7 @@ class GeraProdutosPrevisao:
                     # Filtrando por aglomerado
                     usinas = dados_pontos[dados_pontos['Aglomerado'] == aglomerado].dropna(axis=1)
                     usinas = usinas.loc[:, ~usinas.columns.isin(["Aglomerado", "PotenciaInstalada", "Submercado"])].values.tolist()[0]
-                    pontos_gfs_filtrados = pontos_gfs[pontos_gfs['prefixos'].isin(usinas)]
+                    pontos_gfs_filtrados = pontos_quad_modelo[pontos_quad_modelo['prefixos'].isin(usinas)]
                     dados_usina_filtrados = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]', 'prefixos', 'estado']]
                     estado = dados_usina_filtrados['estado'].values[0]
                     potencia_instalada = dados_usina_filtrados.set_index('prefixos').to_dict().get('Pot Instalada [MW]')
