@@ -19,12 +19,12 @@ def auth_airflow():
     else:
         raise Exception("Falha na autenticação com o Airflow")
 
-def trigger_airflow_dag(
+def trigger_dag(
     dag_id: str,
     conf: dict={},
 ):
 
-    trigger_dag_url = f"{constants.BASE_URL}/airflow-middle/dags/{dag_id}/dagRuns"
+    trigger_dag_url = f"{constants.BASE_URL}/airflow-middle/api/v2/dags/{dag_id}/dagRuns"
     json = {"conf": conf}
 
     json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()

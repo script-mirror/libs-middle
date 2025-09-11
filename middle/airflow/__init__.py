@@ -4,11 +4,11 @@ from .context_handling import(
 )
 
 from .airflow_repository import(
-    trigger_airflow_dag,
+    trigger_dag,
 )
 
 __all__ = [
     "enviar_whatsapp_erro",
     "enviar_whatsapp_sucesso",
-    "trigger_airflow_dag",
+    "trigger_dag",
 ]
