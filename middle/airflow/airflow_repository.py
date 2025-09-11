@@ -17,7 +17,7 @@ def auth_airflow():
         token = response.json().get("access_token")
         return {"Authorization": f"Bearer {token}"}
     else:
-        raise Exception("Falha na autenticação com o Airflow")
+        raise Exception(f"Falha na autenticação com o Airflow {response.text}")
 
 def trigger_dag(
     dag_id: str,
