@@ -3,7 +3,7 @@ from .context_handling import(
     enviar_whatsapp_sucesso,
 )
 
-from .trigger_dag import(
+from .airflow_repository import(
     trigger_airflow_dag,
 )
 
