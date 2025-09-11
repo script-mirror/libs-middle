@@ -585,6 +585,10 @@ class Constants:
     @property
     def GET_RODADAS_VAZAO_OBSERVADA_PDP(self):
         return "https://tradingenergiarz.com/api/v2/rodadas/vazao-observada-pdp"
+    
+    @property
+    def POST_RODADAS_VAZAO_OBSERVADA_PDP(self):
+        return "https://tradingenergiarz.com/api/v2/rodadas/vazao-observada-pdp"
 
     @property
     def GET_RODADAS_POSTOS_PLUVIOMETRICOS(self):
