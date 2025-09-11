@@ -48,9 +48,10 @@ def download_from_s3(id_produto: str, filename: str, path_download: str) -> str:
         f.write(content)
     return filename
 
-
 def handle_webhook_file(webhook_payload: dict, path_download: str) -> str:
-    return download_from_s3(webhook_payload['id'], webhook_payload['nome'], path_download)
+    s3Key = webhook_payload['s3Key']
+    filename = s3Key[s3Key.index(webhook_payload['id'])+len(webhook_payload['id'])+1:]
+    return download_from_s3(webhook_payload['id'], filename, path_download)
 
 
 def get_latest_webhook_product(
