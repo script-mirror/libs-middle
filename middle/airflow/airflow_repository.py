@@ -41,5 +41,5 @@ def trigger_dag_legada(
     trigger_dag_url = f"{constants.BASE_URL}/airflow/api/v1/dags/{dag_id}/dagRuns"
     json = {"conf": conf}
 
-    answer = requests.post(trigger_dag_url, json=json, headers=auth_airflow_legado())
+    answer = requests.post(trigger_dag_url, json=json, auth=auth_airflow_legado())
     return answer
