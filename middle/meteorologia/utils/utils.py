@@ -1,3 +1,4 @@
+from ast import mod
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -529,9 +530,10 @@ def ajustar_hora_utc(dt):
 
 ###################################################################################################################
 
-def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial', prefixo_negrito=False, prefixo=None):
+def gerar_titulo(modelo=None, tipo=None, cond_ini=None, data_ini=None, data_fim=None, semana=None, semana_operativa=False, intervalo=None, days_of_week=None, sem_intervalo_semana=False, unico_tempo=False, condicao_inicial='Condição Inicial', prefixo_negrito=False, prefixo=None, customizado=False, parte_cima=None, parte_baixo=None):
 
-    modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est').replace('pconjunto', 'pconj')
+    if modelo is not None:
+        modelo = modelo.replace('ecmwf-ens', 'ec-ens').replace('estendido', 'est').replace('pconjunto', 'pconj')
 
     if semana_operativa:
 
@@ -571,6 +573,15 @@ def gerar_titulo(modelo, tipo, cond_ini, data_ini=None, data_fim=None, semana=No
                 f'{modelo.upper()} - {tipo} \u2022 '
                 f'{condicao_inicial}: {cond_ini}\n'
                 f'$\\mathbf{{Válido\\ para\\ {data_ini}}}$'
+            )
+
+    elif customizado:
+            
+            parte_baixo = parte_baixo.replace(' ', '\\ ')
+
+            titulo = (
+                f'{parte_cima} \n'
+                f'$\\mathbf{{{parte_baixo}}}$'
             )
 
     else:
