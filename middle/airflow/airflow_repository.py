@@ -23,11 +23,23 @@ def trigger_dag(
     dag_id: str,
     conf: dict={},
 ):
-
     trigger_dag_url = f"{constants.BASE_URL}/airflow-middle/api/v2/dags/{dag_id}/dagRuns"
     json = {"conf": conf}
 
     json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()
     answer = requests.post(trigger_dag_url, json=json, headers=auth_airflow())
     return answer
+
+
+def auth_airflow_legado():
+    return requests.auth.HTTPBasicAuth(constants.USER_AIRFLOW, constants.PASSWORD_AIRFLOW)
     
+def trigger_dag_legada(
+    dag_id: str,
+    conf: dict={},
+):
+    trigger_dag_url = f"{constants.BASE_URL}/airflow/api/v1/dags/{dag_id}/dagRuns"
+    json = {"conf": conf}
+
+    answer = requests.post(trigger_dag_url, json=json, headers=auth_airflow_legado())
+    return answer
