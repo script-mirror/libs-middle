@@ -356,7 +356,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_vento_weol(),
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None, 
             ]
     
         elif tipo == 'pl':
@@ -368,7 +368,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_vento_weol(),
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None, 
             ]
     
         elif tipo == 'pl':
