@@ -1,4 +1,4 @@
-name: env-deploy
+name: env-middle-deploy
 
 on:
   push:
