@@ -745,8 +745,10 @@ class GeraProdutosPrevisao:
     def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None, modo_atual=True):
 
         self.produto_config_sf = produto_config_sf
-        self.modelo_fmt = self.produto_config_sf.modelo if 'membros' not in self.produto_config_sf.modelo else self.produto_config_sf.modelo.replace('-membros', '')
+        # self.modelo_fmt = self.produto_config_sf.modelo if 'membros' not in self.produto_config_sf.modelo else self.produto_config_sf.modelo.replace('-membros', '')
+        self.modelo_fmt = self.produto_config_sf.modelo.replace('-membros', '').replace('-wind', '')
         self.arquivos_com_membros = True if '-membros' in self.produto_config_sf.modelo else False
+        self.arquivos_com_wind = True if '-wind' in self.produto_config_sf.modelo else False
         self.output_path = self.produto_config_sf.output_path
         self.resolucao = self.produto_config_sf.resolucao
         self.data_fmt = f'{pd.to_datetime(self.produto_config_sf.data).strftime("%Y%m%d")}{str(self.produto_config_sf.inicializacao).zfill(2)}'
@@ -820,6 +822,9 @@ class GeraProdutosPrevisao:
 
         if self.arquivos_com_membros:
             modelo_fmt = f'{self.modelo_fmt}-membros'
+
+        elif self.arquivos_com_wind:
+            modelo_fmt = f'{self.modelo_fmt}-wind'
         else:
             modelo_fmt = self.produto_config_sf.modelo
 
