@@ -349,6 +349,17 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             lambda: produtos.gerar_temp_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
         ]
 
+    elif modelo == 'gefs-wind':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+            ]
+    
+        elif tipo == 'pl':
+            return []
+
     return 
 
 ###################################################################################################################
