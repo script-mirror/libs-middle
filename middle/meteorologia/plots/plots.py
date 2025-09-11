@@ -373,7 +373,7 @@ def plot_campos(
                 add_valor_bacias=False,
                 with_norm=False,
                 footnote_text=False,
-                whit_logo=True,
+                with_logo=True,
     ):
 
     os.makedirs(path_to_save, exist_ok=True)
@@ -623,7 +623,7 @@ def plot_campos(
                             # )
 
     # Logo
-    if whit_logo:
+    if with_logo:
         img = Image.open(Constants().LOGO_RAIZEN)
         im_width, _ = img.size
         bbox = plt.gca().get_window_extent()

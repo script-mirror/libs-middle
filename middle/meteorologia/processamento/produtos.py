@@ -2328,8 +2328,8 @@ class GeraProdutosPrevisao:
                 if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
                     self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
-                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
                 for n_24h in us_24h_850.tempo:
 
@@ -2745,7 +2745,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
-                            whit_logo=False,
+                            with_logo=False,
                             **kwargs
                         )
                             
@@ -2766,7 +2766,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
-                            whit_logo=False,
+                            with_logo=False,
                             **kwargs
                         )
 
@@ -2859,7 +2859,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
-                            whit_logo=False,
+                            with_logo=False,
                             **kwargs
                         )
 
@@ -2883,7 +2883,7 @@ class GeraProdutosPrevisao:
                             plot_bacias=False,
                             shapefiles=self.shapefiles,
                             path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
-                            whit_logo=False,
+                            with_logo=False,
                             **kwargs
                         )
 
