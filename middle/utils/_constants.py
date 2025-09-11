@@ -1045,3 +1045,7 @@ class Constants:
     def PATH_ARQUIVOS_UTILS(self):
         return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_utils'
 
+    @property 
+    def PATH_ARQUIVOS_WEOL(self):
+        return '/projetos/arquivos/meteorologia'
+

@@ -3486,6 +3486,115 @@ class GeraProdutosPrevisao:
                 if response.status_code == 200:
                     print('Indices da ITCZ inseridos no banco com sucesso!')
 
+            elif modo == 'vento_weol':
+
+                if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
+                    self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
+
+                ds = xr.Dataset()
+                ds['u100'] = self.us100_mean
+                ds['v100'] = self.vs100_mean
+                ds['magnitude'] = np.sqrt(ds['u100']**2 + ds['v100']**2)
+
+                # Dataframe com os dados dos pontos de grade do modelo 
+                if self.modelo_fmt in ['gefs', 'gefs-estendido']:
+                    modelo_weol = 'gefs'
+                else:
+                    modelo_weol = self.modelo_fmt
+                    
+                pontos_quad_modelo = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/Link_Us_Quad_{modelo_weol.upper()}.txt', delimiter=';', encoding='latin1', header=None)
+                pontos_quad_modelo.columns = ['usina', 'lon', 'lat']
+                pontos_quad_modelo['prefixos'] = [x.split('_')[0] for x in pontos_quad_modelo['usina']]
+
+                # Dados dos aglomerados
+                dados_pontos = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/DadosdosPontos.txt', delimiter=';', header=None)
+                dados_pontos.rename({0: 'Aglomerado', 1: 'PotenciaInstalada', 2: 'Submercado'}, inplace=True, axis=1)
+
+                # Dados das usinas
+                dados_usinas_weol = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/Dados_Usinas_WEOL_SH.txt', delimiter=';', encoding='latin1')
+                dados_usinas_weol['prefixos'] = [x.split('_')[0] for x in dados_usinas_weol['Usina']]
+                dados_usinas_weol['estado'] = dados_usinas_weol['Usina'].str[:2]
+
+                print('\n##########################################################')
+                tamanho_aglomerados = len(dados_pontos['Aglomerado'])
+
+                valores_gerados = []
+                
+                for i, aglomerado in enumerate(dados_pontos['Aglomerado']):
+
+                    print(f'Processando ... {aglomerado} ({i+1}/{tamanho_aglomerados})')
+
+                    # Filtrando por aglomerado
+                    usinas = dados_pontos[dados_pontos['Aglomerado'] == aglomerado].dropna(axis=1)
+                    usinas = usinas.loc[:, ~usinas.columns.isin(["Aglomerado", "PotenciaInstalada", "Submercado"])].values.tolist()[0]
+                    pontos_gfs_filtrados = pontos_gfs[pontos_gfs['prefixos'].isin(usinas)]
+                    dados_usina_filtrados = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]', 'prefixos', 'estado']]
+                    estado = dados_usina_filtrados['estado'].values[0]
+                    potencia_instalada = dados_usina_filtrados.set_index('prefixos').to_dict().get('Pot Instalada [MW]')
+                    potencia_total_instalada = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]']].sum().values[0]
+                    lons = pontos_gfs_filtrados['lon'].to_list()
+                    lons = [360+x for x in lons]
+                    lats = pontos_gfs_filtrados['lat'].to_list()
+
+                    # Gerando o vento previsto ponderado pela potencia instalada
+                    valores = []
+
+                    for index, (lat, lon, usina) in enumerate(zip(lats, lons, usinas)):
+
+                        print(f'Usina: {usina} ... {index+1}/{len(usinas)}')
+                        
+                        potencia = potencia_instalada.get(usina)
+                        valor = ds.sel(latitude=lat, longitude=lon, method='nearest')['magnitude'].to_dataframe().reset_index()
+                        valor = valor[['valid_time', 'latitude', 'longitude', 'magnitude']]
+                        valor['valid_time'] = pd.to_datetime(valor['valid_time'].values) - pd.Timedelta(hours=3)
+                        valor['usina'] = usina
+                        valor['pot_instalda/total'] = potencia/potencia_total_instalada
+                        valor['magnitude_ponderada'] = valor['magnitude'] * valor['pot_instalda/total']
+                        valores.append(valor)
+            
+                    valores = pd.concat(valores, axis=0)
+                    valores = valores.sort_values(by='valid_time').groupby('valid_time')[['magnitude_ponderada']].sum().reset_index()
+                    valores = valores[valores['valid_time'] >= pd.to_datetime(self.us100_mean.time.values)] # pegar apenas os dias da inicialização para frente pq tirei 3 horas (hora GMT-3)   
+
+                    to_txt = False
+                    if to_txt:
+
+                        pivot_df = valores.pivot_table(index="rodada", columns="valid_time", values="magnitude_ponderada")
+                        pivot_df.columns = valores["Hora"]
+
+                        filename = f'{path_to_save}/{aglomerado}_Ven_Prev_{modelo_fmt.upper()}'
+
+                        # Criar o cabeçalho com as horas
+                        header = "Data;" + ";".join(map(str, pivot_df.columns))
+
+                        # Criar as linhas com as datas e valores correspondentes
+                        rows = "\n".join(
+                            f"{row.name};" + ";".join(f"{val:.2f}" for val in row)
+                            for _, row in pivot_df.iterrows()
+                        )
+
+                        # Salvar no formato TXT
+                        output = f"{header}\n{rows}"
+                        with open(f"{filename}.txt", "w") as file:
+                            file.write(output)
+
+                    print('\n##########################################################\n')
+
+                    valores = valores.set_index('valid_time').resample('D').mean().reset_index()
+                    valores['estado'] = estado
+                    valores['aglomerado'] = aglomerado
+                    valores_gerados.append(valores)    
+
+                prev_estado = True
+                if prev_estado:
+                    valores_gerados = pd.concat(valores_gerados, axis=0)
+                    valores_gerados = valores_gerados.groupby(['estado', 'valid_time', 'aglomerado'])['magnitude_ponderada'].mean().reset_index()
+                    valores_gerados.rename(columns={'valid_time': 'dt_prevista', 'magnitude_ponderada': 'vl_vento'}, inplace=True)
+                    valores_gerados['dt_prevista'] = pd.to_datetime(valores_gerados['dt_prevista']).dt.strftime('%Y-%m-%d')
+                    valores_gerados_json = {'dt_rodada': pd.to_datetime(self.us100_mean.time.values).strftime('%Y-%m-%d'), 'hr_rodada': inicializacao.hour, 'modelo': modelo_fmt, 'valores': valores_gerados.to_dict(orient='records')}
+                    resposta = requests.post(url='https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto', json=valores_gerados_json, headers=get_auth_header())
+                    print(f'Resposta da API: {resposta.status_code} - {resposta.text}')
+
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -3698,6 +3807,9 @@ class GeraProdutosPrevisao:
 
     def gerar_indices_itcz(self, **kwargs):
         self._processar_varsdinamicas('indices-itcz', **kwargs)
+
+    def gerar_vento_weol(self, **kwargs):
+        self._processar_varsdinamicas('vento_weol', **kwargs)
 
     ###################################################################################################################
 

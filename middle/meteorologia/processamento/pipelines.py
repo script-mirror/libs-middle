@@ -49,7 +49,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_geada_inmet(),
                 lambda: produtos.gerar_geada_cana(),
                 lambda: produtos.gerar_graficos_chuva(),
-                lambda: produtos.gerar_graficos_temp(),           
+                lambda: produtos.gerar_graficos_temp(),    
+                lambda: produtos.gerar_vento_weol(),       
             ]
 
     elif modelo == 'gefs':
@@ -355,6 +356,19 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_vento_weol(),
+            ]
+    
+        elif tipo == 'pl':
+            return []
+        
+    elif modelo == 'gefs-estendido-wind':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_vento_weol(),
             ]
     
         elif tipo == 'pl':
