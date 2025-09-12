@@ -1353,7 +1353,7 @@ class GeraProdutosPrevisao:
                 if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
-                    send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivos=[path_painel], assunto=f'MAPAS {self.modelo_fmt.upper()}')
+                    send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivos=[path_painel], assunto=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}')
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
 
@@ -4040,8 +4040,7 @@ class GeraProdutosObservacao:
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
                 tp = self.tp.sortby("valid_time")
-                print(self.tp)
-                tp = tp.sel(valid_time=tp.valid_time <= self.data)
+                # tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
                 print('oi')
