@@ -699,10 +699,11 @@ class ConfigProdutosObservado:
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
 
             # Troca time por valid_time
-            ds = ds.swap_dims({'time': 'valid_time'})
+            if modelo_fmt in ['merge', 'mergegpm']:
+                ds = ds.swap_dims({'time': 'valid_time'})
 
-            # if self.modelo == 'cpc':
-            #     ds = ds.rename({'time': 'valid_time'})
+            elif modelo_fmt in ['cpc']:
+                ds = ds.rename({'time': 'valid_time'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
