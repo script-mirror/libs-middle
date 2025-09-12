@@ -694,14 +694,14 @@ class ConfigProdutosObservado:
             data_fmt = data.strftime('%Y%m')
 
             # Filtrando arquivos pela data
-            files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f]
+            files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
 
             # Troca time por valid_time
             ds = ds.swap_dims({'time': 'valid_time'})
 
         if todo_dir:
-            files = [f'{caminho_para_salvar}/{f}' for f in files]
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
 
             # Troca time por valid_time
@@ -723,7 +723,7 @@ class ConfigProdutosObservado:
 
         if ultimos_n_dias:
             files = files[-n_dias:]
-            files = [f'{caminho_para_salvar}/{f}' for f in files]
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
 
         if ajusta_nome:
