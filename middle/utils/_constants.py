@@ -756,6 +756,14 @@ class Constants:
     @property
     def GET_DECOMP_CARGA_DECOMP(self):
         return f"{self.BASE_URL}/api/v2/decks/carga-decomp"
+    
+    @property
+    def POST_DECOMP_CARGA_PMO(self):
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo-decomp"
+
+    @property
+    def GET_DECOMP_CARGA_PMO(self):
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo-decomp"
 
     # CVU Endpoints
     @property
