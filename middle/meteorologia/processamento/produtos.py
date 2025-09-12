@@ -701,6 +701,9 @@ class ConfigProdutosObservado:
             # Troca time por valid_time
             ds = ds.swap_dims({'time': 'valid_time'})
 
+            if self.modelo == 'cpc':
+                ds = ds.rename({'time': 'valid_time'})
+
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
@@ -1347,7 +1350,7 @@ class GeraProdutosPrevisao:
                 if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
-                    send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivos=[path_painel])
+                    send_email_message(mensagem=path_painel, assunto=f'MAPAS {self.modelo_fmt.upper()}')
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
 
