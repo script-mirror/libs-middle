@@ -705,8 +705,6 @@ class ConfigProdutosObservado:
             elif modelo_fmt in ['cpc']:
                 ds = ds.rename({'time': 'valid_time'})
 
-            print(ds)
-
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
@@ -4040,11 +4038,9 @@ class GeraProdutosObservacao:
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
                 tp = self.tp.sortby("valid_time")
-                # tp = tp.sel(valid_time=tp.valid_time <= self.data)
+                tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
-
-                print('oi')
-
+                
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
                 print(tp_plot_acc)
