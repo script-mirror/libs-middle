@@ -3493,11 +3493,11 @@ class GeraProdutosPrevisao:
                     self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
 
                 ds = self.us100_mean.copy()
-                ds['v100'] = self.vs100_mean
+                ds['v100'] = self.vs100_mean['v100']
                 ds['magnitude'] = np.sqrt(ds['u100']**2 + ds['v100']**2)
                 
                 # Dataframe com os dados dos pontos de grade do modelo 
-                if self.modelo_fmt in ['gefs', 'gefs-estendido']:
+                if self.modelo_fmt in ['gefs', 'gefs-estendido', 'gefs-wind', 'gefs-estendido-wind']:
                     modelo_weol = 'gefs'
                 else:
                     modelo_weol = self.modelo_fmt
