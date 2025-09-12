@@ -4039,8 +4039,8 @@ class GeraProdutosObservacao:
                     path_to_save = Constants().PATH_FIGURAS_CPC_CLIM
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
-                print(self.tp)
                 tp = self.tp.sortby("valid_time")
+                print(self.tp)
                 tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
