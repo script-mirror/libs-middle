@@ -709,7 +709,7 @@ class ConfigProdutosObservado:
 
         if unico:
             data_fmt = self.data.strftime('%Y%m%d')
-            file = [f for f in files if data_fmt in f][0]
+            file = [f for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))][0]
             ds = xr.open_dataset(f'{caminho_para_salvar}/{file}', backend_kwargs=backend_kwargs)
 
             # Cria dim valid_time e atribui o valor do time

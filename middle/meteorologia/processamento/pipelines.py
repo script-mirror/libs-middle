@@ -352,7 +352,6 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             # lambda: produtos.gerar_dif_prev(),
         ]
 
-
     elif modelo == 'samet':
 
         return [
