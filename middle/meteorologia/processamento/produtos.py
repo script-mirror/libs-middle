@@ -742,8 +742,6 @@ class ConfigProdutosObservado:
         if 'longitude' in ds.dims and ajusta_longitude:
            ds = ajusta_lon_0_360(ds)
 
-        print(ds)
-
         return ds
 
 ###################################################################################################################
@@ -4039,12 +4037,14 @@ class GeraProdutosObservacao:
                     path_to_save = Constants().PATH_FIGURAS_CPC_CLIM
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
-                self.tp = self.tp.sortby("valid_time")
-                self.tp = self.tp.sel(valid_time=self.tp.valid_time <= self.data)
+                tp = self.tp.sortby("valid_time")
+                tp = tp.sel(valid_time=self.tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
+                print(tp)
+
                 # Acumulando no mes
-                tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
                 print(tp_plot_acc)
 
                 tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
