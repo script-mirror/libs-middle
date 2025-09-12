@@ -4038,7 +4038,7 @@ class GeraProdutosObservacao:
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
                 tp = self.tp.sortby("valid_time")
-                tp = tp.sel(valid_time=self.tp.valid_time <= self.data)
+                tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
                 print(tp)
@@ -4231,7 +4231,7 @@ class GeraProdutosObservacao:
                             print(f'Erro ao processar {modelo_prev} - {n_dia}: {e}')
     
                 # Enviando painel de diferença por wpp
-                data_anterior = date_range[0].strftime('%Y%m%d%H')
+                data_anterior = date_range[-1].strftime('%Y%m%d%H')
                 figura_obs = [
                     f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario/mergegpm_rain_{self.data.strftime("%Y%m%d")}.png',
                     f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_pconjunto-ons-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
