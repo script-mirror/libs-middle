@@ -922,13 +922,13 @@ class HtmlBuilder:
                 </div>
                 
                 <div class="table-section">
-                    <h2>ANDE</h2>
-                    {html_tabela_diff_ande}
-                </div>
-
-                <div class="table-section">
                     <h2>Diferença de MMGD Total (Expansão)</h2>
                     {html_tabela_diff_mmgd_total}
+                </div>
+                
+                <div class="table-section">
+                    <h2>ANDE</h2>
+                    {html_tabela_diff_ande}
                 </div>
 
                 <div class="table-section">

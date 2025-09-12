@@ -14,7 +14,7 @@ else:
 class Constants:
     @property
     def BASE_URL(self):
-        return "https://tradingenergiarz.com"
+        return os.getenv("BASE_URL", "https://tradingenergiarz.com")
     
     @property
     def USER_PLUVIA(self):
@@ -584,7 +584,11 @@ class Constants:
 
     @property
     def GET_RODADAS_VAZAO_OBSERVADA_PDP(self):
-        return f"{self.BASE_URL}/api/v2/rodadas/vazao-observada-pdp"
+        return "https://tradingenergiarz.com/api/v2/rodadas/vazao-observada-pdp"
+    
+    @property
+    def POST_RODADAS_VAZAO_OBSERVADA_PDP(self):
+        return "https://tradingenergiarz.com/api/v2/rodadas/vazao-observada-pdp"
 
     @property
     def GET_RODADAS_POSTOS_PLUVIOMETRICOS(self):
@@ -994,6 +998,10 @@ class Constants:
         return '/WX2TB/Documentos/dados/merge-climatologia'
     
     @property 
+    def PATH_CLIMATOLOGIA_CPC(self):
+        return '/WX2TB/Documentos/dados/cpc-climatol'
+    
+    @property 
     def PATH_SAVE_FIGS_METEOROLOGIA(self):
         return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS' # './tmp/plots'
 
@@ -1004,7 +1012,15 @@ class Constants:
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_MERGE(self):
         return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
-    
+
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_CPC(self):
+        return '/WX2TB/Documentos/dados/cpc'
+
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_DIFGPM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm'
+
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_SAMET(self):
         return '/WX2TB/Documentos/dados/temp_samet'
@@ -1037,3 +1053,22 @@ class Constants:
     def PATH_ARQUIVOS_UTILS(self):
         return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_utils'
 
+    @property 
+    def PATH_ARQUIVOS_WEOL(self):
+        return '/projetos/arquivos/meteorologia'
+
+    @property 
+    def PATH_FIGURAS_MERGEDAILY(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario'
+
+    @property 
+    def PATH_FIGURAS_MERGE_CLIM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim'
+    
+    @property 
+    def PATH_FIGURAS_CPC(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_diario'
+    
+    @property 
+    def PATH_FIGURAS_CPC_CLIM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_clim'

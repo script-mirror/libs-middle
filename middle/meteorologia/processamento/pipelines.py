@@ -15,12 +15,11 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
-                lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
+                # lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
-                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
@@ -42,6 +41,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_ivt(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_indices_itcz(),
                 
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
@@ -49,7 +49,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_geada_inmet(),
                 lambda: produtos.gerar_geada_cana(),
                 lambda: produtos.gerar_graficos_chuva(),
-                lambda: produtos.gerar_graficos_temp(),           
+                lambda: produtos.gerar_graficos_temp(),    
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None,    
             ]
 
     elif modelo == 'gefs':
@@ -61,11 +62,10 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
-                lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
+                # lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
-                lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
-                lambda: produtos.gerar_indices_itcz(),
+                lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,     
             ]
 
         elif tipo == 'pl':
@@ -85,8 +85,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_vento_div850(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
-                
-                
+                lambda: produtos.gerar_indices_itcz(),
+                         
             ]
 
     elif modelo == 'gefs-estendido':
@@ -97,15 +97,15 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_sop=True),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True),
-                lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
+                lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, dif_01_15d=True, dif_15_final=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
-                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
             return [
+                lambda: produtos.gerar_indices_itcz(),
             ]
 
     elif modelo == 'gefs-membros':
@@ -114,9 +114,9 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
-                lambda: produtos.gerar_desvpad(ensemble=False),
-                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
-                lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
+                lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
             ]  
         
         elif tipo == 'pl':
@@ -128,9 +128,9 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
-                lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
-                lambda: produtos.gerar_desvpad(ensemble=False),
-                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
+                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'],ensemble=False),
+                lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
             ]  
         
         elif tipo == 'pl':
@@ -146,12 +146,11 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
-                lambda: produtos.gerar_diferenca_tp(margin_y=-90, add_valor_bacias=True) if hora == 0 else None,
+                # lambda: produtos.gerar_diferenca_tp(margin_y=-90, add_valor_bacias=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.gerar_graficos_v100(),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
-                lambda: produtos.gerar_indices_itcz(),
             ]
 
         elif tipo == 'pl':
@@ -173,11 +172,11 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_ivt(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
                 lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_indices_itcz(),
                 
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
-                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
-                
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
             ]
 
     elif modelo == 'ecmwf-ens':
@@ -188,19 +187,19 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-                lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
+                # lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),
                 lambda: produtos.salva_netcdf(variavel='tp') if hora == 0 else None,
-                lambda: produtos.gerar_indices_itcz(),  
+                # lambda: produtos.gerar_indices_itcz(),  
             ]
 
         elif tipo == 'pl':
             return [
-                lambda: produtos.gerar_geop500(margin_y=-90),
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop'),
-                lambda: produtos.gerar_olr(margin_y=-90),
+                lambda: produtos.gerar_geop500(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90, resample_freq='sop'),   
+                lambda: produtos.gerar_olr(margin_y=-90),
             ]
 
     elif modelo == 'ecmwf-aifs':
@@ -246,11 +245,11 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
 
         if tipo == 'sfc':
             return [
-                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False, verifica_cache=False),
-                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True, verifica_cache=False),
-                # lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
-                lambda: produtos.gerar_desvpad(ensemble=False),
-                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
+                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'],ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
             ]  
         
         elif tipo == 'pl':
@@ -263,9 +262,9 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
-                lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
-                lambda: produtos.gerar_desvpad(ensemble=False),
-                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
+                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
             ]  
         
         elif tipo == 'pl':
@@ -286,8 +285,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_geop500(margin_y=-90, resample_freq='sop', anomalia_sop=True, anomalia_mensal=True),
                 lambda: produtos.gerar_jato_div200(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_vento_div850(margin_y=-90, resample_freq='sop', anomalia_sop=True),
-                lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17), resample_freq='sop', anomalia_mensal=True),
-                # lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17)),
+                lambda: produtos.gerar_anomalia_vento850(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop', anomalia_mensal=True),
+                lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17), resample_freq='sop', anomalia_mensal=True, with_logo=False),
             ]
 
         elif tipo == 'pl':
@@ -301,9 +300,9 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=False, ensemble=False, salva_db=True),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=False, ensemble=False),
-                lambda: produtos.gerar_desvpad(ensemble=False),
-                lambda: produtos.gerar_probabilidade_limiar(ensemble=False),
-                lambda: produtos.gerar_probabilidade_climatologia(ensemble=False),
+                lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
             ]
 
         elif tipo == 'pl':
@@ -321,13 +320,36 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         elif tipo == 'pl':
             return []
 
+    elif modelo == 'eta':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
+            ]
+
+        elif tipo == 'pl':
+            return [
+
+            ]
+
     elif modelo == 'merge':
 
         return [
             lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
-            lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
-            lambda: produtos.gerar_dif_prev(),
+            lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
             lambda: produtos.gerar_bacias_smap(salva_db=True),
+            lambda: produtos.gerar_dif_prev(),
+        ]
+
+    elif modelo == 'cpc':
+
+        return [
+            lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+            lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+            # lambda: produtos.gerar_bacias_smap(salva_db=True),
+            # lambda: produtos.gerar_dif_prev(),
         ]
 
     elif modelo == 'samet':
@@ -336,6 +358,30 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             lambda: produtos.gerar_temp_diario(extent=CONSTANTES['extents_mapa']['brasil']),
             lambda: produtos.gerar_temp_mensal(extent=CONSTANTES['extents_mapa']['brasil']),
         ]
+
+    elif modelo == 'gefs-wind':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None, 
+            ]
+    
+        elif tipo == 'pl':
+            return []
+        
+    elif modelo == 'gefs-estendido-wind':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None, 
+            ]
+    
+        elif tipo == 'pl':
+            return []
 
     return 
 
