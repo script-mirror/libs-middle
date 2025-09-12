@@ -4073,8 +4073,8 @@ class GeraProdutosObservacao:
                         mes = 'out'
                     elif mes == 'dec':
                         mes = 'dez'
-                    tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc').isel(time=0)
-                    tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})                    
+                    tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc')
+                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp'})                    
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
