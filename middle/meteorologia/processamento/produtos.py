@@ -660,7 +660,8 @@ class ConfigProdutosObservado:
             nx, ny = 720, 360
             data = np.fromfile(caminho_arquivo, dtype="<f4")
             rain = data[:nx*ny].reshape(ny, nx)
-            ds = xr.Dataset({"tp": (("lat","lon"), rain/10)}, coords={"lon": np.arange(0.25, 360, 0.5), "lat": np.arange(-89.75, 90, 0.5)})
+            ds = xr.Dataset({"tp": (("latitude","longitude"), rain/10)}, coords={"longitude": np.arange(0.25, 360, 0.5), "latitude": np.arange(-89.75, 90, 0.5)})
+            ds = ds.assign_coords(time=pd.to_datetime(self.data))
             ds.to_netcdf(f'{caminho_para_salvar}/{filename.replace(".RT", ".nc")}')
 
     # --- ABERTURA DOS DADOS ---
@@ -3980,8 +3981,13 @@ class GeraProdutosObservacao:
 
         try:
 
-
             if modo == '24h':
+
+                if self.modelo_fmt in ['merge', 'mergegpm']:
+                    path_to_save = Constants().PATH_FIGURAS_MERGEDAILY
+                
+                elif self.modelo_fmt in ['cpc']:
+                    path_to_save = Constants().PATH_FIGURAS_CPC
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
 
@@ -4009,8 +4015,8 @@ class GeraProdutosObservacao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=f'mergegpm_rain_{tempo_fim.strftime("%Y%m%d")}',
-                        path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario',
+                        filename=f'{self.modelo_fmt}_rain_{tempo_fim.strftime("%Y%m%d")}',
+                        path_to_save=path_to_save,
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
@@ -4018,7 +4024,12 @@ class GeraProdutosObservacao:
             elif modo == 'acumulado_mensal':
 
                 from calendar import monthrange
-                path_to_save = Constants().PATH_DOWNLOAD_ARQUIVOS_MERGE
+
+                if self.modelo_fmt in ['merge', 'mergegpm']:
+                    path_to_save = Constants().PATH_FIGURAS_MERGE_CLIM
+                
+                elif self.modelo_fmt in ['cpc']:
+                    path_to_save = Constants().PATH_FIGURAS_CPC_CLIM
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
                 self.tp = self.tp.sortby("valid_time")
@@ -4037,6 +4048,26 @@ class GeraProdutosObservacao:
                     mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
                     tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
                     tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
+
+                elif self.modelo_fmt == 'cpc':
+                    path_clim = Constants().PATH_CLIMATOLOGIA_CPC
+                    mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
+                    if mes == 'feb':
+                        mes = 'fev'
+                    elif mes == 'apr':
+                        mes = 'abr'
+                    elif mes == 'may':
+                        mes = 'mai'
+                    elif mes == 'aug':
+                        mes = 'ago'
+                    elif mes == 'sep':
+                        mes = 'set'
+                    elif mes == 'oct':
+                        mes = 'out'
+                    elif mes == 'dec':
+                        mes = 'dez'
+                    tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc').isel(time=0)
+                    tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})                    
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
@@ -4097,8 +4128,8 @@ class GeraProdutosObservacao:
                         ds=ds_total[data_var],
                         variavel_plotagem=variavel_plotagem,
                         title=titulo,
-                        path_to_save='/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim',
-                        filename=f'mergegpm_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
+                        path_to_save=path_to_save,
+                        filename=f'{self.modelo_fmt}_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
                         shapefiles=self.shapefiles,
                         **kwargs
                     )

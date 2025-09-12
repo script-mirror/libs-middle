@@ -998,6 +998,10 @@ class Constants:
         return '/WX2TB/Documentos/dados/merge-climatologia'
     
     @property 
+    def PATH_CLIMATOLOGIA_CPC(self):
+        return '/WX2TB/Documentos/dados/cpc-climatol'
+    
+    @property 
     def PATH_SAVE_FIGS_METEOROLOGIA(self):
         return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS' # './tmp/plots'
 
@@ -1049,3 +1053,18 @@ class Constants:
     def PATH_ARQUIVOS_WEOL(self):
         return '/projetos/arquivos/meteorologia'
 
+    @property 
+    def PATH_FIGURAS_MERGEDAILY(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario'
+
+    @property 
+    def PATH_FIGURAS_MERGE_CLIM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim'
+    
+    @property 
+    def PATH_FIGURAS_CPC(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_diario'
+    
+    @property 
+    def PATH_FIGURAS_CPC_CLIM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_clim'
