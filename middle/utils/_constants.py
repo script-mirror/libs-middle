@@ -1014,6 +1014,10 @@ class Constants:
         return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
 
     @property 
+    def PATH_DOWNLOAD_ARQUIVOS_CPC(self):
+        return '/WX2TB/Documentos/dados/cpc'
+
+    @property 
     def PATH_DOWNLOAD_ARQUIVOS_DIFGPM(self):
         return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/dif_gpm'
 
