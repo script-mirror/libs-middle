@@ -4032,18 +4032,19 @@ class GeraProdutosObservacao:
 
                 from calendar import monthrange
 
-                if self.modelo in ['merge', 'mergegpm']:
+                if self.modelo_fmt in ['merge', 'mergegpm']:
                     path_to_save = Constants().PATH_FIGURAS_MERGE_CLIM
-                
-                elif self.modelo in ['cpc']:
+
+                elif self.modelo_fmt in ['cpc']:
                     path_to_save = Constants().PATH_FIGURAS_CPC_CLIM
 
                 self.tp, self.cond_ini = self._carregar_tp_mean(apenas_mes_atual=True)
+                print(self.tp)
                 tp = self.tp.sortby("valid_time")
                 tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
-                print(tp)
+                print('oi')
 
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
@@ -4053,13 +4054,13 @@ class GeraProdutosObservacao:
                 tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
 
                 # Abrindo a climatologia
-                if self.modelo == 'mergegpm':
+                if self.modelo_fmt == 'mergegpm':
                     path_clim = Constants().PATH_CLIMATOLOGIA_MERGE
                     mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
                     tp_plot_clim = xr.open_dataset(f'{path_clim}/MERGE_CPTEC_acum_{mes}.nc').isel(time=0)
                     tp_plot_clim = tp_plot_clim.rename({'precacum': 'tp'})
 
-                elif self.modelo == 'cpc':
+                elif self.modelo_fmt == 'cpc':
                     path_clim = Constants().PATH_CLIMATOLOGIA_CPC
                     mes = pd.to_datetime(self.tp['valid_time'].values[0]).strftime('%b').lower()
                     if mes == 'feb':
