@@ -701,8 +701,8 @@ class ConfigProdutosObservado:
             # Troca time por valid_time
             ds = ds.swap_dims({'time': 'valid_time'})
 
-            if self.modelo == 'cpc':
-                ds = ds.rename({'time': 'valid_time'})
+            # if self.modelo == 'cpc':
+            #     ds = ds.rename({'time': 'valid_time'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
@@ -740,6 +740,8 @@ class ConfigProdutosObservado:
         # Ajustando a longitude para 0 a 360
         if 'longitude' in ds.dims and ajusta_longitude:
            ds = ajusta_lon_0_360(ds)
+
+        print(ds)
 
         return ds
 
