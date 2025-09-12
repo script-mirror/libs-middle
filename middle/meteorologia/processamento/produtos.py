@@ -1353,7 +1353,7 @@ class GeraProdutosPrevisao:
                 if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
                     send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
-                    send_email_message(mensagem=path_painel, assunto=f'MAPAS {self.modelo_fmt.upper()}')
+                    send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivos=[path_painel], assunto=f'MAPAS {self.modelo_fmt.upper()}')
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
 
@@ -4045,6 +4045,7 @@ class GeraProdutosObservacao:
 
                 # Acumulando no mes
                 tp_plot_acc = self.tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                print(tp_plot_acc)
 
                 tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
@@ -4078,6 +4079,7 @@ class GeraProdutosObservacao:
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
+                print(tp_plot_anomalia_total)
 
                 # Anomalia parcial
                 dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
