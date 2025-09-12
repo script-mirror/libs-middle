@@ -662,6 +662,7 @@ class ConfigProdutosObservado:
             rain = data[:nx*ny].reshape(ny, nx)
             ds = xr.Dataset({"tp": (("latitude","longitude"), rain/10)}, coords={"longitude": np.arange(0.25, 360, 0.5), "latitude": np.arange(-89.75, 90, 0.5)})
             ds = ds.assign_coords(time=pd.to_datetime(self.data))
+            ds = ds.where(ds != -99.9)
             ds.to_netcdf(f'{caminho_para_salvar}/{filename.replace(".RT", ".nc")}')
 
     # --- ABERTURA DOS DADOS ---
