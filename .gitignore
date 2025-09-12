@@ -231,3 +231,5 @@ teste2.py
 produtos.py
 produtos_meteorologia.py
 teste*.ipynb
+*.RT
+*.nc
