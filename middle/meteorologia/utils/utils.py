@@ -830,7 +830,7 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
         axs[j].axis("off")
 
     if output_file:
-        path_to_save = f'{Constants().PATH_ARQUIVOS_TEMP}/paineis'
+        path_to_save = f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/paineis'
         os.makedirs(path_to_save, exist_ok=True)
         fig.savefig(f'{path_to_save}/{output_file}', dpi=300, bbox_inches="tight", pad_inches=0)
         print(f"✅ Painel salvo em: {output_file}")
