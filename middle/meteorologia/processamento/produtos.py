@@ -1080,7 +1080,7 @@ class GeraProdutosPrevisao:
                 path_save = '24-em-24-gifs'
 
             elif modo in self.figs_semana:
-                if anomalia_sop:
+                if anomalia_sop or self.modelo_fmt in ['cfsv2']:
                     path_save = 'semana-energ-anomalia'
                 else:
                     path_save = 'semana-energ' if ensemble else 'semana-energ-membros'
@@ -1153,8 +1153,6 @@ class GeraProdutosPrevisao:
                     )
                     self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
                     self.cond_ini = get_inicializacao_fmt(self.tp_mean)
-
-                    print(self.tp_mean)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -1421,6 +1419,8 @@ class GeraProdutosPrevisao:
                                 footnote_text = 'Hindcast 2004-2023'
                             elif 'gfs' in self.modelo_fmt.lower():
                                 footnote_text = 'Hindcast 2000-2019'
+                            elif 'cfs' in self.modelo_fmt.lower():
+                                footnote_text = 'Hindcast 1999-2010'
                             else:
                                 footnote_text = 'Outro hindcast'
                         else:
@@ -1433,7 +1433,7 @@ class GeraProdutosPrevisao:
 
                         plot_campos(
                             ds=tp_plot['tp'],
-                            variavel_plotagem=variavel_plotagem, #'chuva_ons' if not anomalia_sop else 'tp_anomalia',
+                            variavel_plotagem=variavel_plotagem, 
                             title=titulo,
                             filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'anom_semana_energ-r{self.data_fmt}', n_semana.item()),
                             shapefiles=self.shapefiles,
