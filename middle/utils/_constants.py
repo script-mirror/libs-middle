@@ -9,7 +9,7 @@ if os.path.exists(env_path):
     logger.info(f"Carregando .env de: {env_path}")
 else:
     load_dotenv()
-    logger.warning(".env nao encontrado no path home, usando load_dotenv() default")
+    logger.warning(f".env nao encontrado no path {env_path}, usando load_dotenv() default")
 
 class Constants:
     @property
