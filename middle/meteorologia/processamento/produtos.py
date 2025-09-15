@@ -603,15 +603,13 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         if modelo_fmt in ['cfsv2']:
 
-            print(f'Gerando a anomalia')
-
             path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
             ds_climatologia = xr.open_dataset(f'{path_climatologia}/{variavel}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
             ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
             ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
             ds_list = []
 
-            for valid_time in ds.valid_time[:2]:
+            for valid_time in ds.valid_time[:360]:
 
                 print(f'Gerando a anomalia para {valid_time.values}')
 
@@ -634,7 +632,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 ds_climatologia_sel = interpola_ds(ds_climatologia_sel, ds_sel)
                 ds_anomalia = ds_sel['tp'] - ds_climatologia_sel['prate']
                 ds_anomalia['valid_time'] = valid_time
-                ds_anomalia = ds_anomalia.to_dataset(name='tp_anomalia')
+                ds_anomalia = ds_anomalia.to_dataset(name='tp')
                 ds_list.append(ds_anomalia)
 
             ds = xr.concat(ds_list, dim='valid_time')
@@ -1149,6 +1147,7 @@ class GeraProdutosPrevisao:
 
                     self.tp = xr.concat(tmps, dim='valid_time')
                     self.tp_mean = self.tp.copy()
+                    self.tp.to_netcdf('teste_cfsv2.nc')
 
                     print(self.tp)
 
