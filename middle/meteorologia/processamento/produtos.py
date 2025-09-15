@@ -630,9 +630,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                 ds_climatologia_sel = ds_climatologia.sel(time=tempo_climatologia)
                 ds_climatologia_sel = interpola_ds(ds_climatologia_sel, ds_sel)
-                ds_anomalia = ds_sel['tp'] - ds_climatologia_sel['prate']
+                ds_anomalia = ds_sel[variavel] - ds_climatologia_sel[variavel]
                 ds_anomalia['valid_time'] = valid_time
-                ds_anomalia = ds_anomalia.to_dataset(name='tp')
+                ds_anomalia = ds_anomalia.to_dataset(name='tp' if variavel == 'prate' else variavel)
                 ds_list.append(ds_anomalia)
 
             ds = xr.concat(ds_list, dim='valid_time')
@@ -1131,7 +1131,7 @@ class GeraProdutosPrevisao:
 
                 else:
 
-                    dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=4)
+                    dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
 
                     tmps = []
                     
@@ -1152,7 +1152,7 @@ class GeraProdutosPrevisao:
                         time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
                     )
                     self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                    self.cond_ini = get_inicializacao_fmt(self.tp_mean)
+                    self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -3720,6 +3720,32 @@ class GeraProdutosPrevisao:
                     valores_gerados_json = {'dt_rodada': pd.to_datetime(self.us100_mean.time.values).strftime('%Y-%m-%d'), 'hr_rodada': pd.to_datetime(self.us100_mean.time.values).hour, 'modelo': self.modelo_fmt, 'valores': valores_gerados.to_dict(orient='records')}
                     resposta = requests.post(url='https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto', json=valores_gerados_json, headers=get_auth_header())
                     print(f'Resposta da API: {resposta.status_code} - {resposta.text}')
+
+            elif modo == 'psi_cfsv2':
+
+                dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
+
+                tmps = []
+                
+                for date in dates:
+
+                    data_fmt = date.strftime('%Y%m%d')
+                    inicializacao_fmt = str(date.hour).zfill(2)
+
+                    print(f'Carregando {data_fmt} {inicializacao_fmt}Z...')
+
+                    psi200_tmp = self.produto_config_sf.open_model_file(variavel='psi200', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
+                    psi850_tmp = self.produto_config_sf.open_model_file(variavel='psi850', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
+                    tmps.append(psi200_tmp)
+                    tmps.append(psi850_tmp)
+
+                self.psi = xr.concat(tmps, dim='valid_time')
+                self.psi = self.psi.groupby('valid_time').mean(dim='valid_time')
+                self.psi = self.psi.assign_coords(
+                    time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
+                )
+                self.psi = self.psi.sel(valid_time=self.psi.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
+                self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
 
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
