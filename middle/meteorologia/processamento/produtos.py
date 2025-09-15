@@ -1148,7 +1148,9 @@ class GeraProdutosPrevisao:
                     self.tp = xr.concat(tmps, dim='valid_time')
                     self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
                     self.tp_mean = self.tp*60*60*24
-                    self.tp_mean['time'] = pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
+                    self.tp_mean = self.tp_mean.assign_coords(
+                        time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
+                    )
                     self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
                     self.cond_ini = get_inicializacao_fmt(self.tp_mean)
 
