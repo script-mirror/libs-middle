@@ -606,7 +606,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             print(f'Gerando a anomalia')
 
             path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
-            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{variavel}.{self.data.strftime("%m")}.{self.data.strftime("%d")}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
+            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{variavel}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
             ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
             ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
             ds_list = []
