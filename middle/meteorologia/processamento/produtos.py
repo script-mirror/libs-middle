@@ -1424,9 +1424,14 @@ class GeraProdutosPrevisao:
                         else:
                             footnote_text = False
 
+                        if self.modelo_fmt in ['cfsv2'] or anomalia_sop == True:
+                            variavel_plotagem = 'tp_anomalia'
+                        else:
+                            variavel_plotagem = 'chuva_ons'
+
                         plot_campos(
                             ds=tp_plot['tp'],
-                            variavel_plotagem='chuva_ons' if not anomalia_sop else 'tp_anomalia', # 1semana_energ-r2025090300.png # 1_semana_energ_gfs.png 1_anom_semana_energ-r2025090300.png
+                            variavel_plotagem=variavel_plotagem, #'chuva_ons' if not anomalia_sop else 'tp_anomalia',
                             title=titulo,
                             filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'anom_semana_energ-r{self.data_fmt}', n_semana.item()),
                             shapefiles=self.shapefiles,
