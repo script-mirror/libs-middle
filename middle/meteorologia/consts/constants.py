@@ -89,7 +89,8 @@ CONSTANTES = {
         'gefs-membros-estendido': 6,
         'ecmwf-ens-membros': 3,
         'ecmwf-ens-estendido': 7,
-        'ecmwf-ens-membros-estendido': 7
+        'ecmwf-ens-membros-estendido': 7,
+        'cfsv2': 7,
 
     },
 

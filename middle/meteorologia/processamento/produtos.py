@@ -1149,7 +1149,10 @@ class GeraProdutosPrevisao:
                     self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
                     self.tp_mean = self.tp*60*60*24
                     self.tp_mean['time'] = pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
+                    self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
                     self.cond_ini = get_inicializacao_fmt(self.tp_mean)
+
+                    print(self.tp_mean)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -1395,12 +1398,6 @@ class GeraProdutosPrevisao:
             elif modo == 'semanas_operativas':
 
                 tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=qtdade_max_semanas, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
-
-                # if self.modelo_fmt not in ['cfsv2']:
-                #     tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=qtdade_max_semanas, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
-
-                # else:
-                #     tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=qtdade_max_semanas, var_anomalia=var_anomalia, level_anomalia=level_anomalia, modo_agrupador='mean')
 
                 for n_semana in tp_sop.tempo:
 
