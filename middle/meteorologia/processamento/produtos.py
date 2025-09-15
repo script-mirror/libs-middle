@@ -2581,21 +2581,21 @@ class GeraProdutosPrevisao:
                         u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                         v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
 
-                        u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
-                        v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
+                        u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
+                        v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
 
-                        u850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
-                        v850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
+                        u850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
+                        v850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
 
                         # Grads parar calcular PSI e CHI e gerar um .nc
-                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP}/gera_psi_chi.gs')
+                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
 
                         # Anomalia psi e chi
-                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi200.nc')
-                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi850.nc')
+                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
+                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
 
-                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi200.nc')
-                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi850.nc')
+                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
+                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
 
                         psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
                         psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
@@ -2696,21 +2696,21 @@ class GeraProdutosPrevisao:
                         u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                         v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
 
-                        u200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
-                        v200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
+                        u200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
+                        v200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
 
-                        u850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
-                        v850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
+                        u850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
+                        v850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
 
                         # Grads parar calcular PSI e CHI e gerar um .nc
-                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP}/gera_psi_chi.gs')
+                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
 
                         # Anomalia psi e chi
-                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi200.nc')
-                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi850.nc')
+                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
+                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
 
-                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi200.nc')
-                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi850.nc')
+                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
+                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
 
                         psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
                         psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
@@ -2803,13 +2803,13 @@ class GeraProdutosPrevisao:
                         us_mean_resample_sel_850['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
                         vs_mean_resample_sel_850['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
 
-                        us_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u200_semana.nc')
-                        vs_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v200_semana.nc')
-                        us_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/u850_semana.nc')
-                        vs_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP}/v850_semana.nc')
+                        us_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
+                        vs_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
+                        us_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
+                        vs_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
 
                         # Grads parar calcular PSI e CHI e gerar um .nc
-                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP}/gera_psi_chi.gs')
+                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
 
                         # Selando o tempo na climatologia
                         tempoini = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%Y-%m-%d %H')
@@ -2822,11 +2822,11 @@ class GeraProdutosPrevisao:
                         chi_clim850_sel = chi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
 
                         # Anomalia psi e chi
-                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi200.nc')
-                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/psi850.nc')
+                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
+                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
 
-                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi200.nc')
-                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP}/chi850.nc')
+                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
+                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
 
                         anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_sel['psi']
                         anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_sel['psi']

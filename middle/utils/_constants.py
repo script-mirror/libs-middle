@@ -1054,7 +1054,7 @@ class Constants:
         return '/projetos/arquivos/meteorologia'
     
     @property 
-    def PATH_ARQUIVOS_TEMP(self):
+    def PATH_ARQUIVOS_TEMP_METEOROLOGIA(self):
         return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp'
     
     @property 
