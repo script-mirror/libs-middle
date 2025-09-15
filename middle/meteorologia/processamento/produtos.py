@@ -447,7 +447,11 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         break  # Sai do while quando tudo estiver certo
 
     # --- ABERTURA DOS DADOS ---
-    def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, rename_var=False, var_dim=None):
+    def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, 
+                        arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
+                        ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
+                        rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None,
+                        ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
         import xarray as xr
@@ -462,8 +466,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         mensal_sazonal = CONSTANTES['tipos_variaveis']['mensal_sazonal']
 
         # Formatação da data e inicialização
-        data_fmt = self.data.strftime('%Y%m%d')
-        inicializacao_fmt = str(self.inicializacao).zfill(2)
+        data_fmt = self.data.strftime('%Y%m%d') if data_fmt is None else data_fmt
+        inicializacao_fmt = str(self.inicializacao).zfill(2) if inicializacao_fmt is None else inicializacao_fmt
         resolucao = self.resolucao
         output_path = self.output_path
 
@@ -621,10 +625,16 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     ano_clim = 2001
 
                 tempo_climatologia = f'{ano_clim}-{tempo_dt.month}-{tempo_dt.day}T{tempo_dt.hour:02d}'
+
+                if pd.to_datetime(tempo_climatologia) not in ds_climatologia.time:
+                    print(f"Tempo {tempo_climatologia} não encontrado na climatologia.")
+                    continue
+
                 ds_climatologia_sel = ds_climatologia.sel(time=tempo_climatologia)
                 ds_climatologia_sel = interpola_ds(ds_climatologia_sel, ds_sel)
                 ds_anomalia = ds_sel['tp'] - ds_climatologia_sel['prate']
                 ds_anomalia['valid_time'] = valid_time
+                ds_anomalia = ds_anomalia.to_dataset(name='tp_anomalia')
                 ds_list.append(ds_anomalia)
 
             ds = xr.concat(ds_list, dim='valid_time')
@@ -1110,13 +1120,37 @@ class GeraProdutosPrevisao:
 
             # Carrega e processa dado
             if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                if self.modelo_fmt == 'eta':
-                    variavel = 'prec'
-                elif self.modelo_fmt in ['cfsv2']:
-                    variavel = 'prate'
+
+                if self.modelo_fmt not in ['cfsv2']:
+
+                    if self.modelo_fmt == 'eta':
+                        variavel = 'prec'
+                    elif self.modelo_fmt in ['cfsv2']:
+                        variavel = 'prate'
+                    else:
+                        variavel = 'tp'
+                    self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
+
                 else:
-                    variavel = 'tp'
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
+
+                    dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=4)
+
+                    tmps = []
+                    
+                    for date in dates:
+
+                        data_fmt = date.strftime('%Y%m%d')
+                        inicializacao_fmt = str(date.hour).zfill(2)
+
+                        print(f'Carregando {data_fmt} {inicializacao_fmt}Z...')
+
+                        tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
+                        tmps.append(tp_tmp)
+
+                    self.tp = xr.concat(tmps, dim='valid_time')
+                    self.tp_mean = self.tp.copy()
+
+                    print(self.tp)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
