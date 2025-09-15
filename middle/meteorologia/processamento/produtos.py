@@ -3568,7 +3568,7 @@ class GeraProdutosPrevisao:
                         pivot_df = valores.pivot_table(index="rodada", columns="valid_time", values="magnitude_ponderada")
                         pivot_df.columns = valores["Hora"]
 
-                        filename = f'{path_to_save}/{aglomerado}_Ven_Prev_{modelo_fmt.upper()}'
+                        filename = f'{path_to_save}/{aglomerado}_Ven_Prev_{self.modelo_fmt.upper()}'
 
                         # Criar o cabeçalho com as horas
                         header = "Data;" + ";".join(map(str, pivot_df.columns))
@@ -4040,7 +4040,7 @@ class GeraProdutosObservacao:
                 tp = self.tp.sortby("valid_time")
                 tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
-                
+
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
                 print(tp_plot_acc)
