@@ -383,6 +383,17 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         elif tipo == 'pl':
             return []
 
+    elif modelo == 'cfsv2':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+
+            ]
+    
+        elif tipo == 'pl':
+            return []
+
     return 
 
 ###################################################################################################################

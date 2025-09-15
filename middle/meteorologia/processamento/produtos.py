@@ -6,6 +6,7 @@ import time
 import pandas as pd
 import numpy as np
 from ..consts.constants import CONSTANTES
+from ..downloads.downloads import baixar_arquivo
 from middle.utils import Constants
 import shutil
 import xarray as xr
@@ -62,7 +63,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     # --- DOWNLOAD ---
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
-                               modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11,
+                               modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11, membro_cfs='01',
                                levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
 
         # Formatação da data e inicialização
@@ -407,6 +408,45 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                 time.sleep(10)
                                 continue  
 
+            elif modelo_fmt == 'cfsv2':
+
+                while True:
+                    todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                    for variavel in variables:
+                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.{data_fmt}/{inicializacao_fmt}/time_grib_{membro_cfs}/{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.daily.grb2'
+                        filename = f'{caminho_para_salvar}/{self.name_prefix}_{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.daily.grb2' if self.name_prefix else f'{caminho_para_salvar}/{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.daily.grb2'
+
+                        file = requests.get(url, allow_redirects=True)
+                        if file.status_code == 200:
+                            with open(filename, 'wb') as f:
+                                f.write(file.content)
+                        else:
+                            print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                            print(url)
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break  # Sai do for e volta ao início do while
+
+                        # Verifica se o arquivo foi baixado corretamente
+                        if os.path.exists(filename):
+                            if os.path.getsize(filename) < file_size:
+                                print(f'⚠️ Arquivo {filename} está vazio/corrompido, removendo...')
+                                os.remove(filename)
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e tenta de novo no while
+                            else:
+                                print(f'✅ {filename} baixado com sucesso!')
+                        else:
+                            print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break
+
+                    if todos_sucesso:
+                        break  # Sai do while quando tudo estiver certo
+
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, rename_var=False, var_dim=None):
 
@@ -435,10 +475,10 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
         files = sorted(os.listdir(caminho_para_salvar))
         if self.name_prefix:
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
 
         else:
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
 
         if len(files) == 0:
             raise FileNotFoundError(f'Nenhum arquivo encontrado no diretório: {caminho_para_salvar}')
@@ -1039,7 +1079,13 @@ class GeraProdutosPrevisao:
 
             # Carrega e processa dado
             if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel='tp' if self.modelo_fmt != 'eta' else 'prec')
+                if self.modelo_fmt == 'eta':
+                    variavel = 'prec'
+                elif self.modelo_fmt in ['cfsv2']:
+                    variavel = 'prate'
+                else:
+                    variavel = 'tp'
+                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -3597,7 +3643,7 @@ class GeraProdutosPrevisao:
                     valores_gerados = valores_gerados.groupby(['estado', 'valid_time', 'aglomerado'])['magnitude_ponderada'].mean().reset_index()
                     valores_gerados.rename(columns={'valid_time': 'dt_prevista', 'magnitude_ponderada': 'vl_vento'}, inplace=True)
                     valores_gerados['dt_prevista'] = pd.to_datetime(valores_gerados['dt_prevista']).dt.strftime('%Y-%m-%d')
-                    valores_gerados_json = {'dt_rodada': pd.to_datetime(self.us100_mean.time.values).strftime('%Y-%m-%d'), 'hr_rodada': pd.to_datetime(self.us100_mean.time.values).hour, 'modelo': modelo_fmt, 'valores': valores_gerados.to_dict(orient='records')}
+                    valores_gerados_json = {'dt_rodada': pd.to_datetime(self.us100_mean.time.values).strftime('%Y-%m-%d'), 'hr_rodada': pd.to_datetime(self.us100_mean.time.values).hour, 'modelo': self.modelo_fmt, 'valores': valores_gerados.to_dict(orient='records')}
                     resposta = requests.post(url='https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto', json=valores_gerados_json, headers=get_auth_header())
                     print(f'Resposta da API: {resposta.status_code} - {resposta.text}')
 
