@@ -597,6 +597,34 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if rename_var and var_dim:
             ds = ds.rename({variavel: var_dim})
 
+        if modelo_fmt in ['cfsv2']:
+
+            path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
+            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{variavel}.{self.data.strftime("%m")}.{self.data.strftime("%d")}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
+            ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
+            ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
+            ds_list = []
+
+            for valid_time in ds.valid_time[:2]:
+
+                ds_sel = ds.sel(valid_time=valid_time)
+                tempo_dt = pd.to_datetime(valid_time.values)
+                ano = tempo_dt.year
+
+                if ano == self.data.year:
+                    ano_clim = 2000
+                else:
+                    ano_clim = 2001
+
+                tempo_climatologia = f'{ano_clim}-{tempo_dt.month}-{tempo_dt.day}T{tempo_dt.hour:02d}'
+                ds_climatologia_sel = ds_climatologia.sel(time=tempo_climatologia)
+                ds_climatologia_sel = interpola_ds(ds_climatologia_sel, ds_sel)
+                ds_anomalia = ds_sel['prate'] - ds_climatologia_sel['prate']
+                ds_anomalia['valid_time'] = valid_time
+                ds_list.append(ds_anomalia)
+
+            ds = xr.concat(ds_list, dim='valid_time')
+
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')
         print(ds)
