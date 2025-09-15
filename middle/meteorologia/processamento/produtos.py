@@ -6,7 +6,6 @@ import time
 import pandas as pd
 import numpy as np
 from ..consts.constants import CONSTANTES
-from ..downloads.downloads import baixar_arquivo
 from middle.utils import Constants
 import shutil
 import xarray as xr
