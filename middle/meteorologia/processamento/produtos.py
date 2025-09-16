@@ -1379,6 +1379,17 @@ class GeraProdutosPrevisao:
                                 **kwargs
                             )     
 
+                            plot_campos(
+                                ds=ds_anomalia['tp'],
+                                variavel_plotagem='chuva_boletim_consumidores',
+                                title=titulo,
+                                filename=formato_filename(self.modelo_fmt, 'anomaliaacumuladomensal', index),
+                                shapefiles=self.shapefiles,
+                                path_to_save=f'{self.path_savefiguras}/mes-energ-anomalia-boletim',
+                                footnote_text='Hindcast 2004-2023' if 'ecmwf' in self.modelo_fmt.lower() else 'Hindcast 2000-2019',
+                                **kwargs
+                            )  
+
                         titulo = gerar_titulo(
                             modelo=self.modelo_fmt,
                             tipo=tipo,
