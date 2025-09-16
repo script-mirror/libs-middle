@@ -774,6 +774,7 @@ class ConfigProdutosObservado:
             data_fmt = data.strftime('%Y%m')
 
             # Filtrando arquivos pela data
+            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), "%Y%m%d"))
             files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
 
@@ -820,6 +821,9 @@ class ConfigProdutosObservado:
         # Ajustando a longitude para 0 a 360
         if 'longitude' in ds.dims and ajusta_longitude:
            ds = ajusta_lon_0_360(ds)
+
+        print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
+        print(ds)
 
         return ds
 
@@ -4189,7 +4193,6 @@ class GeraProdutosObservacao:
 
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
-                print(tp_plot_acc)
 
                 tempo_ini = pd.to_datetime(self.tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(self.tp['valid_time'].values[-1])
