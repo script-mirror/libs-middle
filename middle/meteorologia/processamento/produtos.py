@@ -1152,7 +1152,7 @@ class GeraProdutosPrevisao:
                         time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
                     )
                     self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                    self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
+                    # self.cond_ini = f"Ini: {dates[0].strftime('%d/%m/%Y %H UTC').replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod"
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -3745,7 +3745,7 @@ class GeraProdutosPrevisao:
                     time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
                 )
                 self.psi = self.psi.sel(valid_time=self.psi.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
+                # self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
 
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
