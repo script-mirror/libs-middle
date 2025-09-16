@@ -4191,6 +4191,9 @@ class GeraProdutosObservacao:
                 tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
+                print(tp)
+                print(tp.valid_time)
+
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
 
@@ -4226,7 +4229,6 @@ class GeraProdutosObservacao:
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
-                print(tp_plot_anomalia_total)
 
                 # Anomalia parcial
                 dias_no_mes = monthrange(pd.to_datetime(self.tp['valid_time'][0].item()).year, pd.to_datetime(self.tp['valid_time'][0].item()).month)[1]
