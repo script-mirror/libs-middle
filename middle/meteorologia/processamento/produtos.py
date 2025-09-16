@@ -4191,9 +4191,6 @@ class GeraProdutosObservacao:
                 tp = tp.sel(valid_time=tp.valid_time <= self.data)
                 cond_ini = self.data.strftime('%d/%m/%Y')
 
-                print(tp)
-                print(tp.valid_time)
-
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
 
