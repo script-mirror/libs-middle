@@ -837,7 +837,7 @@ class Constants:
         return f"{self.BASE_URL}/api/v2/decks/newave/sistema/mmgd_total"
     
     @property
-    def PATCH_NEWAVE_SISTEMA_MMGD_TOTAL(self):
+    def PUT_NEWAVE_SISTEMA_MMGD_TOTAL(self):
         return f"{self.BASE_URL}/api/v2/decks/newave/sistema/mmgd_total"
 
     @property
@@ -861,7 +861,7 @@ class Constants:
         return f"{self.BASE_URL}/api/v2/decks/newave/cadic/total_mmgd_base"
     
     @property
-    def PATCH_NEWAVE_CADIC_TOTAL_MMGD_BASE(self):
+    def PUT_NEWAVE_CADIC_TOTAL_MMGD_BASE(self):
         return f"{self.BASE_URL}/api/v2/decks/newave/cadic/total_mmgd_base"
 
     @property
