@@ -313,8 +313,8 @@ class HtmlBuilder:
         deck_novo = dados_ordenados[-1]
         
         # Converter os dados para um formato mais fácil de manipular
-        dados_antigo = {(item['vl_ano'], item['vl_mes']): item['vl_deck_mmgd_total'] for item in deck_antigo['data']}
-        dados_novo = {(item['vl_ano'], item['vl_mes']): item['vl_deck_mmgd_total'] for item in deck_novo['data']}
+        dados_antigo = {(item['vl_ano'], item['vl_mes']): item['vl_deck_mmgd_exp'] for item in deck_antigo['data']}
+        dados_novo = {(item['vl_ano'], item['vl_mes']): item['vl_deck_mmgd_exp'] for item in deck_novo['data']}
         
         # Encontrar todos os anos e meses únicos
         anos = sorted(set([item['vl_ano'] for item in deck_antigo['data'] + deck_novo['data']]))
