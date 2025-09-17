@@ -54,6 +54,13 @@ def custom_colorbar(variavel_plotagem):
         cmap = ListedColormap(colors)
         cbar_ticks = None
 
+    elif variavel_plotagem in ['chuva_boletim_consumidores']:
+        levels = range(-300, 305, 5)
+        colors = ['purple', 'white', 'green']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = range(-300, 350, 50)
+
     elif variavel_plotagem == 'acumulado_total_geodataframe':
         levels = range(0, 420, 20)
         colors = [

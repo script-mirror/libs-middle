@@ -9,7 +9,7 @@ if os.path.exists(env_path):
     logger.info(f"Carregando .env de: {env_path}")
 else:
     load_dotenv()
-    logger.warning(".env nao encontrado no path home, usando load_dotenv() default")
+    logger.warning(f".env nao encontrado no path {env_path}, usando load_dotenv() default")
 
 class Constants:
     @property
@@ -756,6 +756,14 @@ class Constants:
     @property
     def GET_DECOMP_CARGA_DECOMP(self):
         return f"{self.BASE_URL}/api/v2/decks/carga-decomp"
+    
+    @property
+    def POST_DECOMP_CARGA_PMO(self):
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo-decomp"
+
+    @property
+    def GET_DECOMP_CARGA_PMO(self):
+        return f"{self.BASE_URL}/api/v2/decks/carga-pmo-decomp"
 
     # CVU Endpoints
     @property
@@ -998,6 +1006,10 @@ class Constants:
         return '/WX2TB/Documentos/dados/merge-climatologia'
     
     @property 
+    def PATH_CLIMATOLOGIA_CPC(self):
+        return '/WX2TB/Documentos/dados/cpc-climatol'
+    
+    @property 
     def PATH_SAVE_FIGS_METEOROLOGIA(self):
         return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS' # './tmp/plots'
 
@@ -1008,6 +1020,10 @@ class Constants:
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_MERGE(self):
         return '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
+
+    @property 
+    def PATH_DOWNLOAD_ARQUIVOS_CPC(self):
+        return '/WX2TB/Documentos/dados/cpc'
 
     @property 
     def PATH_DOWNLOAD_ARQUIVOS_DIFGPM(self):
@@ -1038,10 +1054,29 @@ class Constants:
         return '/projetos/arquivos/meteorologia'
     
     @property 
-    def PATH_ARQUIVOS_TEMP(self):
+    def PATH_ARQUIVOS_TEMP_METEOROLOGIA(self):
         return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp'
     
     @property 
     def PATH_ARQUIVOS_UTILS(self):
         return '/projetos/arquivos/meteorologia/dados_modelos/arquivos_utils'
 
+    @property 
+    def PATH_ARQUIVOS_WEOL(self):
+        return '/projetos/arquivos/meteorologia'
+
+    @property 
+    def PATH_FIGURAS_MERGEDAILY(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario'
+
+    @property 
+    def PATH_FIGURAS_MERGE_CLIM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_clim'
+    
+    @property 
+    def PATH_FIGURAS_CPC(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_diario'
+    
+    @property 
+    def PATH_FIGURAS_CPC_CLIM(self):
+        return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_clim'

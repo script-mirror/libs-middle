@@ -1,9 +1,9 @@
-name: airflow-deploy
+name: env-middle-deploy
 
 on:
   push:
     branches:
-      - shadow
+      - main
 
 jobs:
   deploy:
@@ -16,7 +16,7 @@ jobs:
 
       - name: Validate secrets
         run: |
-          for secret in SSH_PRIVATE_KEY SERVER_USER SERVER_IP GIT_USERNAME GIT_TOKEN; do
+          for secret in SSH_PRIVATE_KEY SERVER_USER SERVER_MIDDLE_IP GIT_USERNAME GIT_TOKEN; do
             if [ -z "$(eval echo \$\{$secret\})" ]; then
               echo "Error: $secret is empty or not set"
               exit 1
@@ -25,7 +25,7 @@ jobs:
         env:
           SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
           SERVER_USER: ${{ secrets.SERVER_USER }}
-          SERVER_IP: ${{ secrets.SERVER_IP }}
+          SERVER_MIDDLE_IP: ${{ secrets.SERVER_MIDDLE_IP }}
           GIT_USERNAME: ${{ secrets.GIT_USERNAME }}
           GIT_TOKEN: ${{ secrets.GIT_TOKEN }}
 
@@ -35,18 +35,19 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           chmod 700 ~/.ssh
-          ssh-keyscan -t rsa,ecdsa,ed25519 -H "${{ secrets.SERVER_IP }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -t rsa,ecdsa,ed25519 -H "${{ secrets.SERVER_MIDDLE_IP }}" >> ~/.ssh/known_hosts
 
       - name: Deploy to server
         run: |
-          ssh -o ConnectTimeout=30 -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_IP }} << EOF
+          ssh -o ConnectTimeout=30 -i ~/.ssh/id_rsa ${{ secrets.SERVER_USER }}@${{ secrets.SERVER_MIDDLE_IP }} << EOF
             set -e
             
             echo "Iniciando deploy..."
             
-            sudo docker exec airflow_mysql-airflow-scheduler-1 sh -c '
-              pip install --upgrade --force-reinstall git+https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/wx-middle/libs-middle.git || exit 1
-            '
+            . /projetos/env/bin/activate || exit 1
+            
+            pip install --upgrade --force-reinstall git+https://${GIT_USERNAME}:${GIT_TOKEN}@github.com/wx-middle/libs-middle.git || exit 1
+            
           EOF
         env:
           GIT_USERNAME: ${{ secrets.GIT_USERNAME }}

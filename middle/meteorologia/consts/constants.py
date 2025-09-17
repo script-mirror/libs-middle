@@ -3,7 +3,7 @@ import pandas as pd
 CONSTANTES = {
 
     'tipos_variaveis': {
-        "surface": ['tp', 'u10', 'v10', 'prec'],                  # Variáveis em superfície
+        "surface": ['tp', 'u10', 'v10', 'prec', 'prate'],                  # Variáveis em superfície
         "height_above_ground": ['t2m', '2t', 'v100', 'u100', '100u', '100v'],                     # Variáveis a 2 metros
         "isobaric_inhPa": ['u', 'v', 'z', 'gh', 't', 'q'],        # Variáveis isobáricas
         "mean_sea": ['pnmm', 'msl', 'prmsl'],                     # Pressão ao nível médio do mar
@@ -16,7 +16,7 @@ CONSTANTES = {
 
     'labels_variaveis': {
 
-        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop', 'diferenca', 'desvpad', 'tp_anomalia', 'chuva_acumualada_merge', 'chuva_acumualada_merge_anomalia'],
+        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop', 'diferenca', 'desvpad', 'tp_anomalia', 'chuva_acumualada_merge', 'chuva_acumualada_merge_anomalia', 'chuva_boletim_consumidores', 'tp_anomalia_mensal'],
         '[m/s]': ['wind200', 'mag_vento100', 'mag_vento100_anomalia'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
@@ -89,7 +89,8 @@ CONSTANTES = {
         'gefs-membros-estendido': 6,
         'ecmwf-ens-membros': 3,
         'ecmwf-ens-estendido': 7,
-        'ecmwf-ens-membros-estendido': 7
+        'ecmwf-ens-membros-estendido': 7,
+        'cfsv2': 7,
 
     },
 

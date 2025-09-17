@@ -49,7 +49,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_geada_inmet(),
                 lambda: produtos.gerar_geada_cana(),
                 lambda: produtos.gerar_graficos_chuva(),
-                lambda: produtos.gerar_graficos_temp(),           
+                lambda: produtos.gerar_graficos_temp(),    
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None,    
             ]
 
     elif modelo == 'gefs':
@@ -285,7 +286,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_jato_div200(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_vento_div850(margin_y=-90, resample_freq='sop', anomalia_sop=True),
                 lambda: produtos.gerar_anomalia_vento850(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop', anomalia_mensal=True),
-                lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17), resample_freq='sop', anomalia_mensal=True, with_logo=False),
+                lambda: produtos.gerar_psi(margin_y=-90, extent=CONSTANTES['extents_mapa']['global'], central_longitude=180, figsize=(17, 17), resample_freq='sop', anomalia_mensal=True),
             ]
 
         elif tipo == 'pl':
@@ -342,6 +343,15 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             lambda: produtos.gerar_dif_prev(),
         ]
 
+    elif modelo == 'cpc':
+
+        return [
+            lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+            lambda: produtos.gerar_acumulado_mensal(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+            # lambda: produtos.gerar_bacias_smap(salva_db=True),
+            # lambda: produtos.gerar_dif_prev(),
+        ]
+
     elif modelo == 'samet':
 
         return [
@@ -355,6 +365,30 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
                 lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None, 
+            ]
+    
+        elif tipo == 'pl':
+            return []
+        
+    elif modelo == 'gefs-estendido-wind':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil'], resample_freq='sop'),
+                lambda: produtos.gerar_mag_vento100(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_vento_weol() if hora == 0 else None, 
+            ]
+    
+        elif tipo == 'pl':
+            return []
+
+    elif modelo == 'cfsv2':
+
+        if tipo == 'sfc':
+            return [
+                # lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=12),
+
             ]
     
         elif tipo == 'pl':
