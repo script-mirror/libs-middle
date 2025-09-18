@@ -202,7 +202,7 @@ class Constants:
 
     @property
     def URL_HTML_TO_IMAGE(self):
-        return os.getenv('URL_HTML_TO_IMAGE')
+        return f'{self.BASE_URL}/html-to-img/convert'
 
     @property
     def NUMERO_TESTE(self):
