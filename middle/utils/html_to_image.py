@@ -3,13 +3,14 @@ import time
 import requests
 from .auth import get_auth_header
 from .logger import setup_logger
+from ._constants import Constants
 from typing import Optional, Dict, Any
 
 logger = setup_logger()
-
+constants = Constants()
 
 def _check_image_generation_status(job_id: str) -> requests.Response:
-    URL_HTML_TO_IMAGE: Optional[str] = os.getenv('URL_HTML_TO_IMAGE')
+    URL_HTML_TO_IMAGE: Optional[str] = constants.URL_HTML_TO_IMAGE
     if not URL_HTML_TO_IMAGE:
         logger.error("Variavel de ambiente URL_HTML_TO_IMAGE nao definida")
         raise Exception("Variavel de ambiente URL_HTML_TO_IMAGE nao definida")
@@ -21,7 +22,7 @@ def _check_image_generation_status(job_id: str) -> requests.Response:
 
 
 def _get_image(job_id: str) -> Optional[bytes]:
-    URL_HTML_TO_IMAGE: Optional[str] = os.getenv('URL_HTML_TO_IMAGE')
+    URL_HTML_TO_IMAGE: Optional[str] = constants.URL_HTML_TO_IMAGE
     if not URL_HTML_TO_IMAGE:
         logger.error("Variavel de ambiente URL_HTML_TO_IMAGE nao definida")
         raise Exception("Variavel de ambiente URL_HTML_TO_IMAGE nao definida")
@@ -38,7 +39,7 @@ def _get_image(job_id: str) -> Optional[bytes]:
 def html_to_image(
     html_str: str,
 ) -> Optional[bytes]:
-    URL_HTML_TO_IMAGE: Optional[str] = os.getenv('URL_HTML_TO_IMAGE')
+    URL_HTML_TO_IMAGE: Optional[str] = constants.URL_HTML_TO_IMAGE
     if not URL_HTML_TO_IMAGE:
         logger.error("Variavel de ambiente URL_HTML_TO_IMAGE nao definida")
         raise Exception("Variavel de ambiente URL_HTML_TO_IMAGE nao definida")
