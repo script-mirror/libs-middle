@@ -402,7 +402,11 @@ class Constants:
     @property
     def PATH_TMP(self):
         return self.PATH_ARQUIVOS + '/tmp'
-
+    
+    @property 
+    def PATH_ARQUIVOS_TEMP(self):
+        return self.PATH_ARQUIVOS + '/tmp'
+    
     @property
     def PATH_PROJETO(self):
         return "/WX2TB/Documentos/fontes/PMO"
