@@ -438,13 +438,7 @@ class Constants:
     @property
     def ATIVAR_ENV(self):
         return " . /projetos/env/bin/activate;"
-    
-    @property
-    def RUN_STUDY_PROSPEC(self):
-        return ' . /WX/WX2TB/Documentos/fontes/PMO/scripts_unificados/env/bin/activate; python /projetos/estudos-middle/estudos_prospec/rodada_automatica_prospec/main_roda_estudos.py '
-    
-    
-    
+        
     # WEBHOOK
     #==============================================================================================================================================================
     @property
