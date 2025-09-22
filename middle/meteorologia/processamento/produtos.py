@@ -3790,7 +3790,7 @@ class GeraProdutosPrevisao:
                                                                 modelo=modelo_fmt,
                                                                 )
 
-                path_to_save = f'{self.path_savefiguras}/semanas_operativas'
+                path_to_save = f'{self.path_savefiguras}/semana-energ'
                 variavel_plotagem = 'chuva_ons_geodataframe'
                 os.makedirs(path_to_save, exist_ok=True)
                 
@@ -3822,7 +3822,7 @@ class GeraProdutosPrevisao:
 
             if acumulado_total:
 
-                path_to_save = f'{self.path_savefiguras}/total'
+                path_to_save = f'{self.path_savefiguras}/24-em-24-gifs'
                 os.makedirs(path_to_save, exist_ok=True)
                 variavel_plotagem = 'acumulado_total_geodataframe'
 
@@ -3846,11 +3846,11 @@ class GeraProdutosPrevisao:
                                 titulo=titulo, 
                                 shapefiles=self.shapefiles, 
                                 variavel_plotagem=variavel_plotagem,
-                                column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+                                column_plot='vl_chuva', _type='bruto', filename=formato_filename(self.modelo_fmt, 'acumuladototal'))
 
             if prec_24h:
 
-                path_to_save = f'{self.path_savefiguras}/24h'
+                path_to_save = f'{self.path_savefiguras}/24-em-24-gifs'
                 variavel_plotagem = 'chuva_ons_geodataframe'
                 os.makedirs(path_to_save, exist_ok=True)
                 
@@ -3884,7 +3884,7 @@ class GeraProdutosPrevisao:
                                     titulo=titulo, 
                                     shapefiles=self.shapefiles, 
                                     variavel_plotagem=variavel_plotagem,
-                                    column_plot='vl_chuva', _type='bruto', filename=f'tp_24h_{self.modelo_fmt}_{index}')
+                                    column_plot='vl_chuva', _type='bruto', filename=formato_filename(self.modelo_fmt, 'rain', index))
 
         except Exception as e:
             print(f'Erro ao gerar mapas db: {e}')
