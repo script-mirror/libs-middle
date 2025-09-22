@@ -3768,7 +3768,12 @@ class GeraProdutosPrevisao:
 
         try:
 
-            tp_prev = get_prec_db(self.modelo_fmt, pd.to_datetime(self.produto_config_sf.data).strftime('%Y-%m-%d'), str(self.produto_config_sf.inicializacao).zfill(2))
+            if self.modelo_fmt == 'pconjunto':
+                modelo_fmt = 'pconjunto-ons'
+            else:
+                modelo_fmt = self.modelo_fmt
+
+            tp_prev = get_prec_db(modelo_fmt, pd.to_datetime(self.produto_config_sf.data).strftime('%Y-%m-%d'), str(self.produto_config_sf.inicializacao).zfill(2))
             cond_ini = f"{self.produto_config_sf.data.strftime('%d/%m/%Y')} {str(self.produto_config_sf.inicializacao).zfill(2)} UTC"
             tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
             df_prev = tp_prev.groupby(['dt_prevista', 'semana', 'geometry', 'nome_bacia'])['vl_chuva'].mean().reset_index()
@@ -3782,7 +3787,7 @@ class GeraProdutosPrevisao:
                                                                 self.produto_config_sf.data, 
                                                                 qtdade_max_semanas=3, 
                                                                 ds_tempo_final=tp_prev['dt_prevista'].max(),
-                                                                modelo='pconjunto-ons',
+                                                                modelo=modelo_fmt,
                                                                 )
 
                 path_to_save = f'{self.path_savefiguras}/semanas_operativas'
