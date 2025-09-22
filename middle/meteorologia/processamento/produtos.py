@@ -3809,7 +3809,7 @@ class GeraProdutosPrevisao:
                                     titulo=titulo, 
                                     shapefiles=self.shapefiles, 
                                     variavel_plotagem=variavel_plotagem,
-                                    column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+                                    column_plot='vl_chuva', _type='bruto', filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', semana)) # PCONJUNTO_3semana_energ-r2025092200.png
 
             if acumulado_total:
 
