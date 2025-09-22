@@ -2,6 +2,7 @@ import os
 import re
 import codecs
 import datetime
+import unicodedata
 import pandas as pd
 from typing import Dict, List, Tuple, Any, IO
 from .constants import regex_blocos
@@ -11,6 +12,9 @@ BASE_PATH = os.path.dirname(os.path.abspath(__file__))
 
 logger = globals().get("logger", setup_logger())
 
+def remover_acentos(texto):
+    texto_normalizado = unicodedata.normalize('NFKD', texto)
+    return ''.join(char for char in texto_normalizado if unicodedata.category(char) != 'Mn')
 
 def leitura_dadger(
     file_path: str
@@ -35,7 +39,7 @@ def leitura_dadger(
     for i_line in range(len(arquivo)):
         line = arquivo[i_line]
         if line[0] == '&':
-            coment.append(line)
+            coment.append(remover_acentos(line))
             logger.debug(f"Found comment line at index {i_line}")
         elif line[0].strip() == '':
             logger.debug(f"Skipping empty line at index {i_line}")
