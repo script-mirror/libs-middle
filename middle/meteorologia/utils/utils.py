@@ -750,20 +750,35 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
         return gdf
 
     import requests
+    import time
     from middle.utils import get_auth_header
 
     if modelo in ['merge', 'mergegpm']:
-        response = requests.get(f'https://tradingenergiarz.com/api/v2/rodadas/chuva/observada?dt_observada={dt_modelo}', verify=False, headers=get_auth_header())
-
+        url = f'https://tradingenergiarz.com/api/v2/rodadas/chuva/observada?dt_observada={dt_modelo}'
     else:
         dt_hr_rodada = f'{dt_modelo}%20{hr_rodada}'
-        response = requests.get(f'https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao?nome_modelo={modelo}&dt_hr_rodada={dt_hr_rodada}%3A00%3A00&granularidade=subbacia&no_cache=true&atualizar=false', verify=False, headers=get_auth_header())
-        
-    if response.status_code == 200:
-        df = pd.DataFrame(response.json())
-        df_ons = get_df_ons()
-        df = pd.merge(df, df_ons, on='cd_subbacia', how='left')
-        df = to_geopandas(df, 'vl_lon', 'vl_lat')
+        url = (
+            f'https://tradingenergiarz.com/api/v2/rodadas/chuva/previsao'
+            f'?nome_modelo={modelo}&dt_hr_rodada={dt_hr_rodada}%3A00%3A00'
+            f'&granularidade=subbacia&no_cache=true&atualizar=false'
+        )
+
+    max_retries = 100
+    wait_seconds = 5
+
+    for i in range(max_retries):
+        response = requests.get(url, verify=False, headers=get_auth_header())
+        if response.status_code == 200:
+            df = pd.DataFrame(response.json())
+            df_ons = get_df_ons()
+            df = pd.merge(df, df_ons, on='cd_subbacia', how='left')
+            df = to_geopandas(df, 'vl_lon', 'vl_lat')
+            break
+        else:
+            print(f"Tentativa {i+1}/{max_retries} falhou ({response.status_code}). Tentando de novo...")
+            time.sleep(wait_seconds)
+    else:
+        raise RuntimeError(f"Não foi possível obter resposta 200 após várias {max_retries} tentativas.")
 
     return df
 
