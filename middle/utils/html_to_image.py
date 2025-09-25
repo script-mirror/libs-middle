@@ -77,3 +77,12 @@ def html_to_image(
 
     image: Optional[bytes] = _get_image(job_id)
     return image
+
+def html_style():
+    css = '<style type="text/css">'
+    css += 'caption {background-color: #E0E0E0; color: black;}'
+    css += 'th {background-color: #E0E0E0; color: black; min-width: 60px;}'
+    css += 'td {min-width: 60px;}'
+    css += 'table {text-align: center; border-collapse: collapse; border 2px solid black !important}'
+    css += '</style>'
+    return css
