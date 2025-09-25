@@ -763,7 +763,7 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
             f'&granularidade=subbacia&no_cache=true&atualizar=false'
         )
 
-    max_retries = 100
+    max_retries = 500
     wait_seconds = 5
 
     for i in range(max_retries):

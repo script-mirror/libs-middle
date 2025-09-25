@@ -477,6 +477,18 @@ class Constants:
     def WEBHOOK_CARGA_PATAMAR_NEWAVE(self):
         return "Previsões de carga mensal e por patamar - NEWAVE"
     
+    @property
+    def WEBHOOK_ECMWF(self):
+        return "Modelo ECMWF"
+    
+    @property
+    def WEBHOOK_ETA(self):
+        return "Modelo ETA"
+    
+    @property
+    def WEBHOOK_GEFS(self):
+        return "Modelo GEFS"
+    
       
     #ENDPOINTS API
     #==============================================================================================================================================================
@@ -656,6 +668,10 @@ class Constants:
     @property
     def ENDPOINT_IPDO(self):
         return f"{self.BASE_URL}/api/v2/ons/ipdo"
+    
+    @property
+    def ENDPOINT_WEOL_PONDERADO(self):
+        return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average"
 
     @property
     def GET_ONS_RDH(self):
