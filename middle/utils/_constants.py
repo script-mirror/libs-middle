@@ -674,6 +674,10 @@ class Constants:
         return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average"
 
     @property
+    def ENDPOINT_SIGLA_CVU(self):
+        return f"{self.BASE_URL}/api/v2/decks/siglas-cvu"
+
+    @property
     def GET_ONS_RDH(self):
         return f"{self.BASE_URL}/api/v2/ons/rdh"
 
