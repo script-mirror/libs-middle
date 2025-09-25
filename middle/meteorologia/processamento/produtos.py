@@ -834,8 +834,7 @@ class GeraProdutosPrevisao:
     def __init__(self, produto_config_sf, tp_params=None, pl_params=None, shapefiles=None, produto_config_pl=None, modo_atual=True):
 
         self.produto_config_sf = produto_config_sf
-        # self.modelo_fmt = self.produto_config_sf.modelo if 'membros' not in self.produto_config_sf.modelo else self.produto_config_sf.modelo.replace('-membros', '')
-        self.modelo_fmt = self.produto_config_sf.modelo.replace('-membros', '').replace('-wind', '')
+        self.modelo_fmt = self.produto_config_sf.modelo.replace('-membros', '').replace('-wind', '').replace('-ons', '')
         self.arquivos_com_membros = True if '-membros' in self.produto_config_sf.modelo else False
         self.arquivos_com_wind = True if '-wind' in self.produto_config_sf.modelo else False
         self.output_path = self.produto_config_sf.output_path
@@ -3769,7 +3768,12 @@ class GeraProdutosPrevisao:
 
         try:
 
-            tp_prev = get_prec_db(self.modelo_fmt, pd.to_datetime(self.produto_config_sf.data).strftime('%Y-%m-%d'), str(self.produto_config_sf.inicializacao).zfill(2))
+            if self.modelo_fmt == 'pconjunto':
+                modelo_fmt = 'pconjunto-ons'
+            else:
+                modelo_fmt = self.modelo_fmt
+
+            tp_prev = get_prec_db(modelo_fmt, pd.to_datetime(self.produto_config_sf.data).strftime('%Y-%m-%d'), str(self.produto_config_sf.inicializacao).zfill(2))
             cond_ini = f"{self.produto_config_sf.data.strftime('%d/%m/%Y')} {str(self.produto_config_sf.inicializacao).zfill(2)} UTC"
             tp_prev['dt_prevista'] = pd.to_datetime(tp_prev['dt_prevista'])
             df_prev = tp_prev.groupby(['dt_prevista', 'semana', 'geometry', 'nome_bacia'])['vl_chuva'].mean().reset_index()
@@ -3783,10 +3787,10 @@ class GeraProdutosPrevisao:
                                                                 self.produto_config_sf.data, 
                                                                 qtdade_max_semanas=3, 
                                                                 ds_tempo_final=tp_prev['dt_prevista'].max(),
-                                                                modelo='pconjunto-ons',
+                                                                modelo=modelo_fmt,
                                                                 )
 
-                path_to_save = f'{self.path_savefiguras}/semanas_operativas'
+                path_to_save = f'{self.path_savefiguras}/semana-energ'
                 variavel_plotagem = 'chuva_ons_geodataframe'
                 os.makedirs(path_to_save, exist_ok=True)
                 
@@ -3811,9 +3815,14 @@ class GeraProdutosPrevisao:
                                     variavel_plotagem=variavel_plotagem,
                                     column_plot='vl_chuva', _type='bruto', filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', semana)) # PCONJUNTO_3semana_energ-r2025092200.png
 
+                path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
+                send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {cond_ini}', arquivo=path_painel)
+                send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {cond_ini}', arquivos=[path_painel], assunto=f'MAPAS {self.modelo_fmt.upper()} {cond_ini}', destinatario=[Constants().EMAIL_MIDDLE, Constants().EMAIL_FRONT])
+                print(f'Removendo painel ... {path_painel}')
+
             if acumulado_total:
 
-                path_to_save = f'{self.path_savefiguras}/total'
+                path_to_save = f'{self.path_savefiguras}/24-em-24-gifs'
                 os.makedirs(path_to_save, exist_ok=True)
                 variavel_plotagem = 'acumulado_total_geodataframe'
 
@@ -3837,11 +3846,11 @@ class GeraProdutosPrevisao:
                                 titulo=titulo, 
                                 shapefiles=self.shapefiles, 
                                 variavel_plotagem=variavel_plotagem,
-                                column_plot='vl_chuva', _type='bruto', filename=f'tp_total_{self.modelo_fmt}')
+                                column_plot='vl_chuva', _type='bruto', filename=formato_filename(self.modelo_fmt, 'acumuladototal'))
 
             if prec_24h:
 
-                path_to_save = f'{self.path_savefiguras}/24h'
+                path_to_save = f'{self.path_savefiguras}/24-em-24-gifs'
                 variavel_plotagem = 'chuva_ons_geodataframe'
                 os.makedirs(path_to_save, exist_ok=True)
                 
@@ -3875,7 +3884,7 @@ class GeraProdutosPrevisao:
                                     titulo=titulo, 
                                     shapefiles=self.shapefiles, 
                                     variavel_plotagem=variavel_plotagem,
-                                    column_plot='vl_chuva', _type='bruto', filename=f'tp_24h_{self.modelo_fmt}_{index}')
+                                    column_plot='vl_chuva', _type='bruto', filename=formato_filename(self.modelo_fmt, 'rain', index))
 
         except Exception as e:
             print(f'Erro ao gerar mapas db: {e}')
