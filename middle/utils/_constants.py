@@ -668,6 +668,10 @@ class Constants:
     @property
     def ENDPOINT_IPDO(self):
         return f"{self.BASE_URL}/api/v2/ons/ipdo"
+    
+    @property
+    def ENDPOINT_WEOL_PONDERADO(self):
+        return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average"
 
     @property
     def GET_ONS_RDH(self):
