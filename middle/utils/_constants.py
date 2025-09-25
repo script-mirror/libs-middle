@@ -477,6 +477,18 @@ class Constants:
     def WEBHOOK_CARGA_PATAMAR_NEWAVE(self):
         return "Previsões de carga mensal e por patamar - NEWAVE"
     
+    @property
+    def WEBHOOK_ECMWF(self):
+        return "Modelo ECMWF"
+    
+    @property
+    def WEBHOOK_ETA(self):
+        return "Modelo ETA"
+    
+    @property
+    def WEBHOOK_GEFS(self):
+        return "Modelo GEFS"
+    
       
     #ENDPOINTS API
     #==============================================================================================================================================================
@@ -582,11 +594,11 @@ class Constants:
 
     @property
     def GET_RODADAS_VAZAO_OBSERVADA_PDP(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/vazao-observada-pdp"
+        return f"{self.BASE_URL}/api/v2/rodadas/vazao-observada-pdp"
     
     @property
     def POST_RODADAS_VAZAO_OBSERVADA_PDP(self):
-        return "https://tradingenergiarz.com/api/v2/rodadas/vazao-observada-pdp"
+        return f"{self.BASE_URL}/api/v2/rodadas/vazao-observada-pdp"
 
     @property
     def GET_RODADAS_POSTOS_PLUVIOMETRICOS(self):
