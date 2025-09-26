@@ -23,6 +23,7 @@ from .html_generator import (
 
 from .html_to_image import (
     html_to_image,
+    html_style, 
 )
 
 from ._constants import (
@@ -39,6 +40,7 @@ from .pdf_to_image import (
 )
 
 
+
 __all__ = [
     "SemanaOperativa",
     "sanitize_string",
@@ -53,4 +55,5 @@ __all__ = [
     "criar_logger",
     "create_directory",
     "pdf_to_jpg",
+    "html_style",
 ]

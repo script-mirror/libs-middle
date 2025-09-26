@@ -429,7 +429,7 @@ class Constants:
     
     @property
     def PATH_INFO_VAZOES_OBS_JSON(self):
-        return '/home/admin/projetos/arquivos/smap/infos_vazoes/info_vazao_obs.json'
+        return self.PATH_PROJETOS + '/arquivos/smap/infos_vazoes/info_vazao_obs.json'
     
     @property
     def PATH_TOKEN(self):
@@ -668,6 +668,14 @@ class Constants:
     @property
     def ENDPOINT_IPDO(self):
         return f"{self.BASE_URL}/api/v2/ons/ipdo"
+    
+    @property
+    def ENDPOINT_WEOL_PONDERADO(self):
+        return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average"
+
+    @property
+    def GET_NOME_UTE(self):
+        return f"{self.BASE_URL}/api/v2/decks/siglas-cvu"
 
     @property
     def GET_ONS_RDH(self):
