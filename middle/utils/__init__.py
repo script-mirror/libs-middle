@@ -18,7 +18,7 @@ from .logger import (
 )
 
 from .html_generator import (
-    HtmlBuilder
+    gera_tabela_html
 )
 
 from .html_to_image import (
@@ -47,7 +47,7 @@ __all__ = [
     "convert_date_columns",
     "get_auth_header",
     "setup_logger",
-    "HtmlBuilder",
+    "gera_tabela_html",
     "html_to_image",
     "Constants",
     "extract_zip",
