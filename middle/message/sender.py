@@ -44,7 +44,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo = None):
     return response
 
 def send_email_message(
-    user: str = constants.EMAIL_CLIME,
+    user: str = None,
     destinatario = constants.EMAIL_MIDDLE,
     mensagem: str = "",
     assunto: str = "Middle",
@@ -76,9 +76,14 @@ def send_email_message(
     }
     if user is not None:
         fields["user"] = user
+    else:
+        fields["user"] = assunto
     files = []
     for arquivo in arquivos:
-        files.append(("arquivos", open(arquivo, "rb")))
+        if type(arquivo) is str:
+            files.append(("arquivos", open(arquivo, "rb")))
+        else:
+            files.append((arquivo[0], arquivo[1]))
 
     headers = get_auth_header()
     response = requests.post(url, data=fields, files=files, headers=headers)
