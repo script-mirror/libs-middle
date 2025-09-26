@@ -725,11 +725,16 @@ def ajusta_acumulado_ds(ds: xr.Dataset, m_to_mm=True):
 
 def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
 
-    def to_geopandas(df, lon, lat):
+    import requests
+    import time
+    import pandas as pd
+    import numpy as np
+    from middle.utils import get_auth_header
+    from shapely.geometry import Point
+    import geopandas as gpd
 
-        from shapely.geometry import Point
-        import geopandas as gpd
-        
+    # Função para converter DataFrame em GeoDataFrame
+    def to_geopandas(df, lon, lat):
         geometry = [Point(xy) for xy in zip(df[lon], df[lat])]
         gdf = gpd.GeoDataFrame(df, geometry=geometry)
         gdf = gdf.set_crs("EPSG:4326")
@@ -738,7 +743,6 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
         gdf_basins = shp_file.to_crs(gdf.crs)    
 
         def geometry_basin(codigo, gdf_basins):
-
             try:
                 geometry = gdf_basins[gdf_basins['cod'] == codigo]['geometry'].values[0]
             except:
@@ -746,13 +750,9 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
             return geometry
 
         gdf['geometry'] = gdf['cod_psat'].apply(lambda x: geometry_basin(x, gdf_basins))
-
         return gdf
 
-    import requests
-    import time
-    from middle.utils import get_auth_header
-
+    # Construir URL
     if modelo in ['merge', 'mergegpm']:
         url = f'https://tradingenergiarz.com/api/v2/rodadas/chuva/observada?dt_observada={dt_modelo}'
     else:
@@ -763,22 +763,22 @@ def get_prec_db(modelo: str, dt_modelo: str, hr_rodada=None):
             f'&granularidade=subbacia&no_cache=true&atualizar=false'
         )
 
-    max_retries = 500
-    wait_seconds = 5
+    wait_seconds = 5  # tempo de espera entre tentativas
 
-    for i in range(max_retries):
-        response = requests.get(url, verify=False, headers=get_auth_header())
-        if response.status_code == 200:
-            df = pd.DataFrame(response.json())
-            df_ons = get_df_ons()
-            df = pd.merge(df, df_ons, on='cd_subbacia', how='left')
-            df = to_geopandas(df, 'vl_lon', 'vl_lat')
-            break
-        else:
-            print(f"Tentativa {i+1}/{max_retries} falhou ({response.status_code}). Tentando de novo...")
-            time.sleep(wait_seconds)
-    else:
-        raise RuntimeError(f"Não foi possível obter resposta 200 após várias {max_retries} tentativas.")
+    while True:
+        try:
+            response = requests.get(url, verify=False, headers=get_auth_header())
+            if response.status_code == 200:
+                df = pd.DataFrame(response.json())
+                df_ons = get_df_ons()
+                df = pd.merge(df, df_ons, on='cd_subbacia', how='left')
+                df = to_geopandas(df, 'vl_lon', 'vl_lat')
+                break
+            else:
+                print(f"Falha ({response.status_code}). Tentando de novo em {wait_seconds}s...")
+        except Exception as e:
+            print(f"Erro na requisição: {e}. Tentando de novo em {wait_seconds}s...")
+        time.sleep(wait_seconds)
 
     return df
 
