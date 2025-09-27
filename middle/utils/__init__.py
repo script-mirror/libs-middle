@@ -18,7 +18,8 @@ from .logger import (
 )
 
 from .html_generator import (
-    gera_tabela_html
+    gera_tabela_html,
+    HtmlBuilder
 )
 
 from .html_to_image import (
@@ -56,4 +57,5 @@ __all__ = [
     "create_directory",
     "pdf_to_jpg",
     "html_style",
+    "HtmlBuilder",
 ]
