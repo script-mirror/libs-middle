@@ -1,4 +1,5 @@
 from ast import mod
+from pickle import FALSE
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -860,7 +861,7 @@ def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=Tr
         if variavel == 'psi200' or variavel == 'psi850':
             variavel = 'strf'
 
-        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=date_fmt, inicializacao_fmt=inicializacao_fmt, prefix_cfs=prefix_cfs, sel_area=False)
+        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=date_fmt, inicializacao_fmt=inicializacao_fmt, prefix_cfs=prefix_cfs, sel_area=True if variavel in ['prate', 'tp'] else False)
         tp_tmp = tp_tmp.expand_dims(number=[index])
         tmps.append(tp_tmp)
 
@@ -875,7 +876,7 @@ def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=Tr
     ds = ds.sel(valid_time=ds.valid_time >= pd.to_datetime(data_fmt, format='%Y%m%d%H'))
     ini = dates[0].strftime('%d/%m/%Y %H UTC')
     fim = dates[-1].strftime('%d/%m/%Y %H UTC')
-    cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
+    cond_ini = f"{ini} a {fim} ({len(dates)})Rod"
 
     return ds, cond_ini
 

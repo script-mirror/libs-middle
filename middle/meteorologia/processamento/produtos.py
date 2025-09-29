@@ -1417,7 +1417,7 @@ class GeraProdutosPrevisao:
                         titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                         )
 
                         if anomalia_sop:
@@ -3815,10 +3815,7 @@ class GeraProdutosPrevisao:
 
             self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
             self.sst = self.sst.isel(depth=0)
-            print(self.sst)
             sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
-            print(sst)
-            sst.to_netcdf('sst.nc')
 
             for n_semana in sst.tempo:
 
@@ -3830,7 +3827,7 @@ class GeraProdutosPrevisao:
                 titulo = gerar_titulo(
                     modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
                     cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                    semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                    semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                 )
 
                 if anomalia_sop:
@@ -3861,6 +3858,7 @@ class GeraProdutosPrevisao:
                     filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
                     path_to_save=path_to_save,
                     footnote_text=footnote_text,
+                    central_longitude=180,
                     **kwargs
                 )
         
