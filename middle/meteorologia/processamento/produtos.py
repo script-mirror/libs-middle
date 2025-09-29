@@ -1155,7 +1155,10 @@ class GeraProdutosPrevisao:
                         time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
                     )
                     self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                    self.cond_ini = f"Ini: {dates[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')} a {dates[-1].strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')} ({len(dates)})Rod"
+                    ini = dates[0].strftime('%d/%m/%Y %H UTC').replace(' ', r'\ ')
+                    fim = dates[-1].strftime('%d/%m/%Y %H UTC').replace(' ', r'\ ')
+
+                    self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
