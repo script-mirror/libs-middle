@@ -3764,8 +3764,8 @@ class GeraProdutosPrevisao:
 
                 print(f'Processando semana {n_semana.item()}...')
                 sst_plot = sst.sel(tempo=n_semana)
-                intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
-                days_of_week = tp_plot.days_of_weeks.item()
+                intervalo = sst_plot.intervalo.item().replace(' ', '\ ')
+                days_of_week = sst_plot.days_of_weeks.item()
 
                 titulo = gerar_titulo(
                     modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
