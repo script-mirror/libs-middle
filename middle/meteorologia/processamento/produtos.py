@@ -1138,14 +1138,15 @@ class GeraProdutosPrevisao:
 
                     tmps = []
                     
-                    for date in dates:
+                    for index, date in enumerate(dates):
 
                         data_fmt = date.strftime('%Y%m%d')
                         inicializacao_fmt = str(date.hour).zfill(2)
 
-                        print(f'Carregando {data_fmt} {inicializacao_fmt}Z...')
+                        print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
                         tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
+                        tp_tmp['number'] = index
                         tmps.append(tp_tmp)
 
                     self.tp = xr.concat(tmps, dim='valid_time')
@@ -1157,8 +1158,10 @@ class GeraProdutosPrevisao:
                     self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
                     ini = dates[0].strftime('%d/%m/%Y %H UTC').replace(' ', r'\ ')
                     fim = dates[-1].strftime('%d/%m/%Y %H UTC').replace(' ', r'\ ')
-
                     self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
+                    
+                    # Retira o periods_cfs do kwargs
+                    kwargs.pop('periods_cfs', None)
 
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')

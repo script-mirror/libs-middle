@@ -272,6 +272,9 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             elif 'gefs' in modelo.lower():
                 ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(ds.time.data).strftime('%m%d'), modelo=modelo)
     
+            elif modelo.lower() in ['cfsv2']:
+                pass
+
         # Itera sobre os intervalos e semanas
         for (inicio, fim), semana, day_of_weeks in zip(intervalos_fmt, num_semana, days_of_weeks):
 
@@ -290,6 +293,10 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             ds_sel = ds.sel(valid_time=slice(inicio, fim))
 
             if anomalia_sop:
+
+                if modelo in ['cfsv2']:
+                    continue
+
                 # Interpola
                 ds_clim = interpola_ds(ds_clim, ds_sel)    
 
@@ -319,21 +326,6 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                 else:
                     ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
                 
-                # Calcula a anomalia
-                # if modo_agrupador == 'sum':
-                #     if prob_semana:
-                #         ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
-                        
-                #     else:
-                #         ds_sel = ds_sel[coluna_prev].sum(dim='valid_time') - ds_clim_sel[coluna_prev].sum(dim='alvo_previsao')
-
-                # else:
-                #     if prob_semana:
-                #         ds_sel = ds_sel[coluna_prev] - ds_clim_sel[coluna_prev]
-                        
-                #     else:
-                #         ds_sel = ds_sel[coluna_prev].mean(dim='valid_time') - ds_clim_sel[coluna_prev].mean(dim='alvo_previsao')
-
             else:
                 ds_sel = ds_sel.sum(dim='valid_time') if modo_agrupador == 'sum' else ds_sel.mean(dim='valid_time')
 
