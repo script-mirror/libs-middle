@@ -465,6 +465,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         mean_sea = CONSTANTES['tipos_variaveis']['mean_sea']
         nominalTop = CONSTANTES['tipos_variaveis']['nominalTop']
         mensal_sazonal = CONSTANTES['tipos_variaveis']['mensal_sazonal']
+        depthBelowSea = CONSTANTES['tipos_variaveis']['depthBelowSea']
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d') if data_fmt is None else data_fmt
@@ -545,6 +546,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             elif variavel in mensal_sazonal:
                 backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'dataType': 'em'}, "indexpath": ""}
+
+            elif variavel in depthBelowSea:
+                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'depthBelowSea'}, "indexpath": ""}
 
             else:
                 raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
