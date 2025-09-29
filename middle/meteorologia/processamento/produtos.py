@@ -3857,7 +3857,7 @@ class GeraProdutosPrevisao:
                     title=titulo,
                     filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
                     path_to_save=path_to_save,
-                    footnote_text=footnote_text,
+                    # footnote_text=footnote_text,
                     central_longitude=180,
                     **kwargs
                 )
