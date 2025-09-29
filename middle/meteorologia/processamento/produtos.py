@@ -898,7 +898,7 @@ class GeraProdutosPrevisao:
         self.modo_atual = modo_atual
         self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total', '24h_biomassa']
         self.figs_diferenca = ['diferenca']
-        self.figs_semana = ['semanas_operativas']
+        self.figs_semana = ['semanas_operativas', 'sst_cfsv2', 'psi_cfsv2']
         self.figs_6h = ['chuva_geop500_vento850']
         self.vento850_pnmm6h = ['pnmm_vento850']
         self.graficos_vento = ['graficos_vento']
@@ -1981,13 +1981,17 @@ class GeraProdutosPrevisao:
     def _processar_varsdinamicas(self, modo, anomalia_frentes=False, resample_freq='24h', anomalia_sop=False, var_anomalia='gh', level_anomalia=500, anomalia_mensal=False,**kwargs):
 
         qtdade_max_semanas = self.qtdade_max_semanas
+
         if self.modo_atual:
 
             if modo in self.figs_24h:
                 path_save = '24-em-24-gifs'
 
             elif modo in self.figs_semana:
-                path_save = 'semana-energ'
+                if self.modelo_fmt in ['cfsv2']:
+                    path_save = 'semana-energ-anomalia'
+                else:
+                    path_save = 'semana-energ'
 
             elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
@@ -3753,11 +3757,53 @@ class GeraProdutosPrevisao:
 
             self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
             self.sst = self.sst.isel(depth=0)
-            print(self.sst)
 
             sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
-            print('resample')
-            print(sst)
+
+            for n_semana in sst.tempo:
+
+                print(f'Processando semana {n_semana.item()}...')
+                sst_plot = sst.sel(tempo=n_semana)
+                intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
+                days_of_week = tp_plot.days_of_weeks.item()
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                    semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                )
+
+                if anomalia_sop:
+                    if 'ecmwf' in self.modelo_fmt.lower():
+                        footnote_text = 'Hindcast 2004-2023'
+                    elif 'gefs' in self.modelo_fmt.lower():
+                        footnote_text = 'Hindcast 2000-2019'
+                    elif 'cfs' in self.modelo_fmt.lower():
+                        footnote_text = 'Hindcast 1999-2010'
+                    else:
+                        footnote_text = 'Outro hindcast'
+                else:
+                    footnote_text = False
+
+                if self.modelo_fmt in ['cfsv2']:
+                    model_filename = f'tsm_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+
+                else:
+                    model_filename = f'anom_semana_energ-r{self.data_fmt}'
+
+                # Retira o periods_cfs do kwargs
+                kwargs.pop('periods_cfs', None)
+
+                plot_campos(
+                    ds=sst_plot['pt'],
+                    variavel_plotagem='sst_anomalia', 
+                    title=titulo,
+                    filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
+                    shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
+                    footnote_text=footnote_text,
+                    **kwargs
+                )
         
         # except Exception as e:
         #     print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')

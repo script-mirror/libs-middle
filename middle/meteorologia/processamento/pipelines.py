@@ -388,10 +388,10 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         if tipo == 'sfc':
             return [
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=12, anomalia_sop=True),
-                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=12, ensemble=False),
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=28, anomalia_sop=True),
+                lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=12, ensemble=False),
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=28, ensemble=False),
-                lambda: produtos.gerar_ocnsst_cfsv2(periods_cfs=12, resample_freq='sop'),
+                lambda: produtos.gerar_ocnsst_cfsv2(periods_cfs=12, resample_freq='sop', anomalia_sop=True),
             ]
     
         elif tipo == 'pl':
