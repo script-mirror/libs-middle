@@ -1146,10 +1146,11 @@ class GeraProdutosPrevisao:
                         print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
                         tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
-                        tp_tmp['number'] = index
                         tmps.append(tp_tmp)
 
                     self.tp = xr.concat(tmps, dim='valid_time')
+                    self.tp.to_netcdf(f'tp_{data_fmt}_{inicializacao_fmt}Z.nc')
+                    print(self.tp)
                     self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
                     self.tp_mean = self.tp*60*60*24
                     self.tp_mean = self.tp_mean.assign_coords(
