@@ -36,7 +36,8 @@ from ..utils.utils import (
     get_pontos_localidades,
     abrir_modelo_sem_vazios,
     formato_filename,
-    painel_png
+    painel_png,
+    ajusta_cfs_n_rodadas
 )
 
 ###################################################################################################################
@@ -1134,33 +1135,36 @@ class GeraProdutosPrevisao:
 
                 else:
 
-                    dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
+                    self.tp, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='prate', data_fmt=self.data_fmt, ensemble=ensemble, **kwargs)
+                    self.tp_mean = self.tp.copy()
 
-                    tmps = []
+                    # dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
+
+                    # tmps = []
                     
-                    for index, date in enumerate(dates):
+                    # for index, date in enumerate(dates):
 
-                        data_fmt = date.strftime('%Y%m%d')
-                        inicializacao_fmt = str(date.hour).zfill(2)
+                    #     data_fmt = date.strftime('%Y%m%d')
+                    #     inicializacao_fmt = str(date.hour).zfill(2)
 
-                        print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
+                    #     print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
-                        tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
-                        tp_tmp = tp_tmp.expand_dims(number=[index])
-                        tmps.append(tp_tmp)
+                    #     tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
+                    #     tp_tmp = tp_tmp.expand_dims(number=[index])
+                    #     tmps.append(tp_tmp)
 
-                    # self.tp = xr.concat(tmps, dim='valid_time')
-                    self.tp = xr.concat(tmps, dim="number")
-                    self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
-                    self.tp_mean = ensemble_mean(self.tp) if ensemble else self.tp.copy()
-                    self.tp_mean = self.tp_mean * 60 * 60 * 24
-                    self.tp_mean = self.tp_mean.assign_coords(
-                        time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
-                    )
-                    self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                    ini = dates[0].strftime('%d/%m/%Y %H UTC')
-                    fim = dates[-1].strftime('%d/%m/%Y %H UTC')
-                    self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
+                    # # self.tp = xr.concat(tmps, dim='valid_time')
+                    # self.tp = xr.concat(tmps, dim="number")
+                    # self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
+                    # self.tp_mean = ensemble_mean(self.tp) if ensemble else self.tp.copy()
+                    # self.tp_mean = self.tp_mean * 60 * 60 * 24
+                    # self.tp_mean = self.tp_mean.assign_coords(
+                    #     time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
+                    # )
+                    # self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
+                    # ini = dates[0].strftime('%d/%m/%Y %H UTC')
+                    # fim = dates[-1].strftime('%d/%m/%Y %H UTC')
+                    # self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
                     
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -3783,6 +3787,11 @@ class GeraProdutosPrevisao:
                 self.psi = self.psi.sel(valid_time=self.psi.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
                 # self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
 
+            elif modo == 'sst_cfsv2':
+
+                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                print(self.sst)
+            
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -4008,6 +4017,9 @@ class GeraProdutosPrevisao:
 
     def gerar_vento_weol(self, **kwargs):
         self._processar_varsdinamicas('vento_weol', **kwargs)
+
+    def gerar_ocnsst_cfsv2(self, **kwargs):
+        self._processar_varsdinamicas('sst_cfsv2', **kwargs)
 
     ###################################################################################################################
 

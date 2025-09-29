@@ -844,3 +844,36 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
 
 ###################################################################################################################
 
+def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=True, **kwargs):
+
+    dates = pd.date_range(end=produto_config.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
+
+    tmps = []
+    
+    for index, date in enumerate(dates):
+
+        data_fmt = date.strftime('%Y%m%d')
+        inicializacao_fmt = str(date.hour).zfill(2)
+
+        print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
+
+        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
+        tp_tmp = tp_tmp.expand_dims(number=[index])
+        tmps.append(tp_tmp)
+
+    ds = xr.concat(tmps, dim="number")
+    ds = ds.groupby('valid_time').mean(dim='valid_time')
+    ds = ensemble_mean(ds) if ensemble else ds.copy()
+    if variavel == 'prate':
+        ds = ds * 60 * 60 * 24
+    ds = ds.assign_coords(
+        time=pd.to_datetime(data_fmt, format='%Y%m%d%H')
+    )
+    ds = ds.sel(valid_time=ds.valid_time >= pd.to_datetime(data_fmt, format='%Y%m%d%H'))
+    ini = dates[0].strftime('%d/%m/%Y %H UTC')
+    fim = dates[-1].strftime('%d/%m/%Y %H UTC')
+    cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
+
+    return ds, cond_ini
+
+###################################################################################################################
