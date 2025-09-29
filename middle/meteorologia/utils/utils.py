@@ -292,10 +292,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
             # Selecionando os tempos das SOP
             ds_sel = ds.sel(valid_time=slice(inicio, fim))
 
-            if anomalia_sop:
-
-                if modelo in ['cfsv2']:
-                    continue
+            if anomalia_sop and modelo.lower() not in ['cfsv2']:
 
                 # Interpola
                 ds_clim = interpola_ds(ds_clim, ds_sel)    
