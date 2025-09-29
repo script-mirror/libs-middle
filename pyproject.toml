@@ -29,14 +29,3 @@ dynamic = ["dependencies"]
 Homepage = "https://github.com/raizen/raizen-power-trading-libs-middle"
 Repository = "https://github.com/raizen/raizen-power-trading-libs-middle"
 Issues = "https://github.com/raizen/raizen-power-trading-libs-middle/issues"
-
-[tool.setuptools.dynamic]
-dependencies = {file = ["requirements.txt"]}
-
-[tool.black]
-line-length = 100
-target-version = ['py38']
-
-[tool.isort]
-profile = "black"
-line_length = 100
