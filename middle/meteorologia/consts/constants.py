@@ -21,7 +21,7 @@ CONSTANTES = {
         '[m/s]': ['wind200', 'mag_vento100', 'mag_vento100_anomalia'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
-        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia'],
+        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia', 'sst_anomalia'],
         '[kg*m-1*s-1]': ['ivt'],
         '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes'],

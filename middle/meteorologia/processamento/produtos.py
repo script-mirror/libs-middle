@@ -3753,12 +3753,72 @@ class GeraProdutosPrevisao:
             self.psi200, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi200', prefix_cfs='psi200', data_fmt=self.data_fmt, ensemble=True, **kwargs)
             self.psi850, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi850', prefix_cfs='psi850', data_fmt=self.data_fmt, ensemble=True, **kwargs)
 
+            psi200 = resample_variavel(self.psi200, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+            psi850 = resample_variavel(self.psi850, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+
+            psi200 = psi200 - psi200.mean(dim='latitude').mean(dim='longitude')
+            psi200 = psi200 - psi200.mean(dim='longitude')
+
+            psi850 = psi850 - psi850.mean(dim='latitude').mean(dim='longitude')
+            psi850 = psi850 - psi850.mean(dim='longitude')
+
+            for n_semana in psi200.tempo:
+
+                print(f'Processando semana {n_semana.item()}...')
+                psi200_plot = psi200.sel(tempo=n_semana)
+                psi850_plot = psi850.sel(tempo=n_semana)
+                intervalo = psi200_plot.intervalo.item().replace(' ', '\ ')
+                days_of_week = psi200_plot.days_of_weeks.item()
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                    semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                )
+
+                if anomalia_sop:
+                    if 'ecmwf' in self.modelo_fmt.lower():
+                        footnote_text = 'Hindcast 2004-2023'
+                    elif 'gefs' in self.modelo_fmt.lower():
+                        footnote_text = 'Hindcast 2000-2019'
+                    elif 'cfs' in self.modelo_fmt.lower():
+                        footnote_text = 'Hindcast 1999-2010'
+                    else:
+                        footnote_text = 'Outro hindcast'
+                else:
+                    footnote_text = False
+
+                if self.modelo_fmt in ['cfsv2']:
+                    model_filename = f'psi_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+
+                else:
+                    model_filename = f'anom_semana_energ-r{self.data_fmt}'
+
+                # Retira o periods_cfs do kwargs
+                kwargs.pop('periods_cfs', None)
+
+                plot_campos(
+                    ds=psi200_plot/1e6,
+                    variavel_plotagem='psi',
+                    title=titulo,
+                    filename=formato_filename(self.modelo_fmt, model_filename, index),
+                    ds_contour=psi850_plot/1e6,
+                    variavel_contour='psi',
+                    color_contour='black',
+                    plot_bacias=False,
+                    path_to_save=path_to_save,
+                    with_logo=False,
+                    **kwargs
+                )
+    
         elif modo == 'sst_cfsv2':
 
             self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
             self.sst = self.sst.isel(depth=0)
-
+            print(self.sst)
             sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+            print(sst)
+            sst.to_netcdf('sst.nc')
 
             for n_semana in sst.tempo:
 
@@ -3799,7 +3859,6 @@ class GeraProdutosPrevisao:
                     variavel_plotagem='sst_anomalia', 
                     title=titulo,
                     filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
-                    shapefiles=self.shapefiles,
                     path_to_save=path_to_save,
                     footnote_text=footnote_text,
                     **kwargs
@@ -4033,6 +4092,9 @@ class GeraProdutosPrevisao:
 
     def gerar_ocnsst_cfsv2(self, **kwargs):
         self._processar_varsdinamicas('sst_cfsv2', **kwargs)
+
+    def gerar_psi_cfsv2(self, **kwargs):
+        self._processar_varsdinamicas('psi_cfsv2', **kwargs)
 
     ###################################################################################################################
 

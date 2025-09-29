@@ -391,7 +391,10 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=28, anomalia_sop=True),
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=12, ensemble=False),
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, periods_cfs=28, ensemble=False),
-                lambda: produtos.gerar_ocnsst_cfsv2(periods_cfs=12, resample_freq='sop', anomalia_sop=True),
+                lambda: produtos.gerar_ocnsst_cfsv2(periods_cfs=12, resample_freq='sop', anomalia_sop=True, extent=CONSTANTES['extents_mapa']['global']),
+                lambda: produtos.gerar_ocnsst_cfsv2(periods_cfs=28, resample_freq='sop', anomalia_sop=True, extent=CONSTANTES['extents_mapa']['global']),
+                lambda: produtos.gerar_psi_cfsv2(periods_cfs=12, resample_freq='sop', anomalia_sop=True, extent=CONSTANTES['extents_mapa']['global']),
+                lambda: produtos.gerar_psi_cfsv2(periods_cfs=28, resample_freq='sop', anomalia_sop=True, extent=CONSTANTES['extents_mapa']['global']),
             ]
     
         elif tipo == 'pl':
