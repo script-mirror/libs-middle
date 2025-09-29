@@ -2035,1835 +2035,1835 @@ class GeraProdutosPrevisao:
         path_to_save = f'{self.path_savefiguras}/{path_save}'
         os.makedirs(path_to_save, exist_ok=True)
 
-        # try:
+        try:
 
-        print(f"Gerando mapa de variaveis dinâmicas ({modo})...")
+            print(f"Gerando mapa de variaveis dinâmicas ({modo})...")
 
-        if modo == 'jato_div200':
+            if modo == 'jato_div200':
 
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-            level_divergencia = 200
+                level_divergencia = 200
 
-            us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
-            vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+                us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-            for n_24h in us_24h.tempo:
+                for n_24h in us_24h.tempo:
 
-                print(f'Processando {n_24h.item()}...')
-                us_plot = us_24h.sel(tempo=n_24h)
-                vs_plot = vs_24h.sel(tempo=n_24h)
-                vento_jato = (us_plot['u']**2 + vs_plot['v']**2)**0.5
-                divergencia = mpcalc.divergence(us_plot['u'], vs_plot['v']) * 1e5
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h.sel(tempo=n_24h)
+                    vs_plot = vs_24h.sel(tempo=n_24h)
+                    vento_jato = (us_plot['u']**2 + vs_plot['v']**2)**0.5
+                    divergencia = mpcalc.divergence(us_plot['u'], vs_plot['v']) * 1e5
 
-                ds_streamplot = xr.Dataset({
-                    'u': us_plot['u'],
-                    'v': vs_plot['v'],
-                    'divergencia': divergencia,
-                    'jato': vento_jato
-                })
+                    ds_streamplot = xr.Dataset({
+                        'u': us_plot['u'],
+                        'v': vs_plot['v'],
+                        'divergencia': divergencia,
+                        'jato': vento_jato
+                    })
 
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
 
-                    titulo = self._ajustar_tempo_e_titulo(
-                        us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Jato {level_divergencia}hPa', semana, self.cond_ini,
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Jato {level_divergencia}hPa', semana, self.cond_ini,
+                        )
+
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Vento e Jato {level_divergencia}hPa - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
                     )
 
-                else:
-                    intervalo = us_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = us_plot.days_of_weeks.item()                        
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Vento e Jato {level_divergencia}hPa - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
-
-                plot_campos(
-                    ds=ds_streamplot['jato'],
-                    variavel_plotagem='wind200',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'vento200_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    variavel_streamplot='wind200',
-                    ds_streamplot=ds_streamplot,
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
-                    **kwargs
-                )
-        
-        elif modo == 'vento_temp850':
-
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
-
-            if self.t_mean is None:
-                _, self.t_mean, _ = self._carregar_t_mean()
+                    plot_campos(
+                        ds=ds_streamplot['jato'],
+                        variavel_plotagem='wind200',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'vento200_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        variavel_streamplot='wind200',
+                        ds_streamplot=ds_streamplot,
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
+                        **kwargs
+                    )
             
-            level_temp = 850
-            
-            us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            t850_24h = resample_variavel(self.t_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 't', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+            elif modo == 'vento_temp850':
 
-            for n_24h in us_24h_850.tempo:
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-                print(f'Processando {n_24h.item()}...')
-                us_plot = us_24h_850.sel(tempo=n_24h)
-                vs_plot = vs_24h_850.sel(tempo=n_24h)
-                t850_plot = t850_24h.sel(tempo=n_24h)
-
-                ds_quiver = xr.Dataset({
-                    'u': us_plot['u'],
-                    'v': vs_plot['v'],
-                    't850': t850_plot['t']
-                })
-
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
-
-                    titulo = self._ajustar_tempo_e_titulo(
-                        us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}V e Temp. em {level_temp}hPa', semana, self.cond_ini,
-                )
-
-                else:
-                    intervalo = us_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = us_plot.days_of_weeks.item()                        
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'V e Temp. em {level_temp}hPa - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
-
-                plot_campos(
-                    ds=ds_quiver['t850'] - 273.15,  # Kelvin para Celsius
-                    variavel_plotagem='temp850',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'vento_temp850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    ds_quiver=ds_quiver,
-                    variavel_quiver='wind850',
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
-        elif modo == 'geop_vort500':
-
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
-
-            if self.gh_mean is None:
-                self.geop, self.geop_mean, _ = self._carregar_gh_mean()
-
-            level_geop = 500
-
-            # Resample para 24 horas
-            us_24h_500 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            vs_24h_500 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-
-            for n_24h in geop_500.tempo:
-
-                print(f'Processando {n_24h.item()}...')
-                geop_ = geop_500.sel(tempo=n_24h)
-                geop_plot = nd.gaussian_filter(geop_['gh'], sigma=3)
-                u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
-                v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
-                vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
-                vorticidade = nd.gaussian_filter(vorticidade, sigma=3)
-
-                ds_plot = xr.Dataset({
-                    'gh': (('latitude', 'longitude'), geop_plot),
-                    'vorticidade': (('latitude', 'longitude'), vorticidade),
-                    'u': u_plot['u'],
-                    'v': v_plot['v']
-                })
-
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
-                    titulo = self._ajustar_tempo_e_titulo(geop_, f'{self.freqs_map[resample_freq]["prefix_title"]}Vort. e Geop. {level_geop}hPa', semana, self.cond_ini )
-
-                else:
-                    intervalo = geop_.intervalo.item().replace(' ', '\ ')
-                    days_of_week = geop_.days_of_weeks.item()                        
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Vort. e Geop. {level_geop}hPa - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
-
-                plot_campos(
-                    ds=ds_plot['vorticidade'],
-                    variavel_plotagem='vorticidade',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'vort_geo500_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    ds_contour=ds_plot['gh']/10,
-                    variavel_contour='gh_500',
-                    plot_bacias=False,
-                    color_contour='black',
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
-        elif modo == 'frentes':
-
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
-
-            if self.t_mean is None:
-                _, self.t_mean, self.cond_ini = self._carregar_t_mean()
-
-            if self.pnmm_mean is None:
-                _, self.pnmm_mean, self.cond_ini = self._carregar_pnmm_mean()
-            
-            # Gerando mapas das frente frias previstas
-            pnmm_sel = self.pnmm_mean.assign_coords(longitude=(((self.us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude').sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
-            vwnd_sel = self.vs_mean.sortby('latitude').sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
-            air_sel = self.t_mean.sortby('latitude').sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')           
-
-            for index, mes in enumerate(list(set(pnmm_sel.valid_time.dt.month.values))):
-
-                mes_fmt = str(mes).zfill(2)
-
-                ds_mensal_slp = pnmm_sel.sel(valid_time=pnmm_sel.valid_time.dt.month == mes)
-                ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
-                ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
-
-                ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air, varname='msl' if 'ecmwf' in self.modelo_fmt else 'prmsl')
-
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Casos de frentes frias', cond_ini=self.cond_ini,
-                    data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                )
-
-                plot_campos(
-                    ds=ds_frentes,
-                    variavel_plotagem='frentes',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'frentes_{mes_fmt}', index),   
-                    ds_contour=ds_frentes,
-                    variavel_contour='frentes',
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
-                if anomalia_frentes:
+                if self.t_mean is None:
+                    _, self.t_mean, _ = self._carregar_t_mean()
                 
-                    # Agora o mapa de anomalia
-                    ds_climatologia = xr.open_dataset(f'{CONSTANTES["path_reanalise_ncepI"]}/climatologia_{mes_fmt}.nc')
+                level_temp = 850
+                
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                t850_24h = resample_variavel(self.t_mean.sel(isobaricInhPa=level_temp), self.modelo_fmt, 't', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
 
-                    # Renomeando lat para latitude e lon para longitude
-                    ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude', '__xarray_dataarray_variable__':'climatologia'})
+                for n_24h in us_24h_850.tempo:
 
-                    # Transformando a longitude para 0 e 360 se necessário
-                    if (ds_frentes.longitude < 0).any():
-                        ds_frentes = ds_frentes.assign_coords(longitude=(ds_frentes.longitude % 360)).sortby('longitude').sortby('latitude')
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h_850.sel(tempo=n_24h)
+                    vs_plot = vs_24h_850.sel(tempo=n_24h)
+                    t850_plot = t850_24h.sel(tempo=n_24h)
 
-                    # Interpolando
-                    ds_climatologia = interpola_ds(ds_climatologia, ds_frentes)
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u'],
+                        'v': vs_plot['v'],
+                        't850': t850_plot['t']
+                    })
 
-                    # Calculando a anomalia
-                    anomalia = ds_frentes - (ds_climatologia['climatologia']/30)*len(ds_mensal_slp.valid_time)          
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}V e Temp. em {level_temp}hPa', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'V e Temp. em {level_temp}hPa - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=ds_quiver['t850'] - 273.15,  # Kelvin para Celsius
+                        variavel_plotagem='temp850',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'vento_temp850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        ds_quiver=ds_quiver,
+                        variavel_quiver='wind850',
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
+
+            elif modo == 'geop_vort500':
+
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                if self.gh_mean is None:
+                    self.geop, self.geop_mean, _ = self._carregar_gh_mean()
+
+                level_geop = 500
+
+                # Resample para 24 horas
+                us_24h_500 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_500 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+
+                for n_24h in geop_500.tempo:
+
+                    print(f'Processando {n_24h.item()}...')
+                    geop_ = geop_500.sel(tempo=n_24h)
+                    geop_plot = nd.gaussian_filter(geop_['gh'], sigma=3)
+                    u_plot = us_24h_500.sel(tempo=n_24h) * units.meter_per_second
+                    v_plot = vs_24h_500.sel(tempo=n_24h) * units.meter_per_second
+                    vorticidade = mpcalc.vorticity(u_plot['u'], v_plot['v']) * 1e6
+                    vorticidade = nd.gaussian_filter(vorticidade, sigma=3)
+
+                    ds_plot = xr.Dataset({
+                        'gh': (('latitude', 'longitude'), geop_plot),
+                        'vorticidade': (('latitude', 'longitude'), vorticidade),
+                        'u': u_plot['u'],
+                        'v': v_plot['v']
+                    })
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(geop_.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                        titulo = self._ajustar_tempo_e_titulo(geop_, f'{self.freqs_map[resample_freq]["prefix_title"]}Vort. e Geop. {level_geop}hPa', semana, self.cond_ini )
+
+                    else:
+                        intervalo = geop_.intervalo.item().replace(' ', '\ ')
+                        days_of_week = geop_.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Vort. e Geop. {level_geop}hPa - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=ds_plot['vorticidade'],
+                        variavel_plotagem='vorticidade',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'vort_geo500_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        ds_contour=ds_plot['gh']/10,
+                        variavel_contour='gh_500',
+                        plot_bacias=False,
+                        color_contour='black',
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
+
+            elif modo == 'frentes':
+
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                if self.t_mean is None:
+                    _, self.t_mean, self.cond_ini = self._carregar_t_mean()
+
+                if self.pnmm_mean is None:
+                    _, self.pnmm_mean, self.cond_ini = self._carregar_pnmm_mean()
+                
+                # Gerando mapas das frente frias previstas
+                pnmm_sel = self.pnmm_mean.assign_coords(longitude=(((self.us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude').sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
+                vwnd_sel = self.vs_mean.sortby('latitude').sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')
+                air_sel = self.t_mean.sortby('latitude').sel(isobaricInhPa=925).sel(latitude=slice(-90, 0)).resample(valid_time='D').mean(dim='valid_time')           
+
+                for index, mes in enumerate(list(set(pnmm_sel.valid_time.dt.month.values))):
+
+                    mes_fmt = str(mes).zfill(2)
+
+                    ds_mensal_slp = pnmm_sel.sel(valid_time=pnmm_sel.valid_time.dt.month == mes)
+                    ds_mensal_vwnd = vwnd_sel.sel(valid_time=vwnd_sel.valid_time.dt.month == mes)
+                    ds_mensal_air = air_sel.sel(valid_time=air_sel.valid_time.dt.month == mes)
+
+                    ds_frentes = encontra_casos_frentes_xarray(ds_mensal_slp, ds_mensal_vwnd, ds_mensal_air, varname='msl' if 'ecmwf' in self.modelo_fmt else 'prmsl')
 
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Anomalia de frentes frias', cond_ini=self.cond_ini,
+                        modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Casos de frentes frias', cond_ini=self.cond_ini,
                         data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                         data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
                     )
 
                     plot_campos(
-                        ds=anomalia,
-                        variavel_plotagem='frentes_anomalia',
+                        ds=ds_frentes,
+                        variavel_plotagem='frentes',
                         title=titulo,
-                        filename=f'anomalia_frentes_{self.modelo_fmt}',
+                        filename=formato_filename(self.modelo_fmt, f'frentes_{mes_fmt}', index),   
+                        ds_contour=ds_frentes,
+                        variavel_contour='frentes',
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
                         **kwargs
                     )
 
-        elif modo == 'geop500':
+                    if anomalia_frentes:
+                    
+                        # Agora o mapa de anomalia
+                        ds_climatologia = xr.open_dataset(f'{CONSTANTES["path_reanalise_ncepI"]}/climatologia_{mes_fmt}.nc')
 
-            if self.gh_mean is None:
-                self.geop, self.geop_mean, self.cond_ini = self._carregar_gh_mean()
-            
-            level_geop = 500
+                        # Renomeando lat para latitude e lon para longitude
+                        ds_climatologia = ds_climatologia.rename({'lat':'latitude', 'lon':'longitude', '__xarray_dataarray_variable__':'climatologia'})
 
-            if not anomalia_sop:
-                geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
+                        # Transformando a longitude para 0 e 360 se necessário
+                        if (ds_frentes.longitude < 0).any():
+                            ds_frentes = ds_frentes.assign_coords(longitude=(ds_frentes.longitude % 360)).sortby('longitude').sortby('latitude')
 
-            else:
-                geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
-                geop_500_contour = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=False, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
-            
-            for n_24h in geop_500.tempo:
-                print(f'Processando {n_24h.item()}...')
-                geop_plot = geop_500.sel(tempo=n_24h)
+                        # Interpolando
+                        ds_climatologia = interpola_ds(ds_climatologia, ds_frentes)
 
-                if anomalia_sop:
-                    geop_plot_contour = geop_500_contour.sel(tempo=n_24h)
+                        # Calculando a anomalia
+                        anomalia = ds_frentes - (ds_climatologia['climatologia']/30)*len(ds_mensal_slp.valid_time)          
 
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=self.geop.valid_time[-1].values, modelo=self.modelo_fmt)[0]
-                    titulo = self._ajustar_tempo_e_titulo(
-                        geop_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geop. {level_geop}hPa', semana, self.cond_ini,
-                )
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, sem_intervalo_semana=True, tipo=f'Anomalia de frentes frias', cond_ini=self.cond_ini,
+                            data_ini=pd.to_datetime(ds_mensal_slp.valid_time.min().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(ds_mensal_slp.valid_time.max().values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        )
+
+                        plot_campos(
+                            ds=anomalia,
+                            variavel_plotagem='frentes_anomalia',
+                            title=titulo,
+                            filename=f'anomalia_frentes_{self.modelo_fmt}',
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            **kwargs
+                        )
+
+            elif modo == 'geop500':
+
+                if self.gh_mean is None:
+                    self.geop, self.geop_mean, self.cond_ini = self._carregar_gh_mean()
+                
+                level_geop = 500
+
+                if not anomalia_sop:
+                    geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
 
                 else:
-                    intervalo = geop_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = geop_plot.days_of_weeks.item()                        
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Geop. {level_geop}hPa - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
-
-                plot_campos(
-                    ds=geop_plot['gh']/10,
-                    variavel_plotagem='geop_500' if not anomalia_sop else 'geop_500_anomalia',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'altgeop500_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'altgeop500_anomalia_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),                        
-                    ds_contour=geop_plot['gh']/10 if not anomalia_sop else geop_plot_contour['gh']/10,
-                    variavel_contour='gh_500',
-                    color_contour='black' if anomalia_sop else 'white',
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save if anomalia_sop == False else f'{self.path_savefiguras}/semana-energ-geop',
-                    **kwargs
-                )
-
-            if anomalia_mensal:
-                # Dando o resample nos dados de chuva prevista
-                ds_resample = self.geop_mean.resample(valid_time='M').mean()
-
-                if 'ecmwf' in self.modelo_fmt.lower():
-                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
-                    ds_clim = interpola_ds(ds_clim, ds_resample)
-
-                elif 'gefs' in self.modelo_fmt.lower():
-                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
-                    ds_clim = interpola_ds(ds_clim, ds_resample) 
-
-                # Anos iniciais e finais da climatologia
-                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
-                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
-
-                for index, time in enumerate(ds_resample.valid_time):
-
-                    # Selecionando o mês correspondente
-                    ds_resample_sel = ds_resample.sel(valid_time=time)
-
-                    # Selecionando o mês correspondente
-                    mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
-
-                    # Selando o tempo na climatologia
-                    tempoini = pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%Y-%m-%d %H')
-                    tempo_fim = pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%Y-%m-%d %H')
-                    t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
-                    t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
-                    ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
+                    geop_500 = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
+                    geop_500_contour = resample_variavel(self.geop_mean.sel(isobaricInhPa=level_geop), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=False, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
                 
-                    # Anomalia
-                    ds_anomalia = ds_resample_sel['gh'] - ds_clim_sel['gh']
-                    ds_anomalia = ds_anomalia.to_dataset().isel(isobaricInhPa=0)
+                for n_24h in geop_500.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    geop_plot = geop_500.sel(tempo=n_24h)
 
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt,
-                        tipo=f'Média {mes}',
-                        cond_ini=self.cond_ini,
-                        data_ini=pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        sem_intervalo_semana=True
+                    if anomalia_sop:
+                        geop_plot_contour = geop_500_contour.sel(tempo=n_24h)
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(geop_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=self.geop.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                        titulo = self._ajustar_tempo_e_titulo(
+                            geop_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geop. {level_geop}hPa', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = geop_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = geop_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Geop. {level_geop}hPa - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
                     )
 
                     plot_campos(
-                        ds=ds_anomalia['gh'],
-                        variavel_plotagem='geop_500_anomalia',
+                        ds=geop_plot['gh']/10,
+                        variavel_plotagem='geop_500' if not anomalia_sop else 'geop_500_anomalia',
                         title=titulo,
-                        filename=f'{index}_gh_anomalia_mensal_{self.modelo_fmt}',
+                        filename=formato_filename(self.modelo_fmt, f'altgeop500_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'altgeop500_anomalia_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),                        
+                        ds_contour=geop_plot['gh']/10 if not anomalia_sop else geop_plot_contour['gh']/10,
+                        variavel_contour='gh_500',
+                        color_contour='black' if anomalia_sop else 'white',
+                        plot_bacias=False,
                         shapefiles=self.shapefiles,
-                        path_to_save=f'{self.path_savefiguras}/geop_mensal',
+                        path_to_save=path_to_save if anomalia_sop == False else f'{self.path_savefiguras}/semana-energ-geop',
                         **kwargs
-                    )  
+                    )
 
-        elif modo == 'ivt':
+                if anomalia_mensal:
+                    # Dando o resample nos dados de chuva prevista
+                    ds_resample = self.geop_mean.resample(valid_time='M').mean()
 
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                    if 'ecmwf' in self.modelo_fmt.lower():
+                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia)
+                        ds_clim = interpola_ds(ds_clim, ds_resample)
 
-            if self.gh_mean is None:
-                self.geop, self.geop_mean, _ = self._carregar_gh_mean()
+                    elif 'gefs' in self.modelo_fmt.lower():
+                        ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'))
+                        ds_clim = interpola_ds(ds_clim, ds_resample) 
 
-            if self.q_mean is None:
-                self.q, self.q_mean, _ = self._carregar_q_mean()
+                    # Anos iniciais e finais da climatologia
+                    ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                    ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
 
-            # Resample para 24 horas
-            gh_24h = resample_variavel(self.geop_mean.sel(isobaricInhPa=700), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            qs_24h = resample_variavel(self.q_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'q', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                    for index, time in enumerate(ds_resample.valid_time):
 
-            # Calculando o fluxo zonal e meridional de umidade espec
-            qu = qs_24h['q'] * us_24h['u']
-            qv = qs_24h['q'] * vs_24h['v']
+                        # Selecionando o mês correspondente
+                        ds_resample_sel = ds_resample.sel(valid_time=time)
 
-            # Integrando na vertical 300 - 1000hPa
-            QU = qu.integrate('isobaricInhPa')*(-1/10)
-            QV = qv.integrate('isobaricInhPa')*(-1/10)  
+                        # Selecionando o mês correspondente
+                        mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
 
-            # Interpolando o vento
-            n_interp = 2.5
-            QU_interp = QU.interp(longitude=np.arange(QU.longitude.min().values, QU.longitude.max().values, n_interp), latitude=np.arange(QU.latitude.min().values, QU.latitude.max().values, n_interp))
-            QV_interp = QV.interp(longitude=np.arange(QV.longitude.min().values, QV.longitude.max().values, n_interp), latitude=np.arange(QV.latitude.min().values, QV.latitude.max().values, n_interp))
+                        # Selando o tempo na climatologia
+                        tempoini = pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%Y-%m-%d %H')
+                        tempo_fim = pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%Y-%m-%d %H')
+                        t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
+                        t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                        ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
+                    
+                        # Anomalia
+                        ds_anomalia = ds_resample_sel['gh'] - ds_clim_sel['gh']
+                        ds_anomalia = ds_anomalia.to_dataset().isel(isobaricInhPa=0)
 
-            # Calculando o IVT
-            IVT = np.sqrt(QU**2 + QV**2)
-
-            # Plotando
-            for n_24h in gh_24h.tempo:
-
-                print(f'Processando {n_24h.item()}...')
-
-                gh_plot = gh_24h.sel(tempo=n_24h)
-                ivt_plot = IVT.sel(tempo=n_24h)
-                qu_plot = QU_interp.sel(tempo=n_24h)
-                qv_plot = QV_interp.sel(tempo=n_24h)
-
-                ds_quiver = xr.Dataset({
-                    'ivt': ivt_plot,
-                    'qu': qu_plot,
-                    'qv': qv_plot,
-                    'gh_700': gh_plot['gh']/10  # Convertendo de m para dam
-                })
-
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
-                    tempo_fim = pd.to_datetime(gh_plot.data_final.item())
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
-                    titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV', cond_ini=self.cond_ini,
-                            data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                            semana=semana
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt,
+                            tipo=f'Média {mes}',
+                            cond_ini=self.cond_ini,
+                            data_ini=pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True
                         )
 
-                else:
-                    intervalo = gh_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = gh_plot.days_of_weeks.item()
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Geop 700hPa e TIWV - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
+                        plot_campos(
+                            ds=ds_anomalia['gh'],
+                            variavel_plotagem='geop_500_anomalia',
+                            title=titulo,
+                            filename=f'{index}_gh_anomalia_mensal_{self.modelo_fmt}',
+                            shapefiles=self.shapefiles,
+                            path_to_save=f'{self.path_savefiguras}/geop_mensal',
+                            **kwargs
+                        )  
 
-                plot_campos(
-                    ds=ds_quiver['ivt']*100,
-                    variavel_plotagem='ivt',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'ivt_geop700_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    ds_quiver=ds_quiver,
-                    variavel_quiver='ivt',
-                    ds_contour=ds_quiver['gh_700'],
-                    variavel_contour='gh_700',
-                    plot_bacias=False,
-                    color_contour='black',
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
+            elif modo == 'ivt':
 
-        elif modo == 'vento_div850':
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-            level_divergencia = 850
-            
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                if self.gh_mean is None:
+                    self.geop, self.geop_mean, _ = self._carregar_gh_mean()
 
-            us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
-            vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+                if self.q_mean is None:
+                    self.q, self.q_mean, _ = self._carregar_q_mean()
 
-            for n_24h in us_24h_850.tempo:
+                # Resample para 24 horas
+                gh_24h = resample_variavel(self.geop_mean.sel(isobaricInhPa=700), self.modelo_fmt, 'gh', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                qs_24h = resample_variavel(self.q_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'q', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                us_24h = resample_variavel(self.us_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h = resample_variavel(self.vs_mean.sel(isobaricInhPa=slice(1000, 300)), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
 
-                print(f'Processando {n_24h.item()}...')
-                us_plot = us_24h_850.sel(tempo=n_24h)
-                vs_plot = vs_24h_850.sel(tempo=n_24h)
-                divergencia = mpcalc.divergence(us_plot['u'], vs_plot['v']) * 1e5
+                # Calculando o fluxo zonal e meridional de umidade espec
+                qu = qs_24h['q'] * us_24h['u']
+                qv = qs_24h['q'] * vs_24h['v']
 
-                ds_streamplot = xr.Dataset({
-                    'u': us_plot['u'],
-                    'v': vs_plot['v'],
-                    'divergencia': divergencia
-                })
+                # Integrando na vertical 300 - 1000hPa
+                QU = qu.integrate('isobaricInhPa')*(-1/10)
+                QV = qv.integrate('isobaricInhPa')*(-1/10)  
 
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
-                    titulo = self._ajustar_tempo_e_titulo(
-                        us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Div. {level_divergencia}hPa', semana, self.cond_ini,
-                )
+                # Interpolando o vento
+                n_interp = 2.5
+                QU_interp = QU.interp(longitude=np.arange(QU.longitude.min().values, QU.longitude.max().values, n_interp), latitude=np.arange(QU.latitude.min().values, QU.latitude.max().values, n_interp))
+                QV_interp = QV.interp(longitude=np.arange(QV.longitude.min().values, QV.longitude.max().values, n_interp), latitude=np.arange(QV.latitude.min().values, QV.latitude.max().values, n_interp))
 
-                else:
-                    intervalo = us_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = us_plot.days_of_weeks.item()
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Vento e Div. {level_divergencia}hPa - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
+                # Calculando o IVT
+                IVT = np.sqrt(QU**2 + QV**2)
 
-                plot_campos(
-                    ds=ds_streamplot['divergencia'],
-                    variavel_plotagem='divergencia850',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'vento850_div850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    ds_streamplot=ds_streamplot,
-                    variavel_streamplot='wind850',
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
-                    **kwargs
-                )
+                # Plotando
+                for n_24h in gh_24h.tempo:
 
-        elif modo == 'anomalia_vento850':
+                    print(f'Processando {n_24h.item()}...')
 
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                    gh_plot = gh_24h.sel(tempo=n_24h)
+                    ivt_plot = IVT.sel(tempo=n_24h)
+                    qu_plot = QU_interp.sel(tempo=n_24h)
+                    qv_plot = QV_interp.sel(tempo=n_24h)
 
-            us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-            vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                    ds_quiver = xr.Dataset({
+                        'ivt': ivt_plot,
+                        'qu': qu_plot,
+                        'qv': qv_plot,
+                        'gh_700': gh_plot['gh']/10  # Convertendo de m para dam
+                    })
 
-            ds_clim_u = open_hindcast_file('u', level_anomalia=850)
-            ds_clim_v = open_hindcast_file('v', level_anomalia=850)
-            ds_clim_u = interpola_ds(ds_clim_u, self.us_mean)
-            ds_clim_v = interpola_ds(ds_clim_v, self.us_mean)
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(gh_plot.data_inicial.item()))
+                        tempo_fim = pd.to_datetime(gh_plot.data_final.item())
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.geop.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                        titulo = gerar_titulo(
+                                modelo=self.modelo_fmt, tipo='Geop 700hPa e TIWV', cond_ini=self.cond_ini,
+                                data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                                semana=semana
+                            )
 
-            # Anos iniciais e finais da climatologia
-            ano_ini = pd.to_datetime(ds_clim_u.alvo_previsao[0].values).strftime('%Y')
-            ano_fim = pd.to_datetime(ds_clim_u.alvo_previsao[-1].values).strftime('%Y')
+                    else:
+                        intervalo = gh_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = gh_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Geop 700hPa e TIWV - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
 
-            for n_24h in us_24h_850.tempo:
+                    plot_campos(
+                        ds=ds_quiver['ivt']*100,
+                        variavel_plotagem='ivt',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'ivt_geop700_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        ds_quiver=ds_quiver,
+                        variavel_quiver='ivt',
+                        ds_contour=ds_quiver['gh_700'],
+                        variavel_contour='gh_700',
+                        plot_bacias=False,
+                        color_contour='black',
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
 
-                print(f'Processando {n_24h.item()}...')
-                us_plot = us_24h_850.sel(tempo=n_24h)
-                vs_plot = vs_24h_850.sel(tempo=n_24h)
-                magnitude = (us_plot['u']**2 + vs_plot['v']**2)**0.5
+            elif modo == 'vento_div850':
 
-                tempo_ini = pd.to_datetime(us_plot.intervalo.item().split('até')[0].strip(), format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d %H')
-                tempo_fim = pd.to_datetime(us_plot.intervalo.item().split('até')[1].strip(), format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d %H')
+                level_divergencia = 850
+                
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-                t_clim_ini = tempo_ini.replace(tempo_ini[:4], ano_ini)
-                t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
-                ds_clim_sel_u = ds_clim_u.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
-                ds_clim_sel_v = ds_clim_v.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
-                magnitude_clim = (ds_clim_sel_u['u']**2 + ds_clim_sel_v['v']**2)**0.5
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=level_divergencia), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-                magnitude_anom = magnitude - magnitude_clim
+                for n_24h in us_24h_850.tempo:
 
-                intervalo = us_plot.intervalo.item().replace(' ', '\ ')
-                days_of_week = us_plot.days_of_weeks.item()
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'Anom Mag.850 - Semana{n_24h.item()}',
-                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                    semana_operativa=True
-                )
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h_850.sel(tempo=n_24h)
+                    vs_plot = vs_24h_850.sel(tempo=n_24h)
+                    divergencia = mpcalc.divergence(us_plot['u'], vs_plot['v']) * 1e5
 
-                plot_campos(
-                    ds=magnitude_anom,
-                    variavel_plotagem='mag_vento100_anomalia',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_{resample_freq}', n_24h.item()),
-                    plot_bacias=False,
-                    path_to_save=path_to_save,
-                    shapefiles=self.shapefiles,
-                    **kwargs
-                )
+                    ds_streamplot = xr.Dataset({
+                        'u': us_plot['u'],
+                        'v': vs_plot['v'],
+                        'divergencia': divergencia
+                    })
 
-            if anomalia_mensal:
-                # Dando o resample nos dados de chuva prevista
-                ds_resample_u = self.us_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
-                ds_resample_v = self.vs_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
-                ds_resample_mag = (ds_resample_u['u']**2 + ds_resample_v['v']**2)**0.5
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e Div. {level_divergencia}hPa', semana, self.cond_ini,
+                    )
 
-                for index, time in enumerate(ds_resample_mag.valid_time):
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Vento e Div. {level_divergencia}hPa - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
 
-                    # Selecionando o mês correspondente
-                    ds_resample_sel_mag = ds_resample_mag.sel(valid_time=time)
+                    plot_campos(
+                        ds=ds_streamplot['divergencia'],
+                        variavel_plotagem='divergencia850',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'vento850_div850_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        ds_streamplot=ds_streamplot,
+                        variavel_streamplot='wind850',
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save if self.modelo_fmt not in ['ecmwf-ens-estendido'] else f'{self.path_savefiguras}/uv_semanal',
+                        **kwargs
+                    )
 
-                    # Selecionando o mês correspondente
-                    mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
+            elif modo == 'anomalia_vento850':
 
-                    # Selecionando o período da climatologia
-                    tempo_ini = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%Y-%m-%d %H')
-                    tempo_fim = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%Y-%m-%d %H')
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                us_24h_850 = resample_variavel(self.us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+                vs_24h_850 = resample_variavel(self.vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+
+                ds_clim_u = open_hindcast_file('u', level_anomalia=850)
+                ds_clim_v = open_hindcast_file('v', level_anomalia=850)
+                ds_clim_u = interpola_ds(ds_clim_u, self.us_mean)
+                ds_clim_v = interpola_ds(ds_clim_v, self.us_mean)
+
+                # Anos iniciais e finais da climatologia
+                ano_ini = pd.to_datetime(ds_clim_u.alvo_previsao[0].values).strftime('%Y')
+                ano_fim = pd.to_datetime(ds_clim_u.alvo_previsao[-1].values).strftime('%Y')
+
+                for n_24h in us_24h_850.tempo:
+
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h_850.sel(tempo=n_24h)
+                    vs_plot = vs_24h_850.sel(tempo=n_24h)
+                    magnitude = (us_plot['u']**2 + vs_plot['v']**2)**0.5
+
+                    tempo_ini = pd.to_datetime(us_plot.intervalo.item().split('até')[0].strip(), format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d %H')
+                    tempo_fim = pd.to_datetime(us_plot.intervalo.item().split('até')[1].strip(), format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d %H')
+
                     t_clim_ini = tempo_ini.replace(tempo_ini[:4], ano_ini)
                     t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
                     ds_clim_sel_u = ds_clim_u.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
                     ds_clim_sel_v = ds_clim_v.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
                     magnitude_clim = (ds_clim_sel_u['u']**2 + ds_clim_sel_v['v']**2)**0.5
-                
-                    # Anomalia
-                    ds_anomalia = ds_resample_sel_mag - magnitude_clim
 
+                    magnitude_anom = magnitude - magnitude_clim
+
+                    intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = us_plot.days_of_weeks.item()
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt,
-                        tipo=f'Anom Mag.850 - {mes}',
-                        cond_ini=self.cond_ini,
-                        data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        sem_intervalo_semana=True
-                    )
-
-                    plot_campos(
-                        ds=ds_anomalia,
-                        variavel_plotagem='mag_vento100_anomalia',
-                        title=titulo,
-                        filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_mensal', index),
-                        path_to_save=path_to_save,
-                        shapefiles=self.shapefiles,
-                        plot_bacias=False,
-                        **kwargs
-                    )  
-
-        elif modo == 'chuva_geop500_vento850':
-
-            level_vento = 850
-            level_geop = 500
-            
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
-                
-            if self.gh_mean is None:
-                self.geop, self.geop_mean, self.cond_ini = self._carregar_gh_mean()
-
-            if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
-
-            for index, n_24h in enumerate(self.tp_mean.valid_time):
-
-                print(f'Processando {index}...')
-
-                us_plot = self.us_mean.sel(valid_time=n_24h)
-                vs_plot = self.vs_mean.sel(valid_time=n_24h)
-                gh_plot = self.geop_mean.sel(valid_time=n_24h).assign_coords(longitude=(((self.us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
-                tp_plot = self.tp_mean.sel(valid_time=n_24h).assign_coords(longitude=(((self.us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
-
-                ds_quiver = xr.Dataset({
-                    'u': us_plot['u'].sel(isobaricInhPa=level_vento).drop_vars('isobaricInhPa'), 
-                    'v': vs_plot['v'].sel(isobaricInhPa=level_vento).drop_vars('isobaricInhPa'), 
-                    'geop_500': gh_plot['gh'].sel(isobaricInhPa=level_geop).drop_vars('isobaricInhPa') / 10,
-                    'tp': tp_plot['tp']
-                })
-
-                tempo_ini = pd.to_datetime(n_24h.item())
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
-
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'Prec6h, Geo{level_geop}hPa, Vento{level_vento}hPa', cond_ini=self.cond_ini,
-                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    semana=semana, unico_tempo=True
-                )
-
-                plot_campos(ds=ds_quiver['tp'], 
-                            variavel_plotagem='wind_prec_geop', 
-                            title=titulo, 
-                            filename=formato_filename(self.modelo_fmt, 'chuva_geop500_vento850', index),
-                            plot_bacias=False, ds_quiver=ds_quiver, 
-                            variavel_quiver='wind850', 
-                            ds_contour=ds_quiver['geop_500'], 
-                            variavel_contour='gh_500', 
-                            color_contour='black',
-                            shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
-                            **kwargs
-                            )
-
-        elif modo == 'anomalia_psi':
-
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
-
-            us_mean = ajusta_lon_0_360(self.us_mean)
-            vs_mean = ajusta_lon_0_360(self.vs_mean)
-
-            us_24h_200 = resample_variavel(us_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
-            vs_24h_200 = resample_variavel(vs_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
-
-            us_24h_850 = resample_variavel(us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
-            vs_24h_850 = resample_variavel(vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
-
-            psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time"})
-            psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time"})
-            chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time"})
-            chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time"})
-
-            ano_ini = pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%Y')
-            ano_fim = pd.to_datetime(psi_clim200.valid_time[-1].values).strftime('%Y')
-
-            if resample_freq == '24h':
-
-                for n_24h in us_24h_200.tempo:
-
-                    u200_plot = us_24h_200.sel(tempo=n_24h)
-                    v200_plot = vs_24h_200.sel(tempo=n_24h)
-                    u850_plot = us_24h_850.sel(tempo=n_24h)
-                    v850_plot = vs_24h_850.sel(tempo=n_24h)
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
-
-                    data_inicial = pd.to_datetime(n_24h.data_inicial.values).strftime('%Y-%m-%d')
-                    data_final = pd.to_datetime(n_24h.data_final.values).strftime('%Y-%m-%d')
-                    intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
-                    intervalo2 = data_final.replace(data_final[:4], ano_ini)
-
-                    u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-
-                    u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
-                    v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
-
-                    u850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
-                    v850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
-
-                    # Grads parar calcular PSI e CHI e gerar um .nc
-                    os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
-
-                    # Anomalia psi e chi
-                    ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
-                    ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
-
-                    ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
-                    ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
-
-                    psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                    psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                    chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                    chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-
-                    anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_plot['psi']
-                    anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_plot['psi']
-
-                    anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_plot['chi']
-                    anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_plot['chi']
-
-                    anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
-                    anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
-
-                    anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
-                    anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
-
-                    anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
-                    anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
-
-                    anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
-                    anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
-
-                    anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
-
-                    # Plot 24h
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
-
-                    # PSI
-                    titulo = self._ajustar_tempo_e_titulo(
-                        u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PSI 200/850', semana, self.cond_ini,
-                    )
-
-                    plot_campos(
-                        ds=anomalia_psi200/1e6,
-                        variavel_plotagem='psi',
-                        title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'psi_diario', index),
-                        ds_contour=anomalia_psi850/1e6,
-                        variavel_contour='psi',
-                        color_contour='black',
-                        plot_bacias=False,
-                        shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
-                        **kwargs
-                    )
-
-                    # CHI
-                    titulo = self._ajustar_tempo_e_titulo(
-                        u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}CHI 200/850', semana, self.cond_ini,
-                    )
-
-                    plot_campos(
-                        ds=anomalia_chi200/1e6,
-                        variavel_plotagem='chi',
-                        title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'chi_diario', index),
-                        ds_contour=anomalia_chi850/1e6,
-                        variavel_contour='chi',
-                        color_contour='black',
-                        plot_bacias=False,
-                        shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
-                        **kwargs
-                    )
-                    
-            elif resample_freq == 'sop':
-                
-                semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), 
-                                                                                                                                                        pd.to_datetime(self.us.time.values), 
-                                                                                                                                                        ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), 
-                                                                                                                                                        modelo=self.modelo_fmt,
-                                                                                                                                                        qtdade_max_semanas=qtdade_max_semanas
-                                                                                                                                                        )
-
-                for index, n_semana in enumerate(us_24h_200.tempo):
-
-                    u200_plot = us_24h_200.sel(tempo=n_semana)
-                    v200_plot = vs_24h_200.sel(tempo=n_semana)
-                    u850_plot = us_24h_850.sel(tempo=n_semana)
-                    v850_plot = vs_24h_850.sel(tempo=n_semana)
-
-                    data_inicial = pd.to_datetime(intervalos_fmt[index][0]).strftime('%Y-%m-%d')
-                    data_final = pd.to_datetime(intervalos_fmt[index][1]).strftime('%Y-%m-%d')
-                    intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
-                    intervalo2 = data_final.replace(data_final[:4], ano_ini)
-
-                    intervalo = u200_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = u200_plot.days_of_weeks.item()     
-
-                    u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-
-                    u200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
-                    v200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
-
-                    u850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
-                    v850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
-
-                    # Grads parar calcular PSI e CHI e gerar um .nc
-                    os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
-
-                    # Anomalia psi e chi
-                    ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
-                    ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
-
-                    ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
-                    ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
-
-                    psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                    psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                    chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-                    chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
-
-                    anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_plot['psi']
-                    anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_plot['psi']
-
-                    anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_plot['chi']
-                    anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_plot['chi']
-
-                    anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
-                    anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
-
-                    anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
-                    anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
-
-                    anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
-                    anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
-
-                    anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
-                    anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
-
-                    anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
-
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Anom PSI 200 (shaded) e PSI 850 (lines) - Semana{n_semana.item()}',
+                        modelo=self.modelo_fmt, tipo=f'Anom Mag.850 - Semana{n_24h.item()}',
                         cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                         semana_operativa=True
                     )
 
                     plot_campos(
-                        ds=anomalia_psi200/1e6,
-                        variavel_plotagem='psi',
+                        ds=magnitude_anom,
+                        variavel_plotagem='mag_vento100_anomalia',
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'psi_semanal', index),
-                        ds_contour=anomalia_psi850/1e6,
-                        variavel_contour='psi',
-                        color_contour='black',
+                        filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_{resample_freq}', n_24h.item()),
+                        plot_bacias=False,
+                        path_to_save=path_to_save,
+                        shapefiles=self.shapefiles,
+                        **kwargs
+                    )
+
+                if anomalia_mensal:
+                    # Dando o resample nos dados de chuva prevista
+                    ds_resample_u = self.us_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
+                    ds_resample_v = self.vs_mean.sel(isobaricInhPa=850).resample(valid_time='M').mean()
+                    ds_resample_mag = (ds_resample_u['u']**2 + ds_resample_v['v']**2)**0.5
+
+                    for index, time in enumerate(ds_resample_mag.valid_time):
+
+                        # Selecionando o mês correspondente
+                        ds_resample_sel_mag = ds_resample_mag.sel(valid_time=time)
+
+                        # Selecionando o mês correspondente
+                        mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
+
+                        # Selecionando o período da climatologia
+                        tempo_ini = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%Y-%m-%d %H')
+                        tempo_fim = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%Y-%m-%d %H')
+                        t_clim_ini = tempo_ini.replace(tempo_ini[:4], ano_ini)
+                        t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                        ds_clim_sel_u = ds_clim_u.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
+                        ds_clim_sel_v = ds_clim_v.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao')
+                        magnitude_clim = (ds_clim_sel_u['u']**2 + ds_clim_sel_v['v']**2)**0.5
+                    
+                        # Anomalia
+                        ds_anomalia = ds_resample_sel_mag - magnitude_clim
+
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt,
+                            tipo=f'Anom Mag.850 - {mes}',
+                            cond_ini=self.cond_ini,
+                            data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month.item()).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True
+                        )
+
+                        plot_campos(
+                            ds=ds_anomalia,
+                            variavel_plotagem='mag_vento100_anomalia',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, f'anomalia_vento850_mensal', index),
+                            path_to_save=path_to_save,
+                            shapefiles=self.shapefiles,
+                            plot_bacias=False,
+                            **kwargs
+                        )  
+
+            elif modo == 'chuva_geop500_vento850':
+
+                level_vento = 850
+                level_geop = 500
+                
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                    
+                if self.gh_mean is None:
+                    self.geop, self.geop_mean, self.cond_ini = self._carregar_gh_mean()
+
+                if self.tp_mean is None or self.cond_ini is None or self.tp is None:
+                    self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
+
+                for index, n_24h in enumerate(self.tp_mean.valid_time):
+
+                    print(f'Processando {index}...')
+
+                    us_plot = self.us_mean.sel(valid_time=n_24h)
+                    vs_plot = self.vs_mean.sel(valid_time=n_24h)
+                    gh_plot = self.geop_mean.sel(valid_time=n_24h).assign_coords(longitude=(((self.us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+                    tp_plot = self.tp_mean.sel(valid_time=n_24h).assign_coords(longitude=(((self.us_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u'].sel(isobaricInhPa=level_vento).drop_vars('isobaricInhPa'), 
+                        'v': vs_plot['v'].sel(isobaricInhPa=level_vento).drop_vars('isobaricInhPa'), 
+                        'geop_500': gh_plot['gh'].sel(isobaricInhPa=level_geop).drop_vars('isobaricInhPa') / 10,
+                        'tp': tp_plot['tp']
+                    })
+
+                    tempo_ini = pd.to_datetime(n_24h.item())
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Prec6h, Geo{level_geop}hPa, Vento{level_vento}hPa', cond_ini=self.cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        semana=semana, unico_tempo=True
+                    )
+
+                    plot_campos(ds=ds_quiver['tp'], 
+                                variavel_plotagem='wind_prec_geop', 
+                                title=titulo, 
+                                filename=formato_filename(self.modelo_fmt, 'chuva_geop500_vento850', index),
+                                plot_bacias=False, ds_quiver=ds_quiver, 
+                                variavel_quiver='wind850', 
+                                ds_contour=ds_quiver['geop_500'], 
+                                variavel_contour='gh_500', 
+                                color_contour='black',
+                                shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
+                                **kwargs
+                                )
+
+            elif modo == 'anomalia_psi':
+
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+
+                us_mean = ajusta_lon_0_360(self.us_mean)
+                vs_mean = ajusta_lon_0_360(self.vs_mean)
+
+                us_24h_200 = resample_variavel(us_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h_200 = resample_variavel(vs_mean.sel(isobaricInhPa=200), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+
+                us_24h_850 = resample_variavel(us_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'u', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h_850 = resample_variavel(vs_mean.sel(isobaricInhPa=850), self.modelo_fmt, 'v', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+
+                psi_clim200 = open_hindcast_file('psi200').rename({"time": "valid_time"})
+                psi_clim850 = open_hindcast_file('psi850').rename({"time": "valid_time"})
+                chi_clim200 = open_hindcast_file('chi200').rename({"time": "valid_time"})
+                chi_clim850 = open_hindcast_file('chi850').rename({"time": "valid_time"})
+
+                ano_ini = pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%Y')
+                ano_fim = pd.to_datetime(psi_clim200.valid_time[-1].values).strftime('%Y')
+
+                if resample_freq == '24h':
+
+                    for n_24h in us_24h_200.tempo:
+
+                        u200_plot = us_24h_200.sel(tempo=n_24h)
+                        v200_plot = vs_24h_200.sel(tempo=n_24h)
+                        u850_plot = us_24h_850.sel(tempo=n_24h)
+                        v850_plot = vs_24h_850.sel(tempo=n_24h)
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
+
+                        data_inicial = pd.to_datetime(n_24h.data_inicial.values).strftime('%Y-%m-%d')
+                        data_final = pd.to_datetime(n_24h.data_final.values).strftime('%Y-%m-%d')
+                        intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
+                        intervalo2 = data_final.replace(data_final[:4], ano_ini)
+
+                        u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+
+                        u200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
+                        v200_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
+
+                        u850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
+                        v850_plot.drop_vars(["data_inicial", "data_final"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
+
+                        # Grads parar calcular PSI e CHI e gerar um .nc
+                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
+
+                        # Anomalia psi e chi
+                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
+                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
+
+                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
+                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
+
+                        psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                        psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                        chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                        chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+
+                        anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_plot['psi']
+                        anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_plot['psi']
+
+                        anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_plot['chi']
+                        anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_plot['chi']
+
+                        anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
+                        anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
+
+                        anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
+                        anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
+
+                        anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
+                        anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
+
+                        anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
+                        anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
+
+                        anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
+
+                        # Plot 24h
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(u200_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=2), modelo=self.modelo_fmt)[0]
+
+                        # PSI
+                        titulo = self._ajustar_tempo_e_titulo(
+                            u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}PSI 200/850', semana, self.cond_ini,
+                        )
+
+                        plot_campos(
+                            ds=anomalia_psi200/1e6,
+                            variavel_plotagem='psi',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, 'psi_diario', index),
+                            ds_contour=anomalia_psi850/1e6,
+                            variavel_contour='psi',
+                            color_contour='black',
+                            plot_bacias=False,
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            **kwargs
+                        )
+
+                        # CHI
+                        titulo = self._ajustar_tempo_e_titulo(
+                            u200_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}CHI 200/850', semana, self.cond_ini,
+                        )
+
+                        plot_campos(
+                            ds=anomalia_chi200/1e6,
+                            variavel_plotagem='chi',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, 'chi_diario', index),
+                            ds_contour=anomalia_chi850/1e6,
+                            variavel_contour='chi',
+                            color_contour='black',
+                            plot_bacias=False,
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            **kwargs
+                        )
+                        
+                elif resample_freq == 'sop':
+                    
+                    semana_encontrada, tempos_iniciais, tempos_finais, num_semana, dates_range, intervalos_fmt, days_of_weeks = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), 
+                                                                                                                                                            pd.to_datetime(self.us.time.values), 
+                                                                                                                                                            ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), 
+                                                                                                                                                            modelo=self.modelo_fmt,
+                                                                                                                                                            qtdade_max_semanas=qtdade_max_semanas
+                                                                                                                                                            )
+
+                    for index, n_semana in enumerate(us_24h_200.tempo):
+
+                        u200_plot = us_24h_200.sel(tempo=n_semana)
+                        v200_plot = vs_24h_200.sel(tempo=n_semana)
+                        u850_plot = us_24h_850.sel(tempo=n_semana)
+                        v850_plot = vs_24h_850.sel(tempo=n_semana)
+
+                        data_inicial = pd.to_datetime(intervalos_fmt[index][0]).strftime('%Y-%m-%d')
+                        data_final = pd.to_datetime(intervalos_fmt[index][1]).strftime('%Y-%m-%d')
+                        intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
+                        intervalo2 = data_final.replace(data_final[:4], ano_ini)
+
+                        intervalo = u200_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = u200_plot.days_of_weeks.item()     
+
+                        u200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        v200_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        u850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        v850_plot['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+
+                        u200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
+                        v200_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
+
+                        u850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
+                        v850_plot.drop_vars(["intervalo", "days_of_weeks"]).to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
+
+                        # Grads parar calcular PSI e CHI e gerar um .nc
+                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
+
+                        # Anomalia psi e chi
+                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
+                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
+
+                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
+                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
+
+                        psi_clim200_plot = psi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                        psi_clim850_plot = psi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                        chi_clim200_plot = chi_clim200.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+                        chi_clim850_plot = chi_clim850.sel(valid_time=slice(intervalo1, intervalo2)).mean(dim='valid_time')
+
+                        anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_plot['psi']
+                        anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_plot['psi']
+
+                        anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_plot['chi']
+                        anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_plot['chi']
+
+                        anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
+                        anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
+
+                        anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
+                        anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
+
+                        anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
+                        anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
+
+                        anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
+                        anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
+
+                        anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
+
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Anom PSI 200 (shaded) e PSI 850 (lines) - Semana{n_semana.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                        )
+
+                        plot_campos(
+                            ds=anomalia_psi200/1e6,
+                            variavel_plotagem='psi',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, 'psi_semanal', index),
+                            ds_contour=anomalia_psi850/1e6,
+                            variavel_contour='psi',
+                            color_contour='black',
+                            plot_bacias=False,
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            with_logo=False,
+                            **kwargs
+                        )
+                            
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Anom CHI 200 (shaded) e CHI 850 (lines) - Semana{n_semana.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                                semana_operativa=True
+                        )
+
+                        plot_campos(
+                            ds=anomalia_chi200/1e6,
+                            variavel_plotagem='chi',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, 'chi_semanal', index),
+                            ds_contour=anomalia_chi850/1e6,
+                            variavel_contour='chi',
+                            color_contour='black',
+                            plot_bacias=False,
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            with_logo=False,
+                            **kwargs
+                        )
+
+                if anomalia_mensal:
+
+                    us_mean_resample = us_mean.resample(valid_time='M').mean()
+                    vs_mean_resample = vs_mean.resample(valid_time='M').mean()
+
+                    for index, time in enumerate(us_mean_resample.valid_time):
+
+                        # Selecionando o mês correspondente
+                        mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
+
+                        # Selecionando o mês correspondente
+                        us_mean_resample_sel_200 = us_mean_resample.sel(valid_time=time).sel(isobaricInhPa=200)
+                        vs_mean_resample_sel_200 = vs_mean_resample.sel(valid_time=time).sel(isobaricInhPa=200)
+                        us_mean_resample_sel_850 = us_mean_resample.sel(valid_time=time).sel(isobaricInhPa=850)
+                        vs_mean_resample_sel_850 = vs_mean_resample.sel(valid_time=time).sel(isobaricInhPa=850)
+                        
+                        us_mean_resample_sel_200['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        vs_mean_resample_sel_200['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        us_mean_resample_sel_850['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                        vs_mean_resample_sel_850['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+
+                        us_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
+                        vs_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
+                        us_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
+                        vs_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
+
+                        # Grads parar calcular PSI e CHI e gerar um .nc
+                        os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
+
+                        # Selando o tempo na climatologia
+                        tempoini = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%Y-%m-%d %H')
+                        tempo_fim = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%Y-%m-%d %H')
+                        t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
+                        t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                        psi_clim200_sel = psi_clim200.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
+                        psi_clim850_sel = psi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
+                        chi_clim200_sel = chi_clim200.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
+                        chi_clim850_sel = chi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
+
+                        # Anomalia psi e chi
+                        ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
+                        ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
+
+                        ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
+                        ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
+
+                        anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_sel['psi']
+                        anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_sel['psi']
+
+                        anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_sel['chi']
+                        anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_sel['chi']
+
+                        anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
+                        anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
+
+                        anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
+                        anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
+
+                        anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
+                        anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
+
+                        anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
+                        anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
+
+                        anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
+                        anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
+
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt,
+                            tipo=f'PSI200/850 Média {mes}',
+                            cond_ini=self.cond_ini,
+                            data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True
+                        )
+
+                        plot_campos(
+                            ds=anomalia_psi200/1e6,
+                            variavel_plotagem='psi',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, 'psi_mensal', index),
+                            ds_contour=anomalia_psi850/1e6,
+                            variavel_contour='psi',
+                            color_contour='black',
+                            plot_bacias=False,
+                            shapefiles=self.shapefiles,
+                            path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
+                            with_logo=False,
+                            **kwargs
+                        )
+
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt,
+                            tipo=f'CHI200/850 Média {mes}',
+                            cond_ini=self.cond_ini,
+                            data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                            sem_intervalo_semana=True
+                        )
+
+                        plot_campos(
+                            ds=anomalia_chi200/1e6,
+                            variavel_plotagem='chi',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, 'chi_mensal', index),
+                            ds_contour=anomalia_chi850/1e6,
+                            variavel_contour='chi',
+                            color_contour='black',
+                            plot_bacias=False,
+                            shapefiles=self.shapefiles,
+                            path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
+                            with_logo=False,
+                            **kwargs
+                        )
+
+            elif modo == 'geada-inmet':
+
+                if self.t2m_mean is None:
+                    _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
+
+                t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
+
+                for n_24h in t2m_24h.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    t2m_24h_plot = t2m_24h.sel(tempo=n_24h)  
+                    t2m_24h_plot = t2m_24h_plot-273.15
+                    t2m_24h_plot = -1*t2m_24h_plot
+
+                    tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
+                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada - INMET', semana, self.cond_ini)
+                
+                    plot_campos(
+                        ds=t2m_24h_plot['t2m'],
+                        variavel_plotagem='geada-inmet',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'geada_inmet_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
-                        with_logo=False,
                         **kwargs
                     )
-                        
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Anom CHI 200 (shaded) e CHI 850 (lines) - Semana{n_semana.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+
+            elif modo == 'geada-cana':
+
+                if self.t2m_mean is None:
+                    _, self.t2m_mean, _ = self._carregar_t2m_mean()
+
+                t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
+
+                for n_24h in t2m_24h.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    t2m_24h_plot = t2m_24h.sel(tempo=n_24h)  
+                    t2m_24h_plot = t2m_24h_plot-273.15
+                    t2m_24h_plot = -1*t2m_24h_plot
+
+                    tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
+                    titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada - CANA', semana, self.cond_ini)
+                
+                    plot_campos(
+                        ds=t2m_24h_plot['t2m'],
+                        variavel_plotagem='geada-cana',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'geada_cana_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
+
+            elif modo == 'olr':
+
+                if self.olr_mean is None:
+                    _, self.olr_mean, self.cond_ini = self._carregar_olr_mean()
+
+                varname = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
+                var_24h = resample_variavel(self.olr_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
+
+                for n_24h in var_24h.tempo:
+                    print(f'Processando {n_24h.item()}...')
+                    var_24h_plot = var_24h.sel(tempo=n_24h)  # Seleciona o tempo atual
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(var_24h_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.olr_mean.time.values), tempo_ini, ds_tempo_final=self.olr_mean.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            var_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}OLR', semana, self.cond_ini,
+                        )
+
+                    else:
+                        intervalo = var_24h_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = var_24h_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'OLR - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True
                     )
 
                     plot_campos(
-                        ds=anomalia_chi200/1e6,
-                        variavel_plotagem='chi',
+                        ds=var_24h_plot[varname],
+                        variavel_plotagem='olr',
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'chi_semanal', index),
-                        ds_contour=anomalia_chi850/1e6,
-                        variavel_contour='chi',
-                        color_contour='black',
+                        filename=formato_filename(self.modelo_fmt, f'olr_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        plot_bacias=False,
+                        shapefiles=self.shapefiles,
+                        ds_contour=var_24h_plot[varname],
+                        variavel_contour='olr',
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
+
+            elif modo == 'mag_vento100':
+
+                if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
+                    self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
+
+                us_24h = resample_variavel(self.us100_mean, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h = resample_variavel(self.vs100_mean, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
+
+                for n_24h in us_24h.tempo:
+
+                    print(f'Processando {n_24h.item()}...')
+                    us_plot = us_24h.sel(tempo=n_24h)
+                    vs_plot = vs_24h.sel(tempo=n_24h)
+                    magnitude = np.sqrt(us_plot['u100']**2 + vs_plot['v100']**2)
+
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u100'],
+                        'v': vs_plot['v100'],
+                        'magnitude': magnitude
+                    })
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.us100.time.values), tempo_ini, ds_tempo_final=self.us100.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e magnitude em 100m', semana, self.cond_ini,
+                    )
+
+                    else:
+                        intervalo = us_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = us_plot.days_of_weeks.item()                        
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Vento e magnitude em 100m - Semana{n_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=magnitude,
+                        variavel_plotagem='mag_vento100',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'magvento100_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
+                        ds_quiver=ds_quiver,
+                        variavel_quiver='wind850',
                         plot_bacias=False,
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
-                        with_logo=False,
                         **kwargs
                     )
 
-            if anomalia_mensal:
+            elif modo == 'graficos_temperatura':
 
-                us_mean_resample = us_mean.resample(valid_time='M').mean()
-                vs_mean_resample = vs_mean.resample(valid_time='M').mean()
+                if self.t2m_mean is None:
+                    _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
 
-                for index, time in enumerate(us_mean_resample.valid_time):
+                # Ajustando a coordenada de tempo para o BR
+                t2m_brt = self.t2m_mean.assign_coords(valid_time=self.t2m_mean.valid_time - np.timedelta64(3,'h'))
 
-                    # Selecionando o mês correspondente
-                    mes = pd.to_datetime(time.values).strftime('%b/%Y').title()
+                # Máximo e minimos diários
+                t2m_max = t2m_brt.resample(valid_time='D').max() - 273.15
+                t2m_min = t2m_brt.resample(valid_time='D').min() - 273.15
+                t2m_med = t2m_brt.resample(valid_time='D').mean() - 273.15
 
-                    # Selecionando o mês correspondente
-                    us_mean_resample_sel_200 = us_mean_resample.sel(valid_time=time).sel(isobaricInhPa=200)
-                    vs_mean_resample_sel_200 = vs_mean_resample.sel(valid_time=time).sel(isobaricInhPa=200)
-                    us_mean_resample_sel_850 = us_mean_resample.sel(valid_time=time).sel(isobaricInhPa=850)
-                    vs_mean_resample_sel_850 = vs_mean_resample.sel(valid_time=time).sel(isobaricInhPa=850)
-                    
-                    us_mean_resample_sel_200['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    vs_mean_resample_sel_200['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    us_mean_resample_sel_850['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
-                    vs_mean_resample_sel_850['longitude'].attrs = {"units": "degrees_east", "standard_name": "longitude", "long_name": "longitude", "stored_direction": "increasing"}
+                # Selecionado os próximos 15 dias
+                t2max = t2m_max.sel(valid_time=slice(t2m_max.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_max.time + np.timedelta64(15,'D')))
+                t2min = t2m_min.sel(valid_time=slice(t2m_min.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_min.time + np.timedelta64(15,'D')))
+                t2med = t2m_med.sel(valid_time=slice(t2m_med.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_med.time + np.timedelta64(15,'D')))
 
-                    us_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u200_semana.nc')
-                    vs_mean_resample_sel_200.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v200_semana.nc')
-                    us_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/u850_semana.nc')
-                    vs_mean_resample_sel_850.to_netcdf(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/v850_semana.nc')
+                # Pegando os pontos
+                target_lon, target_lat, pontos = get_pontos_localidades()
+                t2max_no_ponto = t2max.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
+                t2min_no_ponto = t2min.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
+                t2med_no_ponto = t2med.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
+                t2max_no_ponto = t2max_no_ponto.reset_index('valid_time')
+                t2min_no_ponto = t2min_no_ponto.reset_index('valid_time')
+                t2med_no_ponto = t2med_no_ponto.reset_index('valid_time')
+                t2max_no_ponto['type'] = 'previsão'
+                t2min_no_ponto['type'] = 'previsão'
+                t2med_no_ponto['type'] = 'previsão'
+                t2max_no_ponto['mes'] = t2max_no_ponto['valid_time'].dt.month
+                t2min_no_ponto['mes'] = t2min_no_ponto['valid_time'].dt.month
+                t2med_no_ponto['mes'] = t2med_no_ponto['valid_time'].dt.month
+                colunas_para_usar = ['valid_time', 't2m', 'type', 'mes']
+                t2max_no_ponto = t2max_no_ponto[colunas_para_usar].reset_index()
+                t2min_no_ponto = t2min_no_ponto[colunas_para_usar].reset_index()
+                t2med_no_ponto = t2med_no_ponto[colunas_para_usar].reset_index()
 
-                    # Grads parar calcular PSI e CHI e gerar um .nc
-                    os.system(f'/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx {Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/gera_psi_chi.gs')
+                # Lendo o csv observado dos ultimos 2 meses
+                mes_atual = str(self.t2m_mean.time.dt.month.item()).zfill(2)
+                ano_atual = str(self.t2m_mean.time.dt.year.item()).zfill(4)
+                mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
+                ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
 
-                    # Selando o tempo na climatologia
-                    tempoini = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%Y-%m-%d %H')
-                    tempo_fim = pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%Y-%m-%d %H')
-                    t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
-                    t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
-                    psi_clim200_sel = psi_clim200.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
-                    psi_clim850_sel = psi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
-                    chi_clim200_sel = chi_clim200.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
-                    chi_clim850_sel = chi_clim850.sel(valid_time=slice(t_clim_ini, t_clim_fim)).mean(dim='valid_time').sortby(['lat'])
+                obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmax_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
+                obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
 
-                    # Anomalia psi e chi
-                    ds_psi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi200.nc')
-                    ds_psi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/psi850.nc')
-
-                    ds_chi200_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi200.nc')
-                    ds_chi850_prev = xr.open_dataset(f'{Constants().PATH_ARQUIVOS_TEMP_METEOROLOGIA}/chi850.nc')
-
-                    anomalia_psi200 = ds_psi200_prev['psi200'] - psi_clim200_sel['psi']
-                    anomalia_psi850 = ds_psi850_prev['psi850'] - psi_clim850_sel['psi']
-
-                    anomalia_chi200 = ds_chi200_prev['chi200'] - chi_clim200_sel['chi']
-                    anomalia_chi850 = ds_chi850_prev['chi850'] - chi_clim850_sel['chi']
-
-                    anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lat').mean(dim='lon')
-                    anomalia_psi200 = anomalia_psi200 - anomalia_psi200.mean(dim='lon')
-
-                    anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lat').mean(dim='lon')
-                    anomalia_psi850 = anomalia_psi850 - anomalia_psi850.mean(dim='lon')
-
-                    anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lat').mean(dim='lon')
-                    anomalia_chi200 = anomalia_chi200 - anomalia_chi200.mean(dim='lon')
-
-                    anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lat').mean(dim='lon')
-                    anomalia_chi850 = anomalia_chi850 - anomalia_chi850.mean(dim='lon')
-
-                    anomalia_psi200 = anomalia_psi200.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_psi850 = anomalia_psi850.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_chi200 = anomalia_chi200.rename({"lat": "latitude", "lon": "longitude"})
-                    anomalia_chi850 = anomalia_chi850.rename({"lat": "latitude", "lon": "longitude"})
-
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt,
-                        tipo=f'PSI200/850 Média {mes}',
-                        cond_ini=self.cond_ini,
-                        data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        sem_intervalo_semana=True
-                    )
-
-                    plot_campos(
-                        ds=anomalia_psi200/1e6,
-                        variavel_plotagem='psi',
-                        title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'psi_mensal', index),
-                        ds_contour=anomalia_psi850/1e6,
-                        variavel_contour='psi',
-                        color_contour='black',
-                        plot_bacias=False,
-                        shapefiles=self.shapefiles,
-                        path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
-                        with_logo=False,
-                        **kwargs
-                    )
-
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt,
-                        tipo=f'CHI200/850 Média {mes}',
-                        cond_ini=self.cond_ini,
-                        data_ini=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        data_fim=pd.to_datetime(self.us_mean.sel(valid_time=self.us_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                        sem_intervalo_semana=True
-                    )
-
-                    plot_campos(
-                        ds=anomalia_chi200/1e6,
-                        variavel_plotagem='chi',
-                        title=titulo,
-                        filename=formato_filename(self.modelo_fmt, 'chi_mensal', index),
-                        ds_contour=anomalia_chi850/1e6,
-                        variavel_contour='chi',
-                        color_contour='black',
-                        plot_bacias=False,
-                        shapefiles=self.shapefiles,
-                        path_to_save=f'{self.path_savefiguras}/psi_chi_mensal',
-                        with_logo=False,
-                        **kwargs
-                    )
-
-        elif modo == 'geada-inmet':
-
-            if self.t2m_mean is None:
-                _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
-
-            t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
-
-            for n_24h in t2m_24h.tempo:
-                print(f'Processando {n_24h.item()}...')
-                t2m_24h_plot = t2m_24h.sel(tempo=n_24h)  
-                t2m_24h_plot = t2m_24h_plot-273.15
-                t2m_24h_plot = -1*t2m_24h_plot
-
-                tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
-                titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada - INMET', semana, self.cond_ini)
-            
-                plot_campos(
-                    ds=t2m_24h_plot['t2m'],
-                    variavel_plotagem='geada-inmet',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'geada_inmet_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
+                obs_tmax = pd.concat([obs_tmax_anterior, obs_tmax_atual], ignore_index=True)
+                obs_tmin = pd.concat([obs_tmin_anterior, obs_tmin_atual], ignore_index=True)
+                obs_tmed = pd.concat([obs_tmed_anterior, obs_tmed_atual], ignore_index=True)
+                obs_tmax['type'] = 'observado'
+                obs_tmin['type'] = 'observado'
+                obs_tmed['type'] = 'observado'
+                obs_tmax['valid_time'] = pd.to_datetime(obs_tmax['valid_time'])
+                obs_tmin['valid_time'] = pd.to_datetime(obs_tmin['valid_time'])
+                obs_tmed['valid_time'] = pd.to_datetime(obs_tmed['valid_time'])
+                ultimos_15_dias = pd.date_range(
+                    start=(pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15)).floor("D"),
+                    end=pd.to_datetime(self.t2m_mean.time.item()).floor("D"),
+                    freq="D"
                 )
-
-        elif modo == 'geada-cana':
-
-            if self.t2m_mean is None:
-                _, self.t2m_mean, _ = self._carregar_t2m_mean()
-
-            t2m_24h = resample_variavel(self.t2m_mean, self.modelo_fmt, 't2m', resample_freq, modo_agrupador='min', qtdade_max_semanas=qtdade_max_semanas)
-
-            for n_24h in t2m_24h.tempo:
-                print(f'Processando {n_24h.item()}...')
-                t2m_24h_plot = t2m_24h.sel(tempo=n_24h)  
-                t2m_24h_plot = t2m_24h_plot-273.15
-                t2m_24h_plot = -1*t2m_24h_plot
-
-                tempo_ini = ajustar_hora_utc(pd.to_datetime(t2m_24h_plot.data_inicial.item()))
-                semana = encontra_semanas_operativas(pd.to_datetime(self.t2m_mean.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.t2m_mean.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt, qtdade_max_semanas=qtdade_max_semanas)[0]
-                titulo = self._ajustar_tempo_e_titulo(t2m_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Geada - CANA', semana, self.cond_ini)
-            
-                plot_campos(
-                    ds=t2m_24h_plot['t2m'],
-                    variavel_plotagem='geada-cana',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'geada_cana_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
-        elif modo == 'olr':
-
-            if self.olr_mean is None:
-                _, self.olr_mean, self.cond_ini = self._carregar_olr_mean()
-
-            varname = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
-            var_24h = resample_variavel(self.olr_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas)
-
-            for n_24h in var_24h.tempo:
-                print(f'Processando {n_24h.item()}...')
-                var_24h_plot = var_24h.sel(tempo=n_24h)  # Seleciona o tempo atual
-
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(var_24h_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.olr_mean.time.values), tempo_ini, ds_tempo_final=self.olr_mean.valid_time[-1].values, modelo=self.modelo_fmt)[0]
-
-                    titulo = self._ajustar_tempo_e_titulo(
-                        var_24h_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}OLR', semana, self.cond_ini,
-                    )
-
-                else:
-                    intervalo = var_24h_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = var_24h_plot.days_of_weeks.item()
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'OLR - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
-
-                plot_campos(
-                    ds=var_24h_plot[varname],
-                    variavel_plotagem='olr',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'olr_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    ds_contour=var_24h_plot[varname],
-                    variavel_contour='olr',
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
-        elif modo == 'mag_vento100':
-
-            if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
-                self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
-
-            us_24h = resample_variavel(self.us100_mean, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
-            vs_24h = resample_variavel(self.vs100_mean, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
-
-            for n_24h in us_24h.tempo:
-
-                print(f'Processando {n_24h.item()}...')
-                us_plot = us_24h.sel(tempo=n_24h)
-                vs_plot = vs_24h.sel(tempo=n_24h)
-                magnitude = np.sqrt(us_plot['u100']**2 + vs_plot['v100']**2)
-
-                ds_quiver = xr.Dataset({
-                    'u': us_plot['u100'],
-                    'v': vs_plot['v100'],
-                    'magnitude': magnitude
-                })
-
-                if resample_freq == '24h':
-                    tempo_ini = ajustar_hora_utc(pd.to_datetime(us_plot.data_inicial.item()))
-                    semana = encontra_semanas_operativas(pd.to_datetime(self.us100.time.values), tempo_ini, ds_tempo_final=self.us100.valid_time[-1].values, modelo=self.modelo_fmt)[0]
-
-                    titulo = self._ajustar_tempo_e_titulo(
-                        us_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Vento e magnitude em 100m', semana, self.cond_ini,
-                )
-
-                else:
-                    intervalo = us_plot.intervalo.item().replace(' ', '\ ')
-                    days_of_week = us_plot.days_of_weeks.item()                        
-                    titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'Vento e magnitude em 100m - Semana{n_24h.item()}',
-                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
-                )
-
-                plot_campos(
-                    ds=magnitude,
-                    variavel_plotagem='mag_vento100',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, f'magvento100_{self.freqs_map[resample_freq]["prefix_filename"]}', n_24h.item()),
-                    ds_quiver=ds_quiver,
-                    variavel_quiver='wind850',
-                    plot_bacias=False,
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
-        elif modo == 'graficos_temperatura':
-
-            if self.t2m_mean is None:
-                _, self.t2m_mean, self.cond_ini = self._carregar_t2m_mean()
-
-            # Ajustando a coordenada de tempo para o BR
-            t2m_brt = self.t2m_mean.assign_coords(valid_time=self.t2m_mean.valid_time - np.timedelta64(3,'h'))
-
-            # Máximo e minimos diários
-            t2m_max = t2m_brt.resample(valid_time='D').max() - 273.15
-            t2m_min = t2m_brt.resample(valid_time='D').min() - 273.15
-            t2m_med = t2m_brt.resample(valid_time='D').mean() - 273.15
-
-            # Selecionado os próximos 15 dias
-            t2max = t2m_max.sel(valid_time=slice(t2m_max.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_max.time + np.timedelta64(15,'D')))
-            t2min = t2m_min.sel(valid_time=slice(t2m_min.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_min.time + np.timedelta64(15,'D')))
-            t2med = t2m_med.sel(valid_time=slice(t2m_med.time - np.timedelta64(self.t2m_mean.time.dt.hour.item(), 'D'), t2m_med.time + np.timedelta64(15,'D')))
-
-            # Pegando os pontos
-            target_lon, target_lat, pontos = get_pontos_localidades()
-            t2max_no_ponto = t2max.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
-            t2min_no_ponto = t2min.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
-            t2med_no_ponto = t2med.sel(latitude=target_lat, longitude=target_lon+360, method='nearest').to_dataframe()
-            t2max_no_ponto = t2max_no_ponto.reset_index('valid_time')
-            t2min_no_ponto = t2min_no_ponto.reset_index('valid_time')
-            t2med_no_ponto = t2med_no_ponto.reset_index('valid_time')
-            t2max_no_ponto['type'] = 'previsão'
-            t2min_no_ponto['type'] = 'previsão'
-            t2med_no_ponto['type'] = 'previsão'
-            t2max_no_ponto['mes'] = t2max_no_ponto['valid_time'].dt.month
-            t2min_no_ponto['mes'] = t2min_no_ponto['valid_time'].dt.month
-            t2med_no_ponto['mes'] = t2med_no_ponto['valid_time'].dt.month
-            colunas_para_usar = ['valid_time', 't2m', 'type', 'mes']
-            t2max_no_ponto = t2max_no_ponto[colunas_para_usar].reset_index()
-            t2min_no_ponto = t2min_no_ponto[colunas_para_usar].reset_index()
-            t2med_no_ponto = t2med_no_ponto[colunas_para_usar].reset_index()
-
-            # Lendo o csv observado dos ultimos 2 meses
-            mes_atual = str(self.t2m_mean.time.dt.month.item()).zfill(2)
-            ano_atual = str(self.t2m_mean.time.dt.year.item()).zfill(4)
-            mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
-            ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
-
-            obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
-            obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
-            obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
-            obs_tmax_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
-            obs_tmin_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
-            obs_tmed_anterior = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_anterior}{mes_anterior}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
-
-            obs_tmax = pd.concat([obs_tmax_anterior, obs_tmax_atual], ignore_index=True)
-            obs_tmin = pd.concat([obs_tmin_anterior, obs_tmin_atual], ignore_index=True)
-            obs_tmed = pd.concat([obs_tmed_anterior, obs_tmed_atual], ignore_index=True)
-            obs_tmax['type'] = 'observado'
-            obs_tmin['type'] = 'observado'
-            obs_tmed['type'] = 'observado'
-            obs_tmax['valid_time'] = pd.to_datetime(obs_tmax['valid_time'])
-            obs_tmin['valid_time'] = pd.to_datetime(obs_tmin['valid_time'])
-            obs_tmed['valid_time'] = pd.to_datetime(obs_tmed['valid_time'])
-            ultimos_15_dias = pd.date_range(
-                start=(pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(days=15)).floor("D"),
-                end=pd.to_datetime(self.t2m_mean.time.item()).floor("D"),
-                freq="D"
-            )
-            obs_tmax = obs_tmax[obs_tmax['valid_time'].isin(ultimos_15_dias)]
-            obs_tmin = obs_tmin[obs_tmin['valid_time'].isin(ultimos_15_dias)]
-            obs_tmed = obs_tmed[obs_tmed['valid_time'].isin(ultimos_15_dias)]
-            obs_tmax['mes'] = obs_tmax['valid_time'].dt.month
-            obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
-            obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
-            
-            # Juntando com a previsao
-            t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
-            t2min_no_ponto = pd.concat([obs_tmin.rename(columns={'tmin': 't2m'}), t2min_no_ponto], axis=0)
-            t2med_no_ponto = pd.concat([obs_tmed.rename(columns={'tmed': 't2m'}), t2med_no_ponto], axis=0)
-
-            # Abrindo os arquivos de climatologia
-            clim_tmax = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmax_cidades.txt', sep=' ', names=np.arange(1,13))
-            clim_tmin = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmin_cidades.txt', sep=' ', names=np.arange(1,13))
-            clim_tmed = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmed_cidades.txt', sep=' ', names=np.arange(1,13))
-            clim_tmax['id'] = pontos['id']
-            clim_tmax = clim_tmax.melt(id_vars='id', value_name='t2m_clim', var_name='month')
-            clim_tmin['id'] = pontos['id']
-            clim_tmin = clim_tmin.melt(id_vars='id', value_name='t2m_clim', var_name='month')
-            clim_tmed['id'] = pontos['id']
-            clim_tmed = clim_tmed.melt(id_vars='id', value_name='t2m_clim', var_name='month')
-
-            # Juntar pelo id e mês
-            t2max_no_ponto = t2max_no_ponto.reset_index().merge(clim_tmax, left_on=["id", "mes"], right_on=["id", "month"], how="left")
-            t2min_no_ponto = t2min_no_ponto.reset_index().merge(clim_tmin, left_on=["id", "mes"], right_on=["id", "month"], how="left")
-            t2med_no_ponto = t2med_no_ponto.reset_index().merge(clim_tmed, left_on=["id", "mes"], right_on=["id", "month"], how="left")
-            t2max_no_ponto['valid_time_fmt'] = t2max_no_ponto['valid_time'].dt.strftime('%d/%m')
-            t2min_no_ponto['valid_time_fmt'] = t2min_no_ponto['valid_time'].dt.strftime('%d/%m')
-            t2med_no_ponto['valid_time_fmt'] = t2med_no_ponto['valid_time'].dt.strftime('%d/%m')
-
-            # Agrupar no submercado e calcular a temperatura por peso
-            df_submercado = CONSTANTES['city_peso']
-            t2med_no_ponto_submercado = t2med_no_ponto[t2med_no_ponto['id'].isin(df_submercado['id'])]
-            t2med_no_ponto_submercado['peso'] = t2med_no_ponto_submercado['id'].map(df_submercado.set_index('id')['weights'])
-            t2med_no_ponto_submercado['regiao'] = t2med_no_ponto_submercado['id'].map(df_submercado.set_index('id')['region'])
-            t2med_no_ponto_submercado['t2m_peso'] = t2med_no_ponto_submercado['t2m'] * t2med_no_ponto_submercado['peso']
-            t2med_no_ponto_submercado['t2m_clim_peso'] = t2med_no_ponto_submercado['t2m_clim'] * t2med_no_ponto_submercado['peso']
-            t2med_no_ponto_submercado = t2med_no_ponto_submercado.groupby(['regiao', 'valid_time', 'type'])[['t2m_peso', 't2m_clim_peso']].sum().reset_index()
-            t2med_no_ponto_submercado['valid_time_fmt'] = t2med_no_ponto_submercado['valid_time'].dt.strftime('%d/%m')
-
-            # Grafico por id
-            for id in t2max_no_ponto['id'].unique():
-
-                print(f'Gráficos temperatura ID: {id}')
-
-                dados_t2max = t2max_no_ponto[t2max_no_ponto['id'] == id]
-                dados_t2min = t2min_no_ponto[t2min_no_ponto['id'] == id]
-
-                titulo = f"{CONSTANTES['city_dict'][id]}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
-                filename = f'{path_to_save}/{id}'
-                plot_graficos_2d(df=dados_t2max, tipo='tmax_tmin', df_tmin=dados_t2min, titulo=titulo, filename=filename)
+                obs_tmax = obs_tmax[obs_tmax['valid_time'].isin(ultimos_15_dias)]
+                obs_tmin = obs_tmin[obs_tmin['valid_time'].isin(ultimos_15_dias)]
+                obs_tmed = obs_tmed[obs_tmed['valid_time'].isin(ultimos_15_dias)]
+                obs_tmax['mes'] = obs_tmax['valid_time'].dt.month
+                obs_tmin['mes'] = obs_tmin['valid_time'].dt.month
+                obs_tmed['mes'] = obs_tmed['valid_time'].dt.month
                 
-                path_to_save_geada = f'{self.path_savefiguras}/geadas_grafs'
-                os.makedirs(path_to_save_geada, exist_ok=True)
-                filename = f'{path_to_save_geada}/{id}_geada'
-                plot_graficos_2d(df=dados_t2min, tipo='geada', titulo=titulo, filename=filename)
+                # Juntando com a previsao
+                t2max_no_ponto = pd.concat([obs_tmax.rename(columns={'tmax': 't2m'}), t2max_no_ponto], axis=0)
+                t2min_no_ponto = pd.concat([obs_tmin.rename(columns={'tmin': 't2m'}), t2min_no_ponto], axis=0)
+                t2med_no_ponto = pd.concat([obs_tmed.rename(columns={'tmed': 't2m'}), t2med_no_ponto], axis=0)
 
-            # Grafico por submercado
-            for submercado in t2med_no_ponto_submercado['regiao'].unique():
+                # Abrindo os arquivos de climatologia
+                clim_tmax = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmax_cidades.txt', sep=' ', names=np.arange(1,13))
+                clim_tmin = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmin_cidades.txt', sep=' ', names=np.arange(1,13))
+                clim_tmed = pd.read_csv(f'{Constants().PATH_CLIMATOLOGIA_TEMPERATURA_PONTUAL}/tmed_cidades.txt', sep=' ', names=np.arange(1,13))
+                clim_tmax['id'] = pontos['id']
+                clim_tmax = clim_tmax.melt(id_vars='id', value_name='t2m_clim', var_name='month')
+                clim_tmin['id'] = pontos['id']
+                clim_tmin = clim_tmin.melt(id_vars='id', value_name='t2m_clim', var_name='month')
+                clim_tmed['id'] = pontos['id']
+                clim_tmed = clim_tmed.melt(id_vars='id', value_name='t2m_clim', var_name='month')
 
-                print(f'Gráficos temperatura Submercado: {submercado}')
+                # Juntar pelo id e mês
+                t2max_no_ponto = t2max_no_ponto.reset_index().merge(clim_tmax, left_on=["id", "mes"], right_on=["id", "month"], how="left")
+                t2min_no_ponto = t2min_no_ponto.reset_index().merge(clim_tmin, left_on=["id", "mes"], right_on=["id", "month"], how="left")
+                t2med_no_ponto = t2med_no_ponto.reset_index().merge(clim_tmed, left_on=["id", "mes"], right_on=["id", "month"], how="left")
+                t2max_no_ponto['valid_time_fmt'] = t2max_no_ponto['valid_time'].dt.strftime('%d/%m')
+                t2min_no_ponto['valid_time_fmt'] = t2min_no_ponto['valid_time'].dt.strftime('%d/%m')
+                t2med_no_ponto['valid_time_fmt'] = t2med_no_ponto['valid_time'].dt.strftime('%d/%m')
 
-                dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado]
-                print(dados_submercado)
-                dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
+                # Agrupar no submercado e calcular a temperatura por peso
+                df_submercado = CONSTANTES['city_peso']
+                t2med_no_ponto_submercado = t2med_no_ponto[t2med_no_ponto['id'].isin(df_submercado['id'])]
+                t2med_no_ponto_submercado['peso'] = t2med_no_ponto_submercado['id'].map(df_submercado.set_index('id')['weights'])
+                t2med_no_ponto_submercado['regiao'] = t2med_no_ponto_submercado['id'].map(df_submercado.set_index('id')['region'])
+                t2med_no_ponto_submercado['t2m_peso'] = t2med_no_ponto_submercado['t2m'] * t2med_no_ponto_submercado['peso']
+                t2med_no_ponto_submercado['t2m_clim_peso'] = t2med_no_ponto_submercado['t2m_clim'] * t2med_no_ponto_submercado['peso']
+                t2med_no_ponto_submercado = t2med_no_ponto_submercado.groupby(['regiao', 'valid_time', 'type'])[['t2m_peso', 't2m_clim_peso']].sum().reset_index()
+                t2med_no_ponto_submercado['valid_time_fmt'] = t2med_no_ponto_submercado['valid_time'].dt.strftime('%d/%m')
 
-                titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
-                filename = f'{path_to_save}/{submercado}'
-                plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
+                # Grafico por id
+                for id in t2max_no_ponto['id'].unique():
 
-                path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
-                dados_submercado.set_index("valid_time").to_csv(
-                    f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv'
-                )
+                    print(f'Gráficos temperatura ID: {id}')
 
-        elif modo == 'graficos_vento':
+                    dados_t2max = t2max_no_ponto[t2max_no_ponto['id'] == id]
+                    dados_t2min = t2min_no_ponto[t2min_no_ponto['id'] == id]
 
-            if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
-                self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
-
-            us_24h = resample_variavel(self.us100_mean, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
-            vs_24h = resample_variavel(self.vs100_mean, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
-
-            AREAS = {
-
-            'LITORAL_NORTE' : [-2, -4.5, -41.5, -38],
-            'LITORAL_NE_NORTE' : [-4.5, -7.5, -38.5, -34.5],
-            'LITORAL_NE_SUL' : [-8.5, -11.5, -38.5, -35],
-            'BAHIA' : [-6, -15, -43, -40],
-
-            }
-
-            # Climatologia do vento
-            uv100_clim = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_UV100}/monthly_clim_uv100.nc')
-
-            for index, area in enumerate(AREAS):
-
-                latini = AREAS.get(area)[0]
-                latfim = AREAS.get(area)[1]
-                lonini = AREAS.get(area)[2]
-                lonfim = AREAS.get(area)[3]
-
-                area_u = us_24h.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='longitude').mean(dim='latitude')
-                area_v = vs_24h.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='longitude').mean(dim='latitude')
-
-                # Climatologia
-                clim_sel = uv100_clim.sel(month=self.us100.valid_time.dt.month)
-                clim_sel = clim_sel.sel(latitude=slice(latini, latfim), longitude=slice(lonini, lonfim))
-                clim_sel_u = resample_variavel(clim_sel, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u').mean(dim='longitude').mean(dim='latitude')
-                clim_sel_v = resample_variavel(clim_sel, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v').mean(dim='longitude').mean(dim='latitude')
-
-                # Previsao
-                u_med_area = area_u['u100'].values
-                v_med_area = area_v['v100'].values
-                magnitude = np.sqrt(u_med_area**2 + v_med_area**2)
-
-                # Climatologia
-                u_med_area_clim = clim_sel_u['u100'].values
-                v_med_area_clim = clim_sel_v['v100'].values
-                magnitude_clim = np.sqrt(u_med_area_clim**2 + v_med_area_clim**2)
-
-                # Tempos para montar o dataframe
-                valid_times = clim_sel_u.data_final.dt.strftime('%d/%m').values
-                valid_times_fmt = clim_sel_u.data_final.dt.strftime('%Y-%m-%d')
-
-                # montando o df para gerar o
-                df = pd.DataFrame({
-                    'data': valid_times,
-                    f'': valid_times_fmt,
-                    f'datas_fmt': valid_times_fmt,
-                    f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}': magnitude,
-                    'magnitude': magnitude,
-                    'magnitude_clim': magnitude_clim,
-                    'Climatologia': magnitude_clim
+                    titulo = f"{CONSTANTES['city_dict'][id]}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
+                    filename = f'{path_to_save}/{id}'
+                    plot_graficos_2d(df=dados_t2max, tipo='tmax_tmin', df_tmin=dados_t2min, titulo=titulo, filename=filename)
                     
-                })
+                    path_to_save_geada = f'{self.path_savefiguras}/geadas_grafs'
+                    os.makedirs(path_to_save_geada, exist_ok=True)
+                    filename = f'{path_to_save_geada}/{id}_geada'
+                    plot_graficos_2d(df=dados_t2min, tipo='geada', titulo=titulo, filename=filename)
 
-                path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
-                df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv', index=False)
+                # Grafico por submercado
+                for submercado in t2med_no_ponto_submercado['regiao'].unique():
 
-                # Titulo do plot
-                titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
-                filename = f'{path_to_save}/mag_vento100_{area}'
-                plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
+                    print(f'Gráficos temperatura Submercado: {submercado}')
 
-                if index > 0:
-                    df_temp = pd.concat([df, df_temp], axis=1)
+                    dados_submercado = t2med_no_ponto_submercado[t2med_no_ponto_submercado['regiao'] == submercado]
+                    print(dados_submercado)
+                    dados_submercado = dados_submercado.rename(columns={'t2m_peso': 't2m_w', 't2m_clim_peso': 't2m_clim_w'})
 
-                else:
-                    df_temp = df
+                    titulo = f"{submercado}\n{self.modelo_fmt.upper()} - {self.cond_ini}"
+                    filename = f'{path_to_save}/{submercado}'
+                    plot_graficos_2d(df=dados_submercado, tipo='submercado', titulo=titulo, filename=filename)
 
-            colunas = [x for x in df_temp.columns if 'magnitude' in x if 'clim' not in x]
-            df_media = pd.DataFrame(df_temp[colunas].mean(axis=1), columns=list(set(colunas)))
-            df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
-            df_media.rename(columns={'magnitude' :f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}'}, inplace=True)
-            df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
-            df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv', index=False)
+                    path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_temperatura/{self.modelo_fmt}'
+                    dados_submercado.set_index("valid_time").to_csv(
+                        f'{path_to_save_csv}/{self.modelo_fmt}_{submercado}_{self.data_fmt}.csv'
+                    )
 
-        elif modo == 'pnmm_vento850':
+            elif modo == 'graficos_vento':
 
-            varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
+                if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
+                    self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
 
-            # Pnmm
-            if self.pnmm_mean is None:
-                _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
+                us_24h = resample_variavel(self.us100_mean, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u')
+                vs_24h = resample_variavel(self.vs100_mean, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v')
 
-            # Apenas para combar com o vento     
-            if self.pnmm_mean.longitude.min() >= 0:
-                pnmm_mean = self.pnmm_mean.assign_coords(longitude=(((self.pnmm_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
+                AREAS = {
 
-            # Vento
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                'LITORAL_NORTE' : [-2, -4.5, -41.5, -38],
+                'LITORAL_NE_NORTE' : [-4.5, -7.5, -38.5, -34.5],
+                'LITORAL_NE_SUL' : [-8.5, -11.5, -38.5, -35],
+                'BAHIA' : [-6, -15, -43, -40],
 
-            for index, n_24h in enumerate(pnmm_mean.valid_time):
+                }
 
-                print(f'Processando {index}...')
+                # Climatologia do vento
+                uv100_clim = xr.open_dataset(f'{Constants().PATH_CLIMATOLOGIA_UV100}/monthly_clim_uv100.nc')
 
-                us_plot = self.us_mean.sel(valid_time=n_24h)
-                vs_plot = self.vs_mean.sel(valid_time=n_24h)
-                pnmm_plot = pnmm_mean.sel(valid_time=n_24h)
+                for index, area in enumerate(AREAS):
 
-                ds_quiver = xr.Dataset({
-                    'u': us_plot['u'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
-                    'v': vs_plot['v'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
-                    'pnmm_plot': pnmm_plot[varname]*1e-2
-                })
+                    latini = AREAS.get(area)[0]
+                    latfim = AREAS.get(area)[1]
+                    lonini = AREAS.get(area)[2]
+                    lonfim = AREAS.get(area)[3]
 
-                tempo_ini = pd.to_datetime(n_24h.item())
-                print(ds_quiver)
-                print(tempo_ini)
-                semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
-                print(semana)
+                    area_u = us_24h.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='longitude').mean(dim='latitude')
+                    area_v = vs_24h.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='longitude').mean(dim='latitude')
 
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,
-                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    semana=semana, unico_tempo=True
-                )
+                    # Climatologia
+                    clim_sel = uv100_clim.sel(month=self.us100.valid_time.dt.month)
+                    clim_sel = clim_sel.sel(latitude=slice(latini, latfim), longitude=slice(lonini, lonfim))
+                    clim_sel_u = resample_variavel(clim_sel, self.modelo_fmt, 'u100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='u').mean(dim='longitude').mean(dim='latitude')
+                    clim_sel_v = resample_variavel(clim_sel, self.modelo_fmt, 'v100', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop, var_anomalia='v').mean(dim='longitude').mean(dim='latitude')
 
-                plot_campos(ds=ds_quiver['pnmm_plot'], 
-                            variavel_plotagem='pnmm_vento', 
-                            title=titulo, 
-                            filename=formato_filename(self.modelo_fmt, 'pnmm_vento850', index),
-                            plot_bacias=False, ds_quiver=ds_quiver, 
-                            variavel_quiver='wind850', 
-                            ds_contour=ds_quiver['pnmm_plot'], 
-                            variavel_contour='pnmm', 
-                            color_contour='black',
-                            shapefiles=self.shapefiles,
-                            path_to_save=path_to_save,
-                            with_norm=True,
-                            **kwargs
-                            )         
+                    # Previsao
+                    u_med_area = area_u['u100'].values
+                    v_med_area = area_v['v100'].values
+                    magnitude = np.sqrt(u_med_area**2 + v_med_area**2)
 
-        elif modo == 'indices-itcz':
+                    # Climatologia
+                    u_med_area_clim = clim_sel_u['u100'].values
+                    v_med_area_clim = clim_sel_v['v100'].values
+                    magnitude_clim = np.sqrt(u_med_area_clim**2 + v_med_area_clim**2)
 
-            limiar = 235
-            lon_range=(326, 335)
+                    # Tempos para montar o dataframe
+                    valid_times = clim_sel_u.data_final.dt.strftime('%d/%m').values
+                    valid_times_fmt = clim_sel_u.data_final.dt.strftime('%Y-%m-%d')
 
-            if self.olr_mean is None:
-                _, self.olr_mean, self.cond_ini = self._carregar_olr_mean()
+                    # montando o df para gerar o
+                    df = pd.DataFrame({
+                        'data': valid_times,
+                        f'': valid_times_fmt,
+                        f'datas_fmt': valid_times_fmt,
+                        f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}': magnitude,
+                        'magnitude': magnitude,
+                        'magnitude_clim': magnitude_clim,
+                        'Climatologia': magnitude_clim
+                        
+                    })
 
-            if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
-                self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
+                    path_to_save_csv = f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/csv_eolica/{self.modelo_fmt}'
+                    df[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_{area}_{self.data_fmt}_diario.csv', index=False)
 
-            if self.tp_mean is None or self.cond_ini is None or self.tp is None:
-                self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
+                    # Titulo do plot
+                    titulo = f'{self.modelo_fmt.upper()} - Magnitude do vento a 100m - {area.replace("_", " ")}\nCondição Inicial: {self.cond_ini} \u2022 Climatologia ERA5 [1991-2020]'
+                    filename = f'{path_to_save}/mag_vento100_{area}'
+                    plot_graficos_2d(df=df, tipo='vento', titulo=titulo, filename=filename)
 
-            varname_olr = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
+                    if index > 0:
+                        df_temp = pd.concat([df, df_temp], axis=1)
 
-            # Colocando vento em 0 a 360
-            ds_vento = ajusta_lon_0_360(self.vs_mean, 'longitude').sel(isobaricInhPa=925)
-            ds_vento['abs_vwnd'] = np.abs(ds_vento['v'])
+                    else:
+                        df_temp = df
 
-            ds_chuva = self.tp_mean
-            ds_olr = ajusta_lon_0_360(self.olr_mean, 'longitude')
+                colunas = [x for x in df_temp.columns if 'magnitude' in x if 'clim' not in x]
+                df_media = pd.DataFrame(df_temp[colunas].mean(axis=1), columns=list(set(colunas)))
+                df_media['Climatologia'] = df_temp['Climatologia'].mean(axis=1)
+                df_media.rename(columns={'magnitude' :f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}'}, inplace=True)
+                df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
+                df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv', index=False)
 
-            # pegando apenas os dias completos, 12 nao precisa pq tem todos os dias
-            inicializacao = pd.to_datetime(ds_chuva.time.values)
-            if inicializacao.hour == 0:
-                ds_chuva = ds_chuva.isel(valid_time=slice(None, -2))
-            elif inicializacao.hour == 6:
-                ds_chuva = ds_chuva.isel(valid_time=slice(None, -3))
-            elif inicializacao.hour == 18:
-                ds_chuva = ds_chuva.isel(valid_time=slice(None, -1))
+            elif modo == 'pnmm_vento850':
 
-            ds_olr_crop = ds_olr.sel(valid_time=ds_chuva.valid_time)
-            ds_vento = ds_vento.sel(valid_time=ds_chuva.valid_time)
+                varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
 
-            # transformando em diario das 12 as 12
-            tempos = ds_olr_crop.valid_time
-            delta_t = 13
-            tempos_shifted = tempos - pd.Timedelta(hours=delta_t)
+                # Pnmm
+                if self.pnmm_mean is None:
+                    _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
 
-            ds_chuva['valid_time'] = tempos_shifted
-            ds_chuva = ds_chuva.sel(valid_time=ds_chuva.valid_time>=inicializacao).resample(valid_time='D').sum()
-            ds_chuva['valid_time'] = ds_chuva['valid_time'] + pd.Timedelta(days=1) 
+                # Apenas para combar com o vento     
+                if self.pnmm_mean.longitude.min() >= 0:
+                    pnmm_mean = self.pnmm_mean.assign_coords(longitude=(((self.pnmm_mean.longitude + 180) % 360) - 180)).sortby('longitude').sortby('latitude')
 
-            ds_olr_crop['valid_time'] = tempos_shifted
-            ds_olr_crop = ds_olr_crop.sel(valid_time=ds_olr_crop.valid_time>=inicializacao).resample(valid_time='D').mean()
-            ds_olr_crop['valid_time'] = ds_olr_crop['valid_time'] + pd.Timedelta(days=1) 
+                # Vento
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-            ds_vento['valid_time'] = tempos_shifted
-            ds_vento = ds_vento.sel(valid_time=ds_vento.valid_time>=inicializacao).resample(valid_time='D').mean()
-            ds_vento['valid_time'] = ds_vento['valid_time'] + pd.Timedelta(days=1) 
+                for index, n_24h in enumerate(pnmm_mean.valid_time):
 
-            # Inicializando listas que vão guardar os resultados
-            lats_min = []
-            lats_max = []
-            lats_menor_olr = []
-            lats_menor_vento = []
-            intensidades_chuva = []
-            intensidades_olr = []
-            tempos_fmt = []
-            latitudes_media_vento_olr = []
+                    print(f'Processando {index}...')
 
-            # Iterando sobre cada tempo fornecido
-            tempos = ds_chuva['valid_time'].values
-            for t in tempos:
+                    us_plot = self.us_mean.sel(valid_time=n_24h)
+                    vs_plot = self.vs_mean.sel(valid_time=n_24h)
+                    pnmm_plot = pnmm_mean.sel(valid_time=n_24h)
 
-                achou_banda = False
+                    ds_quiver = xr.Dataset({
+                        'u': us_plot['u'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
+                        'v': vs_plot['v'].sel(isobaricInhPa=850).drop_vars('isobaricInhPa'), 
+                        'pnmm_plot': pnmm_plot[varname]*1e-2
+                    })
 
-                for lon_ref in range(lon_range[0], lon_range[1] + 1):
+                    tempo_ini = pd.to_datetime(n_24h.item())
+                    print(ds_quiver)
+                    print(tempo_ini)
+                    semana = encontra_semanas_operativas(pd.to_datetime(self.us.time.values), tempo_ini, ds_tempo_final=pd.to_datetime(self.us.valid_time[-1].values) + pd.Timedelta(days=1), modelo=self.modelo_fmt)[0]
+                    print(semana)
 
-                    ds_olr_mask = xr.where(ds_olr_crop[varname_olr] < limiar, ds_olr_crop[varname_olr], np.nan)
-                    ds_olr_mask_longitude_ref = ds_olr_mask.sel(longitude=lon_ref).sel(valid_time=t).sel(latitude=slice(-5.5, 13.5))
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'PNMM, Vento850hPa', cond_ini=self.cond_ini,
+                        data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                        semana=semana, unico_tempo=True
+                    )
 
-                    # Para o vento
-                    ds_vento_crop = ds_vento.sel(longitude=lon_ref, method='nearest').sel(valid_time=t)
+                    plot_campos(ds=ds_quiver['pnmm_plot'], 
+                                variavel_plotagem='pnmm_vento', 
+                                title=titulo, 
+                                filename=formato_filename(self.modelo_fmt, 'pnmm_vento850', index),
+                                plot_bacias=False, ds_quiver=ds_quiver, 
+                                variavel_quiver='wind850', 
+                                ds_contour=ds_quiver['pnmm_plot'], 
+                                variavel_contour='pnmm', 
+                                color_contour='black',
+                                shapefiles=self.shapefiles,
+                                path_to_save=path_to_save,
+                                with_norm=True,
+                                **kwargs
+                                )         
 
-                    # Banda da ITCZ pela OLR
-                    valid_latitudes = ds_olr_mask_longitude_ref.dropna(dim="latitude").latitude
+            elif modo == 'indices-itcz':
 
-                    if valid_latitudes.sizes["latitude"] != 0:
-                        achou_banda = True
+                limiar = 235
+                lon_range=(326, 335)
 
-                        # Latitude inicial 
-                        lat_min = valid_latitudes.min().item()
+                if self.olr_mean is None:
+                    _, self.olr_mean, self.cond_ini = self._carregar_olr_mean()
 
-                        # Latitude final
-                        lat_max = valid_latitudes.max().item()
+                if self.us_mean is None or self.vs_mean is None or self.cond_ini is None:
+                    self.us, self.vs, self.us_mean, self.vs_mean, self.cond_ini = self._carregar_uv_mean()
 
-                        # Valor da latitude da menor OLR na banda
-                        latitude_min_olr = ds_olr_mask_longitude_ref.argmin(dim='latitude')
-                        latitude_min_value = ds_olr_mask_longitude_ref['latitude'].isel(latitude=latitude_min_olr.values)
+                if self.tp_mean is None or self.cond_ini is None or self.tp is None:
+                    self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean()
 
-                        # Intensidade 
-                        prec_intensidade = ds_chuva.sel(latitude=slice(lat_min, lat_max)).sel(valid_time=t).sel(longitude=lon_ref, method='nearest')
-                        intensidade_chuva = prec_intensidade['tp'].mean(dim='latitude')
-                        ds_olr_intensidade = ds_olr_mask_longitude_ref.sel(latitude=slice(lat_min, lat_max))
-                        intensidade = ds_olr_intensidade.mean(dim='latitude')
+                varname_olr = 'ttr' if 'ecmwf' in self.modelo_fmt else 'sulwrf'
 
-                        # Determinar para o vento na banda
-                        ds_vento_crop = ds_vento_crop.sel(latitude=slice(lat_min, lat_max))
-                        indice_lat_vento_min = ds_vento_crop['abs_vwnd'].argmin(dim='latitude')
-                        latitude_min_vento_value = ds_vento_crop['latitude'].isel(latitude=indice_lat_vento_min.values).item()
+                # Colocando vento em 0 a 360
+                ds_vento = ajusta_lon_0_360(self.vs_mean, 'longitude').sel(isobaricInhPa=925)
+                ds_vento['abs_vwnd'] = np.abs(ds_vento['v'])
 
-                        # Valor médio entre a ITCZolr e a ITCZvwnd
-                        latitude_media_vento_olr = np.mean([latitude_min_vento_value, latitude_min_value])
+                ds_chuva = self.tp_mean
+                ds_olr = ajusta_lon_0_360(self.olr_mean, 'longitude')
+
+                # pegando apenas os dias completos, 12 nao precisa pq tem todos os dias
+                inicializacao = pd.to_datetime(ds_chuva.time.values)
+                if inicializacao.hour == 0:
+                    ds_chuva = ds_chuva.isel(valid_time=slice(None, -2))
+                elif inicializacao.hour == 6:
+                    ds_chuva = ds_chuva.isel(valid_time=slice(None, -3))
+                elif inicializacao.hour == 18:
+                    ds_chuva = ds_chuva.isel(valid_time=slice(None, -1))
+
+                ds_olr_crop = ds_olr.sel(valid_time=ds_chuva.valid_time)
+                ds_vento = ds_vento.sel(valid_time=ds_chuva.valid_time)
+
+                # transformando em diario das 12 as 12
+                tempos = ds_olr_crop.valid_time
+                delta_t = 13
+                tempos_shifted = tempos - pd.Timedelta(hours=delta_t)
+
+                ds_chuva['valid_time'] = tempos_shifted
+                ds_chuva = ds_chuva.sel(valid_time=ds_chuva.valid_time>=inicializacao).resample(valid_time='D').sum()
+                ds_chuva['valid_time'] = ds_chuva['valid_time'] + pd.Timedelta(days=1) 
+
+                ds_olr_crop['valid_time'] = tempos_shifted
+                ds_olr_crop = ds_olr_crop.sel(valid_time=ds_olr_crop.valid_time>=inicializacao).resample(valid_time='D').mean()
+                ds_olr_crop['valid_time'] = ds_olr_crop['valid_time'] + pd.Timedelta(days=1) 
+
+                ds_vento['valid_time'] = tempos_shifted
+                ds_vento = ds_vento.sel(valid_time=ds_vento.valid_time>=inicializacao).resample(valid_time='D').mean()
+                ds_vento['valid_time'] = ds_vento['valid_time'] + pd.Timedelta(days=1) 
+
+                # Inicializando listas que vão guardar os resultados
+                lats_min = []
+                lats_max = []
+                lats_menor_olr = []
+                lats_menor_vento = []
+                intensidades_chuva = []
+                intensidades_olr = []
+                tempos_fmt = []
+                latitudes_media_vento_olr = []
+
+                # Iterando sobre cada tempo fornecido
+                tempos = ds_chuva['valid_time'].values
+                for t in tempos:
+
+                    achou_banda = False
+
+                    for lon_ref in range(lon_range[0], lon_range[1] + 1):
+
+                        ds_olr_mask = xr.where(ds_olr_crop[varname_olr] < limiar, ds_olr_crop[varname_olr], np.nan)
+                        ds_olr_mask_longitude_ref = ds_olr_mask.sel(longitude=lon_ref).sel(valid_time=t).sel(latitude=slice(-5.5, 13.5))
+
+                        # Para o vento
+                        ds_vento_crop = ds_vento.sel(longitude=lon_ref, method='nearest').sel(valid_time=t)
+
+                        # Banda da ITCZ pela OLR
+                        valid_latitudes = ds_olr_mask_longitude_ref.dropna(dim="latitude").latitude
+
+                        if valid_latitudes.sizes["latitude"] != 0:
+                            achou_banda = True
+
+                            # Latitude inicial 
+                            lat_min = valid_latitudes.min().item()
+
+                            # Latitude final
+                            lat_max = valid_latitudes.max().item()
+
+                            # Valor da latitude da menor OLR na banda
+                            latitude_min_olr = ds_olr_mask_longitude_ref.argmin(dim='latitude')
+                            latitude_min_value = ds_olr_mask_longitude_ref['latitude'].isel(latitude=latitude_min_olr.values)
+
+                            # Intensidade 
+                            prec_intensidade = ds_chuva.sel(latitude=slice(lat_min, lat_max)).sel(valid_time=t).sel(longitude=lon_ref, method='nearest')
+                            intensidade_chuva = prec_intensidade['tp'].mean(dim='latitude')
+                            ds_olr_intensidade = ds_olr_mask_longitude_ref.sel(latitude=slice(lat_min, lat_max))
+                            intensidade = ds_olr_intensidade.mean(dim='latitude')
+
+                            # Determinar para o vento na banda
+                            ds_vento_crop = ds_vento_crop.sel(latitude=slice(lat_min, lat_max))
+                            indice_lat_vento_min = ds_vento_crop['abs_vwnd'].argmin(dim='latitude')
+                            latitude_min_vento_value = ds_vento_crop['latitude'].isel(latitude=indice_lat_vento_min.values).item()
+
+                            # Valor médio entre a ITCZolr e a ITCZvwnd
+                            latitude_media_vento_olr = np.mean([latitude_min_vento_value, latitude_min_value])
+
+                            # Adicionando os valores calculados às listas
+                            lats_min.append(lat_min)
+                            lats_max.append(lat_max)
+                            lats_menor_olr.append(latitude_min_value.item())
+                            intensidades_chuva.append(intensidade_chuva.values)
+                            intensidades_olr.append(intensidade.values)
+                            lats_menor_vento.append(latitude_min_vento_value)
+                            tempos_fmt.append(t)
+                            latitudes_media_vento_olr.append(latitude_media_vento_olr)
+
+                            break
+
+                    if not achou_banda:
+                        print(f'Não achou a banda para o tempo {t}')
+                        latitude_min_value = np.nan
+                        latitude_media_vento_olr = np.nan
+                        lat_min = np.nan
+                        lat_max = np.nan
+                        intensidade = np.nan
+                        intensidade_chuva = np.nan
+                        latitude_min_vento_value = np.nan
 
                         # Adicionando os valores calculados às listas
                         lats_min.append(lat_min)
                         lats_max.append(lat_max)
-                        lats_menor_olr.append(latitude_min_value.item())
-                        intensidades_chuva.append(intensidade_chuva.values)
-                        intensidades_olr.append(intensidade.values)
+                        lats_menor_olr.append(latitude_min_value)
+                        intensidades_olr.append(intensidade)
+                        intensidades_chuva.append(intensidade_chuva)
                         lats_menor_vento.append(latitude_min_vento_value)
                         tempos_fmt.append(t)
                         latitudes_media_vento_olr.append(latitude_media_vento_olr)
-
-                        break
-
-                if not achou_banda:
-                    print(f'Não achou a banda para o tempo {t}')
-                    latitude_min_value = np.nan
-                    latitude_media_vento_olr = np.nan
-                    lat_min = np.nan
-                    lat_max = np.nan
-                    intensidade = np.nan
-                    intensidade_chuva = np.nan
-                    latitude_min_vento_value = np.nan
-
-                    # Adicionando os valores calculados às listas
-                    lats_min.append(lat_min)
-                    lats_max.append(lat_max)
-                    lats_menor_olr.append(latitude_min_value)
-                    intensidades_olr.append(intensidade)
-                    intensidades_chuva.append(intensidade_chuva)
-                    lats_menor_vento.append(latitude_min_vento_value)
-                    tempos_fmt.append(t)
-                    latitudes_media_vento_olr.append(latitude_media_vento_olr)
-            
-            # Criando o DataFrame final
-            df_resultado = pd.DataFrame({
-                'tempo': tempos_fmt,
-                'lats_min': lats_min,
-                'lats_max': lats_max,
-                'lats_menor_olr': lats_menor_olr,
-                'lats_menor_vento': lats_menor_vento,
-                'lats_media_vento_olr': latitudes_media_vento_olr,
-                'intensidades_olr': intensidades_olr,
-                'intensidades_chuva': intensidades_chuva, 
-            })
-
-            df_resultado['largura'] = df_resultado['lats_max'] - df_resultado['lats_min']
-            df_resultado.rename({'tempo': 'dt_prevista'}, axis=1, inplace=True)
-            df_resultado.fillna(999, inplace=True) # coloca 999 para conseguir subir no banco
-            df_resultado['str_modelo'] = self.modelo_fmt.lower()
-            df_resultado['dt_prevista'] = df_resultado['dt_prevista'].dt.strftime('%Y-%m-%d')
-            df_resultado["intensidades_olr"] = df_resultado["intensidades_olr"].astype(float)
-            df_resultado["intensidades_chuva"] = df_resultado["intensidades_chuva"].astype(float)
-            df_resultado['dt_rodada'] = inicializacao.strftime('%Y-%m-%d')
-            df_resultado['hr_rodada'] = inicializacao.hour
-
-            # Adicionando ao db
-            response = requests.post(f'{Constants().API_URL_APIV2}/meteorologia/indices-itcz-previstos', verify=False, json=df_resultado.to_dict('records'), headers=get_auth_header()) 
-            if response.status_code == 200:
-                print('Indices da ITCZ inseridos no banco com sucesso!')
-
-        elif modo == 'vento_weol':
-
-            if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
-                self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
-
-            ds = self.us100_mean.copy()
-            ds['v100'] = self.vs100_mean['v100']
-            ds['magnitude'] = np.sqrt(ds['u100']**2 + ds['v100']**2)
-            
-            # Dataframe com os dados dos pontos de grade do modelo 
-            if self.modelo_fmt in ['gefs', 'gefs-estendido', 'gefs-wind', 'gefs-estendido-wind']:
-                modelo_weol = 'gefs'
-            else:
-                modelo_weol = self.modelo_fmt
                 
-            pontos_quad_modelo = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/Link_Us_Quad_{modelo_weol.upper()}.txt', delimiter=';', encoding='latin1', header=None)
-            pontos_quad_modelo.columns = ['usina', 'lon', 'lat']
-            pontos_quad_modelo['prefixos'] = [x.split('_')[0] for x in pontos_quad_modelo['usina']]
+                # Criando o DataFrame final
+                df_resultado = pd.DataFrame({
+                    'tempo': tempos_fmt,
+                    'lats_min': lats_min,
+                    'lats_max': lats_max,
+                    'lats_menor_olr': lats_menor_olr,
+                    'lats_menor_vento': lats_menor_vento,
+                    'lats_media_vento_olr': latitudes_media_vento_olr,
+                    'intensidades_olr': intensidades_olr,
+                    'intensidades_chuva': intensidades_chuva, 
+                })
 
-            # Dados dos aglomerados
-            dados_pontos = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/DadosdosPontos.txt', delimiter=';', header=None)
-            dados_pontos.rename({0: 'Aglomerado', 1: 'PotenciaInstalada', 2: 'Submercado'}, inplace=True, axis=1)
+                df_resultado['largura'] = df_resultado['lats_max'] - df_resultado['lats_min']
+                df_resultado.rename({'tempo': 'dt_prevista'}, axis=1, inplace=True)
+                df_resultado.fillna(999, inplace=True) # coloca 999 para conseguir subir no banco
+                df_resultado['str_modelo'] = self.modelo_fmt.lower()
+                df_resultado['dt_prevista'] = df_resultado['dt_prevista'].dt.strftime('%Y-%m-%d')
+                df_resultado["intensidades_olr"] = df_resultado["intensidades_olr"].astype(float)
+                df_resultado["intensidades_chuva"] = df_resultado["intensidades_chuva"].astype(float)
+                df_resultado['dt_rodada'] = inicializacao.strftime('%Y-%m-%d')
+                df_resultado['hr_rodada'] = inicializacao.hour
 
-            # Dados das usinas
-            dados_usinas_weol = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/Dados_Usinas_WEOL_SH.txt', delimiter=';', encoding='latin1')
-            dados_usinas_weol['prefixos'] = [x.split('_')[0] for x in dados_usinas_weol['Usina']]
-            dados_usinas_weol['estado'] = dados_usinas_weol['Usina'].str[:2]
+                # Adicionando ao db
+                response = requests.post(f'{Constants().API_URL_APIV2}/meteorologia/indices-itcz-previstos', verify=False, json=df_resultado.to_dict('records'), headers=get_auth_header()) 
+                if response.status_code == 200:
+                    print('Indices da ITCZ inseridos no banco com sucesso!')
 
-            print('\n##########################################################')
-            tamanho_aglomerados = len(dados_pontos['Aglomerado'])
+            elif modo == 'vento_weol':
 
-            valores_gerados = []
-            
-            for i, aglomerado in enumerate(dados_pontos['Aglomerado']):
+                if self.us100_mean is None or self.vs100_mean is None or self.cond_ini is None:
+                    self.us100, self.vs100, self.us100_mean, self.vs100_mean, self.cond_ini = self._carregar_uv100_mean()
 
-                print(f'Processando ... {aglomerado} ({i+1}/{tamanho_aglomerados})')
-
-                # Filtrando por aglomerado
-                usinas = dados_pontos[dados_pontos['Aglomerado'] == aglomerado].dropna(axis=1)
-                usinas = usinas.loc[:, ~usinas.columns.isin(["Aglomerado", "PotenciaInstalada", "Submercado"])].values.tolist()[0]
-                pontos_gfs_filtrados = pontos_quad_modelo[pontos_quad_modelo['prefixos'].isin(usinas)]
-                dados_usina_filtrados = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]', 'prefixos', 'estado']]
-                estado = dados_usina_filtrados['estado'].values[0]
-                potencia_instalada = dados_usina_filtrados.set_index('prefixos').to_dict().get('Pot Instalada [MW]')
-                potencia_total_instalada = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]']].sum().values[0]
-                lons = pontos_gfs_filtrados['lon'].to_list()
-                lons = [360+x for x in lons]
-                lats = pontos_gfs_filtrados['lat'].to_list()
-
-                # Gerando o vento previsto ponderado pela potencia instalada
-                valores = []
-
-                for index, (lat, lon, usina) in enumerate(zip(lats, lons, usinas)):
-
-                    print(f'Usina: {usina} ... {index+1}/{len(usinas)}')
+                ds = self.us100_mean.copy()
+                ds['v100'] = self.vs100_mean['v100']
+                ds['magnitude'] = np.sqrt(ds['u100']**2 + ds['v100']**2)
+                
+                # Dataframe com os dados dos pontos de grade do modelo 
+                if self.modelo_fmt in ['gefs', 'gefs-estendido', 'gefs-wind', 'gefs-estendido-wind']:
+                    modelo_weol = 'gefs'
+                else:
+                    modelo_weol = self.modelo_fmt
                     
-                    potencia = potencia_instalada.get(usina)
-                    valor = ds.sel(latitude=lat, longitude=lon, method='nearest')['magnitude'].to_dataframe().reset_index()
-                    valor = valor[['valid_time', 'latitude', 'longitude', 'magnitude']]
-                    valor['valid_time'] = pd.to_datetime(valor['valid_time'].values) - pd.Timedelta(hours=3)
-                    valor['usina'] = usina
-                    valor['pot_instalda/total'] = potencia/potencia_total_instalada
-                    valor['magnitude_ponderada'] = valor['magnitude'] * valor['pot_instalda/total']
-                    valores.append(valor)
-        
-                valores = pd.concat(valores, axis=0)
-                valores = valores.sort_values(by='valid_time').groupby('valid_time')[['magnitude_ponderada']].sum().reset_index()
-                valores = valores[valores['valid_time'] >= pd.to_datetime(self.us100_mean.time.values)] # pegar apenas os dias da inicialização para frente pq tirei 3 horas (hora GMT-3)   
+                pontos_quad_modelo = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/Link_Us_Quad_{modelo_weol.upper()}.txt', delimiter=';', encoding='latin1', header=None)
+                pontos_quad_modelo.columns = ['usina', 'lon', 'lat']
+                pontos_quad_modelo['prefixos'] = [x.split('_')[0] for x in pontos_quad_modelo['usina']]
 
-                to_txt = False
-                if to_txt:
+                # Dados dos aglomerados
+                dados_pontos = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/DadosdosPontos.txt', delimiter=';', header=None)
+                dados_pontos.rename({0: 'Aglomerado', 1: 'PotenciaInstalada', 2: 'Submercado'}, inplace=True, axis=1)
 
-                    pivot_df = valores.pivot_table(index="rodada", columns="valid_time", values="magnitude_ponderada")
-                    pivot_df.columns = valores["Hora"]
+                # Dados das usinas
+                dados_usinas_weol = pd.read_table(f'{Constants().PATH_ARQUIVOS_WEOL}/Dados_Usinas_WEOL_SH.txt', delimiter=';', encoding='latin1')
+                dados_usinas_weol['prefixos'] = [x.split('_')[0] for x in dados_usinas_weol['Usina']]
+                dados_usinas_weol['estado'] = dados_usinas_weol['Usina'].str[:2]
 
-                    filename = f'{path_to_save}/{aglomerado}_Ven_Prev_{self.modelo_fmt.upper()}'
+                print('\n##########################################################')
+                tamanho_aglomerados = len(dados_pontos['Aglomerado'])
 
-                    # Criar o cabeçalho com as horas
-                    header = "Data;" + ";".join(map(str, pivot_df.columns))
+                valores_gerados = []
+                
+                for i, aglomerado in enumerate(dados_pontos['Aglomerado']):
 
-                    # Criar as linhas com as datas e valores correspondentes
-                    rows = "\n".join(
-                        f"{row.name};" + ";".join(f"{val:.2f}" for val in row)
-                        for _, row in pivot_df.iterrows()
+                    print(f'Processando ... {aglomerado} ({i+1}/{tamanho_aglomerados})')
+
+                    # Filtrando por aglomerado
+                    usinas = dados_pontos[dados_pontos['Aglomerado'] == aglomerado].dropna(axis=1)
+                    usinas = usinas.loc[:, ~usinas.columns.isin(["Aglomerado", "PotenciaInstalada", "Submercado"])].values.tolist()[0]
+                    pontos_gfs_filtrados = pontos_quad_modelo[pontos_quad_modelo['prefixos'].isin(usinas)]
+                    dados_usina_filtrados = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]', 'prefixos', 'estado']]
+                    estado = dados_usina_filtrados['estado'].values[0]
+                    potencia_instalada = dados_usina_filtrados.set_index('prefixos').to_dict().get('Pot Instalada [MW]')
+                    potencia_total_instalada = dados_usinas_weol[dados_usinas_weol['prefixos'].isin(usinas)][['Pot Instalada [MW]']].sum().values[0]
+                    lons = pontos_gfs_filtrados['lon'].to_list()
+                    lons = [360+x for x in lons]
+                    lats = pontos_gfs_filtrados['lat'].to_list()
+
+                    # Gerando o vento previsto ponderado pela potencia instalada
+                    valores = []
+
+                    for index, (lat, lon, usina) in enumerate(zip(lats, lons, usinas)):
+
+                        print(f'Usina: {usina} ... {index+1}/{len(usinas)}')
+                        
+                        potencia = potencia_instalada.get(usina)
+                        valor = ds.sel(latitude=lat, longitude=lon, method='nearest')['magnitude'].to_dataframe().reset_index()
+                        valor = valor[['valid_time', 'latitude', 'longitude', 'magnitude']]
+                        valor['valid_time'] = pd.to_datetime(valor['valid_time'].values) - pd.Timedelta(hours=3)
+                        valor['usina'] = usina
+                        valor['pot_instalda/total'] = potencia/potencia_total_instalada
+                        valor['magnitude_ponderada'] = valor['magnitude'] * valor['pot_instalda/total']
+                        valores.append(valor)
+            
+                    valores = pd.concat(valores, axis=0)
+                    valores = valores.sort_values(by='valid_time').groupby('valid_time')[['magnitude_ponderada']].sum().reset_index()
+                    valores = valores[valores['valid_time'] >= pd.to_datetime(self.us100_mean.time.values)] # pegar apenas os dias da inicialização para frente pq tirei 3 horas (hora GMT-3)   
+
+                    to_txt = False
+                    if to_txt:
+
+                        pivot_df = valores.pivot_table(index="rodada", columns="valid_time", values="magnitude_ponderada")
+                        pivot_df.columns = valores["Hora"]
+
+                        filename = f'{path_to_save}/{aglomerado}_Ven_Prev_{self.modelo_fmt.upper()}'
+
+                        # Criar o cabeçalho com as horas
+                        header = "Data;" + ";".join(map(str, pivot_df.columns))
+
+                        # Criar as linhas com as datas e valores correspondentes
+                        rows = "\n".join(
+                            f"{row.name};" + ";".join(f"{val:.2f}" for val in row)
+                            for _, row in pivot_df.iterrows()
+                        )
+
+                        # Salvar no formato TXT
+                        output = f"{header}\n{rows}"
+                        with open(f"{filename}.txt", "w") as file:
+                            file.write(output)
+
+                    print('\n##########################################################\n')
+
+                    valores = valores.set_index('valid_time').resample('D').mean().reset_index()
+                    valores['estado'] = estado
+                    valores['aglomerado'] = aglomerado
+                    valores_gerados.append(valores)    
+
+                prev_estado = True
+                if prev_estado:
+                    valores_gerados = pd.concat(valores_gerados, axis=0)
+                    valores_gerados = valores_gerados.groupby(['estado', 'valid_time', 'aglomerado'])['magnitude_ponderada'].mean().reset_index()
+                    valores_gerados.rename(columns={'valid_time': 'dt_prevista', 'magnitude_ponderada': 'vl_vento'}, inplace=True)
+                    valores_gerados['dt_prevista'] = pd.to_datetime(valores_gerados['dt_prevista']).dt.strftime('%Y-%m-%d')
+                    valores_gerados_json = {'dt_rodada': pd.to_datetime(self.us100_mean.time.values).strftime('%Y-%m-%d'), 'hr_rodada': pd.to_datetime(self.us100_mean.time.values).hour, 'modelo': self.modelo_fmt, 'valores': valores_gerados.to_dict(orient='records')}
+                    resposta = requests.post(url='https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto', json=valores_gerados_json, headers=get_auth_header())
+                    print(f'Resposta da API: {resposta.status_code} - {resposta.text}')
+
+            elif modo == 'psi_cfsv2':
+
+                self.psi200, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi200', prefix_cfs='psi200', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.psi850, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi850', prefix_cfs='psi850', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+
+                psi200 = resample_variavel(self.psi200, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+                psi850 = resample_variavel(self.psi850, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+
+                psi200 = psi200 - psi200.mean(dim='latitude').mean(dim='longitude')
+                psi200 = psi200 - psi200.mean(dim='longitude')
+
+                psi850 = psi850 - psi850.mean(dim='latitude').mean(dim='longitude')
+                psi850 = psi850 - psi850.mean(dim='longitude')
+
+                for n_semana in psi200.tempo:
+
+                    print(f'Processando semana {n_semana.item()}...')
+                    psi200_plot = psi200.sel(tempo=n_semana)
+                    psi850_plot = psi850.sel(tempo=n_semana)
+                    intervalo = psi200_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = psi200_plot.days_of_weeks.item()
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
                     )
 
-                    # Salvar no formato TXT
-                    output = f"{header}\n{rows}"
-                    with open(f"{filename}.txt", "w") as file:
-                        file.write(output)
-
-                print('\n##########################################################\n')
-
-                valores = valores.set_index('valid_time').resample('D').mean().reset_index()
-                valores['estado'] = estado
-                valores['aglomerado'] = aglomerado
-                valores_gerados.append(valores)    
-
-            prev_estado = True
-            if prev_estado:
-                valores_gerados = pd.concat(valores_gerados, axis=0)
-                valores_gerados = valores_gerados.groupby(['estado', 'valid_time', 'aglomerado'])['magnitude_ponderada'].mean().reset_index()
-                valores_gerados.rename(columns={'valid_time': 'dt_prevista', 'magnitude_ponderada': 'vl_vento'}, inplace=True)
-                valores_gerados['dt_prevista'] = pd.to_datetime(valores_gerados['dt_prevista']).dt.strftime('%Y-%m-%d')
-                valores_gerados_json = {'dt_rodada': pd.to_datetime(self.us100_mean.time.values).strftime('%Y-%m-%d'), 'hr_rodada': pd.to_datetime(self.us100_mean.time.values).hour, 'modelo': self.modelo_fmt, 'valores': valores_gerados.to_dict(orient='records')}
-                resposta = requests.post(url='https://tradingenergiarz.com/api/v2/meteorologia/vento-previsto', json=valores_gerados_json, headers=get_auth_header())
-                print(f'Resposta da API: {resposta.status_code} - {resposta.text}')
-
-        elif modo == 'psi_cfsv2':
-
-            self.psi200, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi200', prefix_cfs='psi200', data_fmt=self.data_fmt, ensemble=True, **kwargs)
-            self.psi850, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi850', prefix_cfs='psi850', data_fmt=self.data_fmt, ensemble=True, **kwargs)
-
-            psi200 = resample_variavel(self.psi200, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
-            psi850 = resample_variavel(self.psi850, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
-
-            psi200 = psi200 - psi200.mean(dim='latitude').mean(dim='longitude')
-            psi200 = psi200 - psi200.mean(dim='longitude')
-
-            psi850 = psi850 - psi850.mean(dim='latitude').mean(dim='longitude')
-            psi850 = psi850 - psi850.mean(dim='longitude')
-
-            for n_semana in psi200.tempo:
-
-                print(f'Processando semana {n_semana.item()}...')
-                psi200_plot = psi200.sel(tempo=n_semana)
-                psi850_plot = psi850.sel(tempo=n_semana)
-                intervalo = psi200_plot.intervalo.item().replace(' ', '\ ')
-                days_of_week = psi200_plot.days_of_weeks.item()
-
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
-                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                    semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
-                )
-
-                if anomalia_sop:
-                    if 'ecmwf' in self.modelo_fmt.lower():
-                        footnote_text = 'Hindcast 2004-2023'
-                    elif 'gefs' in self.modelo_fmt.lower():
-                        footnote_text = 'Hindcast 2000-2019'
-                    elif 'cfs' in self.modelo_fmt.lower():
-                        footnote_text = 'Hindcast 1999-2010'
+                    if anomalia_sop:
+                        if 'ecmwf' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2004-2023'
+                        elif 'gefs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2000-2019'
+                        elif 'cfs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 1999-2010'
+                        else:
+                            footnote_text = 'Outro hindcast'
                     else:
-                        footnote_text = 'Outro hindcast'
-                else:
-                    footnote_text = False
+                        footnote_text = False
 
-                if self.modelo_fmt in ['cfsv2']:
-                    model_filename = f'psi_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                    if self.modelo_fmt in ['cfsv2']:
+                        model_filename = f'psi_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
 
-                else:
-                    model_filename = f'anom_semana_energ-r{self.data_fmt}'
-
-                # Retira o periods_cfs do kwargs
-                kwargs.pop('periods_cfs', None)
-
-                plot_campos(
-                    ds=psi200_plot/1e6,
-                    variavel_plotagem='psi',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, model_filename, index),
-                    ds_contour=psi850_plot/1e6,
-                    variavel_contour='psi',
-                    color_contour='black',
-                    plot_bacias=False,
-                    path_to_save=path_to_save,
-                    with_logo=False,
-                    **kwargs
-                )
-    
-        elif modo == 'sst_cfsv2':
-
-            self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
-            self.sst = self.sst.isel(depth=0)
-            sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
-
-            for n_semana in sst.tempo:
-
-                print(f'Processando semana {n_semana.item()}...')
-                sst_plot = sst.sel(tempo=n_semana)
-                intervalo = sst_plot.intervalo.item().replace(' ', '\ ')
-                days_of_week = sst_plot.days_of_weeks.item()
-
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
-                    cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                    semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
-                )
-
-                if anomalia_sop:
-                    if 'ecmwf' in self.modelo_fmt.lower():
-                        footnote_text = 'Hindcast 2004-2023'
-                    elif 'gefs' in self.modelo_fmt.lower():
-                        footnote_text = 'Hindcast 2000-2019'
-                    elif 'cfs' in self.modelo_fmt.lower():
-                        footnote_text = 'Hindcast 1999-2010'
                     else:
-                        footnote_text = 'Outro hindcast'
-                else:
-                    footnote_text = False
+                        model_filename = f'anom_semana_energ-r{self.data_fmt}'
 
-                if self.modelo_fmt in ['cfsv2']:
-                    model_filename = f'tsm_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                    # Retira o periods_cfs do kwargs
+                    kwargs.pop('periods_cfs', None)
 
-                else:
-                    model_filename = f'anom_semana_energ-r{self.data_fmt}'
-
-                # Retira o periods_cfs do kwargs
-                kwargs.pop('periods_cfs', None)
-
-                plot_campos(
-                    ds=sst_plot['pt'],
-                    variavel_plotagem='sst_anomalia', 
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
-                    path_to_save=path_to_save,
-                    # footnote_text=footnote_text,
-                    central_longitude=180,
-                    **kwargs
-                )
+                    plot_campos(
+                        ds=psi200_plot/1e6,
+                        variavel_plotagem='psi',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, model_filename, index),
+                        ds_contour=psi850_plot/1e6,
+                        variavel_contour='psi',
+                        color_contour='black',
+                        plot_bacias=False,
+                        path_to_save=path_to_save,
+                        with_logo=False,
+                        **kwargs
+                    )
         
-        # except Exception as e:
-        #     print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
+            elif modo == 'sst_cfsv2':
+
+                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.sst = self.sst.isel(depth=0)
+                sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+
+                for n_semana in sst.tempo:
+
+                    print(f'Processando semana {n_semana.item()}...')
+                    sst_plot = sst.sel(tempo=n_semana)
+                    intervalo = sst_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = sst_plot.days_of_weeks.item()
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
+                    )
+
+                    if anomalia_sop:
+                        if 'ecmwf' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2004-2023'
+                        elif 'gefs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2000-2019'
+                        elif 'cfs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 1999-2010'
+                        else:
+                            footnote_text = 'Outro hindcast'
+                    else:
+                        footnote_text = False
+
+                    if self.modelo_fmt in ['cfsv2']:
+                        model_filename = f'tsm_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+
+                    else:
+                        model_filename = f'anom_semana_energ-r{self.data_fmt}'
+
+                    # Retira o periods_cfs do kwargs
+                    kwargs.pop('periods_cfs', None)
+
+                    plot_campos(
+                        ds=sst_plot['pt'],
+                        variavel_plotagem='sst_anomalia', 
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
+                        path_to_save=path_to_save,
+                        # footnote_text=footnote_text,
+                        central_longitude=180,
+                        **kwargs
+                    )
+            
+        except Exception as e:
+            print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
     def _processar_chuva_db(self, **kwargs):
 
