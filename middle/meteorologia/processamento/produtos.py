@@ -1431,7 +1431,7 @@ class GeraProdutosPrevisao:
                         if anomalia_sop:
                             if 'ecmwf' in self.modelo_fmt.lower():
                                 footnote_text = 'Hindcast 2004-2023'
-                            elif 'gfs' in self.modelo_fmt.lower():
+                            elif 'gefs' in self.modelo_fmt.lower():
                                 footnote_text = 'Hindcast 2000-2019'
                             elif 'cfs' in self.modelo_fmt.lower():
                                 footnote_text = 'Hindcast 1999-2010'
