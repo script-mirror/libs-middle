@@ -3789,7 +3789,7 @@ class GeraProdutosPrevisao:
 
             elif modo == 'sst_cfsv2':
 
-                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', data_fmt=self.data_fmt, ensemble=True, **kwargs)
                 print(self.sst)
             
         except Exception as e:
