@@ -612,7 +612,11 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if modelo_fmt in ['cfsv2']:
 
             path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
-            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
+            if prefix_cfs == 'prate':
+                file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc'
+            else:
+                file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily.nc'
+            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{file_clim}')
             ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
             ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
             ds_list = []
@@ -3749,6 +3753,8 @@ class GeraProdutosPrevisao:
 
                 self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
                 print(self.sst)
+
+                sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
             
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
