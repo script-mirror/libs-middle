@@ -844,7 +844,7 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
 
 ###################################################################################################################
 
-def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=True, **kwargs):
+def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=True, prefix_cfs='prate', **kwargs):
 
     dates = pd.date_range(end=produto_config.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
 
@@ -857,7 +857,10 @@ def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=Tr
 
         print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
-        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
+        if variavel == 'psi200' or variavel == 'psi850':
+            variavel = 'strf'
+
+        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, prefix_cfs=prefix_cfs)
         tp_tmp = tp_tmp.expand_dims(number=[index])
         tmps.append(tp_tmp)
 

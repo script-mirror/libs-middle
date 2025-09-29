@@ -451,7 +451,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, 
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
                         ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
-                        rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None,
+                        rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None, prefix_cfs=None,
                         ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
@@ -484,6 +484,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         else:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
+
+        if prefix_cfs is not None:
+            files = [f for f in files if prefix_cfs in f]
 
         if len(files) == 0:
             raise FileNotFoundError(f'Nenhum arquivo encontrado no diretório: {caminho_para_salvar}')
@@ -609,7 +612,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if modelo_fmt in ['cfsv2']:
 
             path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
-            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{variavel}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
+            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
             ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
             ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
             ds_list = []
@@ -1139,36 +1142,8 @@ class GeraProdutosPrevisao:
 
                 else:
 
-                    self.tp, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='prate', data_fmt=self.data_fmt, ensemble=ensemble, **kwargs)
+                    self.tp, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='prate', data_fmt=self.data_fmt, ensemble=ensemble, prefix_cfs='prate', **kwargs)
                     self.tp_mean = self.tp.copy()
-
-                    # dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
-
-                    # tmps = []
-                    
-                    # for index, date in enumerate(dates):
-
-                    #     data_fmt = date.strftime('%Y%m%d')
-                    #     inicializacao_fmt = str(date.hour).zfill(2)
-
-                    #     print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
-
-                    #     tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
-                    #     tp_tmp = tp_tmp.expand_dims(number=[index])
-                    #     tmps.append(tp_tmp)
-
-                    # # self.tp = xr.concat(tmps, dim='valid_time')
-                    # self.tp = xr.concat(tmps, dim="number")
-                    # self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
-                    # self.tp_mean = ensemble_mean(self.tp) if ensemble else self.tp.copy()
-                    # self.tp_mean = self.tp_mean * 60 * 60 * 24
-                    # self.tp_mean = self.tp_mean.assign_coords(
-                    #     time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
-                    # )
-                    # self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                    # ini = dates[0].strftime('%d/%m/%Y %H UTC')
-                    # fim = dates[-1].strftime('%d/%m/%Y %H UTC')
-                    # self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
                     
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -3767,33 +3742,12 @@ class GeraProdutosPrevisao:
 
             elif modo == 'psi_cfsv2':
 
-                dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
-
-                tmps = []
-                
-                for date in dates:
-
-                    data_fmt = date.strftime('%Y%m%d')
-                    inicializacao_fmt = str(date.hour).zfill(2)
-
-                    print(f'Carregando {data_fmt} {inicializacao_fmt}Z...')
-
-                    psi200_tmp = self.produto_config_sf.open_model_file(variavel='psi200', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
-                    psi850_tmp = self.produto_config_sf.open_model_file(variavel='psi850', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
-                    tmps.append(psi200_tmp)
-                    tmps.append(psi850_tmp)
-
-                self.psi = xr.concat(tmps, dim='valid_time')
-                self.psi = self.psi.groupby('valid_time').mean(dim='valid_time')
-                self.psi = self.psi.assign_coords(
-                    time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
-                )
-                self.psi = self.psi.sel(valid_time=self.psi.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                # self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
+                self.psi200, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi200', prefix_cfs='psi200', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.psi850, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi850', prefix_cfs='psi850', data_fmt=self.data_fmt, ensemble=True, **kwargs)
 
             elif modo == 'sst_cfsv2':
 
-                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
                 print(self.sst)
             
         except Exception as e:
