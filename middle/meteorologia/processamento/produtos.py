@@ -1146,22 +1146,21 @@ class GeraProdutosPrevisao:
                     print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
                     tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
+                    tp_tmp['number'] = index
                     tmps.append(tp_tmp)
 
                 self.tp = xr.concat(tmps, dim='valid_time')
+                print(self.tp)
                 self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
                 self.tp_mean = self.tp*60*60*24
                 self.tp_mean = self.tp_mean.assign_coords(
                     time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
                 )
                 self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                ini = dates[0].strftime('%d/%m/%Y %H UTC').replace(' ', r'\ ')
-                fim = dates[-1].strftime('%d/%m/%Y %H UTC').replace(' ', r'\ ')
+                ini = dates[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\ ')
+                fim = dates[-1].strftime('%d/%m/%Y %H UTC').replace(' ', '\ ')
                 self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
                 
-                # Retira o periods_cfs do kwargs
-                kwargs.pop('periods_cfs', None)
-
         if modo == '24h':
             tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
             
@@ -1447,14 +1446,24 @@ class GeraProdutosPrevisao:
 
                     if self.modelo_fmt in ['cfsv2'] or anomalia_sop == True:
                         variavel_plotagem = 'tp_anomalia'
+
                     else:
                         variavel_plotagem = 'chuva_ons'
+
+                    if self.modelo_fmt in ['cfsv2']:
+                        model_filename = f'prate_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+
+                    else:
+                        model_filename = f'anom_semana_energ-r{self.data_fmt}'
+
+                    # Retira o periods_cfs do kwargs
+                    kwargs.pop('periods_cfs', None)
 
                     plot_campos(
                         ds=tp_plot['tp'],
                         variavel_plotagem=variavel_plotagem, 
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, f'anom_semana_energ-r{self.data_fmt}', n_semana.item()),
+                        filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
                         footnote_text=footnote_text,
