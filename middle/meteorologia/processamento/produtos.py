@@ -1146,19 +1146,21 @@ class GeraProdutosPrevisao:
                     print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
                     tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
-                    tp_tmp['number'] = index
+                    tp_tmp = tp_tmp.expand_dims(number=[index])
                     tmps.append(tp_tmp)
 
-                self.tp = xr.concat(tmps, dim='valid_time')
+                # self.tp = xr.concat(tmps, dim='valid_time')
+                self.tp = xr.concat(tmps, dim="number")
                 print(self.tp)
                 self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
-                self.tp_mean = self.tp*60*60*24
+                self.tp_mean = ensemble_mean(self.tp) if ensemble else self.tp.copy()
+                self.tp_mean = self.tp_mean * 60 * 60 * 24
                 self.tp_mean = self.tp_mean.assign_coords(
                     time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
                 )
                 self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                ini = dates[0].strftime('%d/%m/%Y %H UTC').replace(' ', '\ ')
-                fim = dates[-1].strftime('%d/%m/%Y %H UTC').replace(' ', '\ ')
+                ini = dates[0].strftime('%d/%m/%Y %H UTC')
+                fim = dates[-1].strftime('%d/%m/%Y %H UTC')
                 self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
                 
         if modo == '24h':
@@ -1429,7 +1431,7 @@ class GeraProdutosPrevisao:
                     titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
                         cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True
+                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
                     )
 
                     if anomalia_sop:
