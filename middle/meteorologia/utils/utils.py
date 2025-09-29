@@ -852,15 +852,15 @@ def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=Tr
     
     for index, date in enumerate(dates):
 
-        data_fmt = date.strftime('%Y%m%d')
+        date_fmt = date.strftime('%Y%m%d')
         inicializacao_fmt = str(date.hour).zfill(2)
 
-        print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
+        print(f'Carregando {date_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
 
         if variavel == 'psi200' or variavel == 'psi850':
             variavel = 'strf'
 
-        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, prefix_cfs=prefix_cfs)
+        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=date_fmt, inicializacao_fmt=inicializacao_fmt, prefix_cfs=prefix_cfs, sel_area=False)
         tp_tmp = tp_tmp.expand_dims(number=[index])
         tmps.append(tp_tmp)
 
