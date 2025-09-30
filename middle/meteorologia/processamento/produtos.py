@@ -459,8 +459,12 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
 
                         for variavel in variables:
-                            url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.{data_fmt}/{inicializacao_fmt}/monthly_grib_{membro_cfs}/{variavel}.{membro_cfs}.{data_fmt}.{month_prev}.avrg.grib.grb2'
-                            filename = f'{caminho_para_salvar}/{self.name_prefix}_{variavel}.{membro_cfs}.{data_fmt}.{month_prev}.avrg.grib.grb2' if self.name_prefix else f'{caminho_para_salvar}/{variavel}.{membro_cfs}.{variavel}.{membro_cfs}.{data_fmt}.{month_prev}.avrg.grib.grb2'
+                            url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.{data_fmt}/{inicializacao_fmt}/monthly_grib_{membro_cfs}/{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.{month_prev}.avrg.grib.grb2'
+                            filename = f'{caminho_para_salvar}/{self.name_prefix}_{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.{month_prev}.avrg.grib.grb2' if self.name_prefix else f'{caminho_para_salvar}/{variavel}.{membro_cfs}.{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.{month_prev}.avrg.grib.grb2'
+
+                            # https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.20250930/00/monthly_grib_01/flxf.01.20250930.202509.avrg.grib.grb2
+                            # https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.20250930/00/monthly_grib_01/flxf.01.2025093000.202509.avrg.grib.grb2
+
 
                             file = requests.get(url, allow_redirects=True)
                             if file.status_code == 200:
