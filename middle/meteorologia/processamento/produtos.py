@@ -3798,11 +3798,11 @@ class GeraProdutosPrevisao:
                     kwargs.pop('periods_cfs', None)
 
                     plot_campos(
-                        ds=psi200_plot/1e6,
+                        ds=psi200_plot['strf']/1e6,
                         variavel_plotagem='psi',
                         title=titulo,
                         filename=formato_filename(self.modelo_fmt, model_filename, index),
-                        ds_contour=psi850_plot/1e6,
+                        ds_contour=psi850_plot['strf']/1e6,
                         variavel_contour='psi',
                         color_contour='black',
                         plot_bacias=False,
