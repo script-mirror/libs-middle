@@ -3867,7 +3867,6 @@ class GeraProdutosPrevisao:
                         plot_bacias=False,
                         path_to_save=path_to_save,
                         with_logo=False,
-                        central_longitude=180,
                         **kwargs
                     )
         
