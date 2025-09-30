@@ -453,7 +453,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                 for date in dates:
 
-                    month_prev = dates.strftime('%Y%m')
+                    month_prev = date.strftime('%Y%m')
 
                     while True:
                         todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
