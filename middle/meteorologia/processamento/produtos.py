@@ -1795,13 +1795,13 @@ class GeraProdutosPrevisao:
                         prob = prob*100
 
                         if index == 0:
-                            tipo = '>'
+                            tipo = 'acima'
 
                         elif index == 1:
-                            tipo = '<'
+                            tipo = 'abaixo'
 
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Prob {tipo} clim. S{n_semana.item()}',
+                            modelo=self.modelo_fmt, tipo=f'P {tipo} clim. S{n_semana.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                             semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                         )
