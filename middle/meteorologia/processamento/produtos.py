@@ -1404,6 +1404,7 @@ class GeraProdutosPrevisao:
             elif modo == 'semanas_operativas':
 
                 tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=qtdade_max_semanas, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
+                qtdade_rodadas = kwargs.get('periods_cfs', 12)
 
                 for n_semana in tp_sop.tempo:
 
@@ -1429,6 +1430,7 @@ class GeraProdutosPrevisao:
                                 footnote_text = 'Hindcast 1999-2010'
                             else:
                                 footnote_text = 'Outro hindcast'
+
                         else:
                             footnote_text = False
 
@@ -1439,7 +1441,7 @@ class GeraProdutosPrevisao:
                             variavel_plotagem = 'chuva_ons'
 
                         if self.modelo_fmt in ['cfsv2']:
-                            model_filename = f'prate_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                            model_filename = f'prate_anom_semana_energ-r{self.data_fmt}_{qtdade_rodadas}rodadas'
 
                         else:
                             model_filename = f'anom_semana_energ-r{self.data_fmt}'
