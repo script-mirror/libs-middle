@@ -623,7 +623,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             for valid_time in ds.valid_time[:360]:
 
-                print(f'Gerando a anomalia para {valid_time.values}')
+                # print(f'Gerando a anomalia para {valid_time.values}')
 
                 ds_sel = ds.sel(valid_time=valid_time)
                 tempo_dt = pd.to_datetime(valid_time.values)
@@ -1132,22 +1132,22 @@ class GeraProdutosPrevisao:
             print(f"Gerando mapa de precipitação ({modo})...")
 
             # Carrega e processa dado
-            if self.tp_mean is None or self.cond_ini is None or self.tp is None:
+            if self.modelo_fmt in ['cfsv2']:
 
-                if self.modelo_fmt not in ['cfsv2']:
+                self.tp, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='prate', data_fmt=self.data_fmt, ensemble=ensemble, prefix_cfs='prate', **kwargs)
+                self.tp_mean = self.tp.copy()
+
+            else:
+
+                if self.tp_mean is None or self.cond_ini is None or self.tp is None:
 
                     if self.modelo_fmt == 'eta':
                         variavel = 'prec'
-                    elif self.modelo_fmt in ['cfsv2']:
-                        variavel = 'prate'
+
                     else:
                         variavel = 'tp'
+
                     self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
-
-                else:
-
-                    self.tp, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='prate', data_fmt=self.data_fmt, ensemble=ensemble, prefix_cfs='prate', **kwargs)
-                    self.tp_mean = self.tp.copy()
                     
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -3762,7 +3762,7 @@ class GeraProdutosPrevisao:
                 psi850 = psi850 - psi850.mean(dim='latitude').mean(dim='longitude')
                 psi850 = psi850 - psi850.mean(dim='longitude')
 
-                for n_semana in psi200.tempo:
+                for index, n_semana in enumerate(psi200.tempo):
 
                     print(f'Processando semana {n_semana.item()}...')
                     psi200_plot = psi200.sel(tempo=n_semana)
