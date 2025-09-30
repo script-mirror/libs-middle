@@ -820,6 +820,7 @@ class ConfigProdutosObservado:
         # Caminho para salvar os arquivos
         caminho_para_salvar = f'{output_path}/'
         files = os.listdir(caminho_para_salvar)
+        files = [f for f in files if '.idx' not in f]
 
         if variavel is not None:
             files = [f for f in files if variavel in f or variavel.lower() in f.lower()]
