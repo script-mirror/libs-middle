@@ -1745,10 +1745,10 @@ class GeraProdutosPrevisao:
                         prob = prob*100
 
                         if index == 0:
-                            tipo = 'acima'
+                            tipo = '>'
 
                         elif index == 1:
-                            tipo = 'abaixo'
+                            tipo = '<'
 
                         titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo=f'Prob {tipo} clim. S{n_semana.item()}',
