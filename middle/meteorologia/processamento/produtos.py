@@ -1749,16 +1749,18 @@ class GeraProdutosPrevisao:
                             tipo = 'abaixo'
 
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Prob {tipo} clim. Semana{n_semana.item()}',
+                            modelo=self.modelo_fmt, tipo=f'Prob {tipo} clim. S{n_semana.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                         )
 
                         if self.modelo_fmt in ['cfsv2']:
                             model_filename = f'{tipo}-probclimatologia_{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
-                            
+
                             # Retira o periods_cfs do kwargs
                             kwargs.pop('periods_cfs', None)
+
+                            path_to_save = f'{self.path_savefiguras}/semana-energ-probabilidades'
 
                         else:
                             model_filename = f'{tipo}-probclimatologia'
@@ -1767,7 +1769,7 @@ class GeraProdutosPrevisao:
                             ds=prob,
                             variavel_plotagem='probabilidade',
                             title=titulo,
-                            filename=formato_filename(self.modelo_fmt, f'{tipo}-probclimatologia', f'{index_semana+1}{index}'),
+                            filename=formato_filename(self.modelo_fmt, model_filename, f'{index_semana+1}{index}'),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
