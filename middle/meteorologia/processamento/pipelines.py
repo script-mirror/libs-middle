@@ -400,6 +400,16 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         elif tipo == 'pl':
             return []
 
+
+    elif modelo == 'cfsv2-mensal':
+
+        if tipo == 'sfc':
+            return [
+            ]
+    
+        elif tipo == 'pl':
+            return []
+
     return 
 
 ###################################################################################################################

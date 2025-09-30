@@ -447,6 +447,51 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     if todos_sucesso:
                         break  # Sai do while quando tudo estiver certo
 
+            elif modelo_fmt == 'cfsv2-mensal':
+
+                dates = pd.date_range(self.data, periods=10, freq='M')
+
+                for date in dates:
+
+                    month_prev = dates.strftime('%Y%m')
+
+                    while True:
+                        todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                        for variavel in variables:
+                            url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.{data_fmt}/{inicializacao_fmt}/monthly_grib_{membro_cfs}/{variavel}.{membro_cfs}.{data_fmt}.{month_prev}.avrg.grib.grb2'
+                            filename = f'{caminho_para_salvar}/{self.name_prefix}_{variavel}.{membro_cfs}.{data_fmt}.{month_prev}.avrg.grib.grb2' if self.name_prefix else f'{caminho_para_salvar}/{variavel}.{membro_cfs}.{variavel}.{membro_cfs}.{data_fmt}.{month_prev}.avrg.grib.grb2'
+
+                            file = requests.get(url, allow_redirects=True)
+                            if file.status_code == 200:
+                                with open(filename, 'wb') as f:
+                                    f.write(file.content)
+                            else:
+                                print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                                print(url)
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e volta ao início do while
+
+                            # Verifica se o arquivo foi baixado corretamente
+                            if os.path.exists(filename):
+                                if os.path.getsize(filename) < file_size:
+                                    print(f'⚠️ Arquivo {filename} está vazio/corrompido, removendo...')
+                                    os.remove(filename)
+                                    todos_sucesso = False
+                                    time.sleep(5)
+                                    break  # Sai do for e tenta de novo no while
+                                else:
+                                    print(f'✅ {filename} baixado com sucesso!')
+                            else:
+                                print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break
+
+                        if todos_sucesso:
+                            break  # Sai do while quando tudo estiver certo
+
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, 
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
