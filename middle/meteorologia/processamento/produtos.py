@@ -1754,9 +1754,11 @@ class GeraProdutosPrevisao:
                             semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
                         )
 
-
                         if self.modelo_fmt in ['cfsv2']:
                             model_filename = f'{tipo}-probclimatologia_{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                            
+                            # Retira o periods_cfs do kwargs
+                            kwargs.pop('periods_cfs', None)
 
                         else:
                             model_filename = f'{tipo}-probclimatologia'
@@ -3776,7 +3778,7 @@ class GeraProdutosPrevisao:
                     titulo = gerar_titulo(
                         modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
                         cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                     )
 
                     if anomalia_sop:
@@ -3811,6 +3813,7 @@ class GeraProdutosPrevisao:
                         plot_bacias=False,
                         path_to_save=path_to_save,
                         with_logo=False,
+                        central_longitude=180,
                         **kwargs
                     )
         
