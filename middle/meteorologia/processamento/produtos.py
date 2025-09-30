@@ -451,7 +451,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                 dates = pd.date_range(self.data, periods=10, freq='M')
 
-                for date in dates:
+                for date in dates[1:]:
 
                     month_prev = date.strftime('%Y%m')
 
