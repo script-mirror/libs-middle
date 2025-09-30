@@ -3762,6 +3762,9 @@ class GeraProdutosPrevisao:
                 psi850 = psi850 - psi850.mean(dim='latitude').mean(dim='longitude')
                 psi850 = psi850 - psi850.mean(dim='longitude')
 
+                psi200 = psi200.isel(lev=0)
+                psi850 = psi850.isel(lev=0)
+
                 for index, n_semana in enumerate(psi200.tempo):
 
                     print(f'Processando semana {n_semana.item()}...')
