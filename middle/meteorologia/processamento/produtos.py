@@ -3294,6 +3294,10 @@ class GeraProdutosPrevisao:
                 mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
                 ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
 
+                if os.path.isfile(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv') == False: # Casos de inicio de mes
+                    mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=2)).strftime('%m')
+                    ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=2)).strftime('%Y')
+
                 obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
                 obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
                 obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
