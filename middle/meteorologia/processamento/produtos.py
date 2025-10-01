@@ -842,6 +842,7 @@ class ConfigProdutosObservado:
 
             # Troca time por valid_time
             if modelo_fmt in ['merge', 'mergegpm']:
+                ds = ds.assign_coords(valid_time=("time", ds["time"].values)) # Para casos com time com apenas 1 tempo
                 ds = ds.swap_dims({'time': 'valid_time'})
 
             elif modelo_fmt in ['cpc']:
