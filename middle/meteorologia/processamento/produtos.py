@@ -1777,6 +1777,7 @@ class GeraProdutosPrevisao:
             elif modo == 'probabilidade_climatologia':
 
                 tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas, prob_semana=True, anomalia_sop=True)
+                qtdade_rodadas = kwargs.get('periods_cfs', 12)
 
                 for index_semana, n_semana in enumerate(tp_sop.tempo):
 
@@ -1807,7 +1808,7 @@ class GeraProdutosPrevisao:
                         )
 
                         if self.modelo_fmt in ['cfsv2']:
-                            model_filename = f'{tipo}-probclimatologia_{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                            model_filename = f'{tipo}-probclimatologia_{self.data_fmt}_{qtdade_rodadas}rodadas'
 
                             # Retira o periods_cfs do kwargs
                             kwargs.pop('periods_cfs', None)
