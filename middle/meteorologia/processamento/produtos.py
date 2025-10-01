@@ -3295,6 +3295,8 @@ class GeraProdutosPrevisao:
                 ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
 
                 if os.path.isfile(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv') == False: # Casos de inicio de mes
+                    mes_atual = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
+                    ano_atual = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
                     mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=2)).strftime('%m')
                     ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=2)).strftime('%Y')
 
