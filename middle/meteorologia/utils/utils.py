@@ -1,4 +1,5 @@
 from ast import mod
+from pickle import FALSE
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -202,7 +203,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                     interval_end = day + pd.Timedelta(hours=36)
                     intervals.append((interval_start, interval_end))
 
-            elif any(m in modelo.lower() for m in ['gefs', 'gfs', 'ecmwf']):
+            elif any(m in modelo.lower() for m in ['gefs', 'gfs', 'ecmwf', 'cmc', 'cmc-ens']):
                 hour_ini = pd.to_datetime(dataini).hour
                 if hour_ini == 0:
                     interval_start = day + pd.Timedelta(hours=18)
@@ -396,7 +397,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
 ###################################################################################################################
 
-def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True):
+def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True, engine='cfgrib'):
 
     backend_kwargs = backend_kwargs or {}
     datasets = []
@@ -406,7 +407,10 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
         print(f'Abrindo {f}... ({index+1}/{len(files)})')
 
         try:
-            ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
+            ds = xr.open_dataset(f, engine=engine, backend_kwargs=backend_kwargs, decode_timedelta=True)
+
+            print(backend_kwargs)
+            print(ds)
 
             # Renomeando lat para latitude e lon para longitude
             if 'lat' in ds.dims:
@@ -844,3 +848,39 @@ def painel_png(path_figs, output_file=None, path_figs2=None, str_contain='semana
 
 ###################################################################################################################
 
+def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=True, prefix_cfs='prate', **kwargs):
+
+    dates = pd.date_range(end=produto_config.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
+
+    tmps = []
+    
+    for index, date in enumerate(dates):
+
+        date_fmt = date.strftime('%Y%m%d')
+        inicializacao_fmt = str(date.hour).zfill(2)
+
+        print(f'Carregando {date_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
+
+        if variavel == 'psi200' or variavel == 'psi850':
+            variavel = 'strf'
+
+        tp_tmp = produto_config.open_model_file(variavel=variavel, data_fmt=date_fmt, inicializacao_fmt=inicializacao_fmt, prefix_cfs=prefix_cfs, sel_area=True if variavel in ['prate', 'tp'] else False)
+        tp_tmp = tp_tmp.expand_dims(number=[index])
+        tmps.append(tp_tmp)
+
+    ds = xr.concat(tmps, dim="number")
+    ds = ds.groupby('valid_time').mean(dim='valid_time')
+    ds = ensemble_mean(ds) if ensemble else ds.copy()
+    if variavel == 'prate':
+        ds = ds * 60 * 60 * 24
+    ds = ds.assign_coords(
+        time=pd.to_datetime(data_fmt, format='%Y%m%d%H')
+    )
+    ds = ds.sel(valid_time=ds.valid_time >= pd.to_datetime(data_fmt, format='%Y%m%d%H'))
+    ini = dates[0].strftime('%d/%m/%Y %H UTC')
+    fim = dates[-1].strftime('%d/%m/%Y %H UTC')
+    cond_ini = f"{ini} a {fim} ({len(dates)})Rod"
+
+    return ds, cond_ini
+
+###################################################################################################################

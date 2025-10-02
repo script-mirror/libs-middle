@@ -349,6 +349,13 @@ def custom_colorbar(variavel_plotagem):
         cmap = 'RdBu'
         cbar_ticks = np.arange(-3, 3.5, 0.5)
 
+    elif variavel_plotagem == 'sst_anomalia':
+        levels = np.arange(-3, 3.05, 0.05)
+        colors = ['indigo', 'darkblue', 'blue', 'dodgerblue', 'cyan', 'white', 'white', 'yellow', 'orange', 'red', 'darkred', 'maroon']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
+        cbar_ticks = np.arange(-3, 3.5, 0.5)
+
     return levels, colors, cmap, cbar_ticks
 
 ###################################################################################################################

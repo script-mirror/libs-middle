@@ -684,6 +684,14 @@ class Constants:
     @property
     def POST_ONS_RDH(self):
         return f"{self.BASE_URL}/api/v2/ons/rdh"
+    
+    @property
+    def GET_PREV_ENA(self):
+        return f"{self.BASE_URL}/api/v2/ons/prev/ena"
+    
+    @property
+    def POST_PREV_ENA(self):
+        return f"{self.BASE_URL}/api/v2/ons/prev/ena"
 
     # BBCE Endpoints
     @property

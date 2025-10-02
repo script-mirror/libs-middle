@@ -36,7 +36,8 @@ from ..utils.utils import (
     get_pontos_localidades,
     abrir_modelo_sem_vazios,
     formato_filename,
-    painel_png
+    painel_png,
+    ajusta_cfs_n_rodadas
 )
 
 ###################################################################################################################
@@ -63,7 +64,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
                                modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11, membro_cfs='01',
-                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
+                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024, convert_nc=False) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -115,10 +116,14 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
             prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file=geavg.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
 
+        elif modelo_fmt == 'cmc-ens':
+            prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_cmcens.pl?dir=%2F'
+            prefix_modelo = f'cmce.{data_fmt}%2F{inicializacao_fmt}%2Fpgrb2ap5&file=cmc_geavg.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
+
         # Baixando os arquivos
         if baixa_arquivos:
 
-            if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
+            if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido', 'cmc-ens']:
 
                 while True:
                     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
@@ -163,6 +168,15 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                 break  # Sai do for e tenta de novo no while
                             else:
                                 print(f'✅ {filename} baixado com sucesso!')
+
+                                if convert_nc:
+                                    try:
+                                        os.system(f'/usr/local/bin/cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
+                                        # Remove o grib2
+                                        # os.remove(caminho_arquivo)
+                                        print(f'✅ {filename} convertido para NetCDF com sucesso!')
+                                    except Exception as e:
+                                        print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
                         else:
                             print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
                             todos_sucesso = False
@@ -446,11 +460,121 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     if todos_sucesso:
                         break  # Sai do while quando tudo estiver certo
 
+            elif modelo_fmt == 'cfsv2-mensal':
+
+                dates = pd.date_range(self.data, periods=10, freq='M')
+
+                for date in dates[1:]:
+
+                    month_prev = date.strftime('%Y%m')
+
+                    while True:
+                        todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                        for variavel in variables:
+                            url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/cfs/prod/cfs.{data_fmt}/{inicializacao_fmt}/monthly_grib_{membro_cfs}/{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.{month_prev}.avrg.grib.grb2'
+                            filename = f'{caminho_para_salvar}/{self.name_prefix}_{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.{month_prev}.avrg.grib.grb2' if self.name_prefix else f'{caminho_para_salvar}/{variavel}.{membro_cfs}.{variavel}.{membro_cfs}.{data_fmt}{inicializacao_fmt}.{month_prev}.avrg.grib.grb2'
+
+                            file = requests.get(url, allow_redirects=True, stream=True)
+                            if file.status_code == 200:
+                                with open(filename, 'wb') as f:
+                                    f.write(file.content)
+                            else:
+                                print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                                print(url)
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e volta ao início do while
+
+                            # Verifica se o arquivo foi baixado corretamente
+                            if os.path.exists(filename):
+                                if os.path.getsize(filename) < file_size:
+                                    print(f'⚠️ Arquivo {filename} está vazio/corrompido, removendo...')
+                                    os.remove(filename)
+                                    todos_sucesso = False
+                                    time.sleep(5)
+                                    break  # Sai do for e tenta de novo no while
+                                else:
+                                    print(f'✅ {filename} baixado com sucesso!')
+                            else:
+                                print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break
+
+                        if todos_sucesso:
+                            break  # Sai do while quando tudo estiver certo
+
+            elif modelo_fmt == 'gefs-bc':
+
+                while True:
+                    todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                    for i in steps:
+                        filename = (
+                            f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                            if self.name_prefix
+                            else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                        )
+                        caminho_arquivo = f'{caminho_para_salvar}/{filename}'
+
+                        # Se o arquivo já existe e está com tamanho esperado, pula sem printar
+                        if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
+                            continue
+
+                        # Só imprime aqui quando realmente for tentar baixar
+                        print(f'⬇️ Baixando {filename} ...')
+
+                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.{data_fmt}/{inicializacao_fmt}/prcp_bc_gb2/geprcp.t{inicializacao_fmt}z.pgrb2a.{resolucao}.bc_06hf{i:03d}'
+                        # https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.20251002/00/prcp_bc_gb2/geprcp.t00z.pgrb2a.0p50.bc_06hf006
+                        if sub_region_as_gribfilter:
+                            url += sub_region_as_gribfilter
+
+                        file = requests.get(url, allow_redirects=True)
+                        if file.status_code == 200:
+                            with open(caminho_arquivo, 'wb') as f:
+                                f.write(file.content)
+                        else:
+                            print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                            print(url)
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break  # Sai do for e volta ao início do while
+
+                        # Verifica se o arquivo foi baixado corretamente
+                        if os.path.exists(caminho_arquivo):
+                            if os.path.getsize(caminho_arquivo) < file_size:
+                                print(f'⚠️ Arquivo {filename} está vazio/corrompido, removendo...')
+                                os.remove(caminho_arquivo)
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e tenta de novo no while
+                            else:
+                                print(f'✅ {filename} baixado com sucesso!')
+
+                                if convert_nc:
+                                    try:
+                                        os.system(f'/usr/local/bin/cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
+                                        # Remove o grib2
+                                        # os.remove(caminho_arquivo)
+                                        print(f'✅ {filename} convertido para NetCDF com sucesso!')
+                                    except Exception as e:
+                                        print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
+                        else:
+                            print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break
+
+                    if todos_sucesso:
+                        break  # Sai do while quando tudo estiver certo
+
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, 
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
                         ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
-                        rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None,
+                        rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None, prefix_cfs=None,
+                        engine='cfgrib',
                         ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
@@ -464,6 +588,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         mean_sea = CONSTANTES['tipos_variaveis']['mean_sea']
         nominalTop = CONSTANTES['tipos_variaveis']['nominalTop']
         mensal_sazonal = CONSTANTES['tipos_variaveis']['mensal_sazonal']
+        depthBelowSea = CONSTANTES['tipos_variaveis']['depthBelowSea']
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d') if data_fmt is None else data_fmt
@@ -482,6 +607,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         else:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
+
+        if prefix_cfs is not None:
+            files = [f for f in files if prefix_cfs in f]
 
         if len(files) == 0:
             raise FileNotFoundError(f'Nenhum arquivo encontrado no diretório: {caminho_para_salvar}')
@@ -514,8 +642,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 raise ValueError(f'Variável {variavel} não reconhecida ou não implementada para ensemble model.')
 
             # Abrindo o arquivo com xarray
-            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area)
-            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area)
+            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area, engine=engine)
+            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area, engine=engine)
             ds = xr.concat([cf, pf], dim='number')            
 
         else:
@@ -545,8 +673,12 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             elif variavel in mensal_sazonal:
                 backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'dataType': 'em'}, "indexpath": ""}
 
+            elif variavel in depthBelowSea:
+                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'depthBelowSea'}, "indexpath": ""}
+
             else:
-                raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
+                backend_kwargs = None
+                # raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
             
             if arquivos_membros_diferentes:
 
@@ -570,7 +702,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             else:
 
-                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area)
+                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine)
         
         # Pega apenas a hora das 12z
         if sel_12z:
@@ -604,14 +736,18 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         if modelo_fmt in ['cfsv2']:
 
             path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
-            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{variavel}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc')
+            if prefix_cfs == 'prate':
+                file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc'
+            else:
+                file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily.nc'
+            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{file_clim}')
             ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
             ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
             ds_list = []
 
             for valid_time in ds.valid_time[:360]:
 
-                print(f'Gerando a anomalia para {valid_time.values}')
+                # print(f'Gerando a anomalia para {valid_time.values}')
 
                 ds_sel = ds.sel(valid_time=valid_time)
                 tempo_dt = pd.to_datetime(valid_time.values)
@@ -759,6 +895,7 @@ class ConfigProdutosObservado:
         # Caminho para salvar os arquivos
         caminho_para_salvar = f'{output_path}/'
         files = os.listdir(caminho_para_salvar)
+        files = [f for f in files if '.idx' not in f]
 
         if variavel is not None:
             files = [f for f in files if variavel in f or variavel.lower() in f.lower()]
@@ -780,6 +917,7 @@ class ConfigProdutosObservado:
 
             # Troca time por valid_time
             if modelo_fmt in ['merge', 'mergegpm']:
+                ds = ds.assign_coords(valid_time=("time", ds["time"].values)) # Para casos com time com apenas 1 tempo
                 ds = ds.swap_dims({'time': 'valid_time'})
 
             elif modelo_fmt in ['cpc']:
@@ -886,7 +1024,7 @@ class GeraProdutosPrevisao:
         self.modo_atual = modo_atual
         self.figs_24h = ['prec_pnmm', '24h', 'jato_div200', 'vento_temp850', 'geop_vort500', 'geop500', 'ivt', 'vento_div850', 'total', '24h_biomassa']
         self.figs_diferenca = ['diferenca']
-        self.figs_semana = ['semanas_operativas']
+        self.figs_semana = ['semanas_operativas', 'sst_cfsv2', 'psi_cfsv2']
         self.figs_6h = ['chuva_geop500_vento850']
         self.vento850_pnmm6h = ['pnmm_vento850']
         self.graficos_vento = ['graficos_vento']
@@ -1120,47 +1258,25 @@ class GeraProdutosPrevisao:
             print(f"Gerando mapa de precipitação ({modo})...")
 
             # Carrega e processa dado
-            if self.tp_mean is None or self.cond_ini is None or self.tp is None:
+            if self.modelo_fmt in ['cfsv2']:
 
-                if self.modelo_fmt not in ['cfsv2']:
+                self.tp, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='prate', data_fmt=self.data_fmt, ensemble=ensemble, prefix_cfs='prate', **kwargs)
+                self.tp_mean = self.tp.copy()
+
+            else:
+
+                if self.tp_mean is None or self.cond_ini is None or self.tp is None:
 
                     if self.modelo_fmt == 'eta':
                         variavel = 'prec'
-                    elif self.modelo_fmt in ['cfsv2']:
-                        variavel = 'prate'
+
+                    elif self.modelo_fmt in ['cmc-ens', 'gefs-bc']:
+                        variavel = 'unknown'
+
                     else:
                         variavel = 'tp'
+
                     self.tp, self.tp_mean, self.cond_ini = self._carregar_tp_mean(ensemble=ensemble, variavel=variavel)
-
-                else:
-
-                    dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
-
-                    tmps = []
-                    
-                    for index, date in enumerate(dates):
-
-                        data_fmt = date.strftime('%Y%m%d')
-                        inicializacao_fmt = str(date.hour).zfill(2)
-
-                        print(f'Carregando {data_fmt} {inicializacao_fmt}Z... ({index+1}/{len(dates)})')
-
-                        tp_tmp = self.produto_config_sf.open_model_file(variavel='prate', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt, **self.tp_params)
-                        tp_tmp = tp_tmp.expand_dims(number=[index])
-                        tmps.append(tp_tmp)
-
-                    # self.tp = xr.concat(tmps, dim='valid_time')
-                    self.tp = xr.concat(tmps, dim="number")
-                    self.tp = self.tp.groupby('valid_time').mean(dim='valid_time')
-                    self.tp_mean = ensemble_mean(self.tp) if ensemble else self.tp.copy()
-                    self.tp_mean = self.tp_mean * 60 * 60 * 24
-                    self.tp_mean = self.tp_mean.assign_coords(
-                        time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
-                    )
-                    self.tp_mean = self.tp_mean.sel(valid_time=self.tp_mean.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                    ini = dates[0].strftime('%d/%m/%Y %H UTC')
-                    fim = dates[-1].strftime('%d/%m/%Y %H UTC')
-                    self.cond_ini = f"Ini: {ini} a {fim} ({len(dates)})Rod"
                     
             if modo == '24h':
                 tp_proc = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', '24h')
@@ -1417,6 +1533,7 @@ class GeraProdutosPrevisao:
             elif modo == 'semanas_operativas':
 
                 tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', 'sop', anomalia_sop=anomalia_sop, qtdade_max_semanas=qtdade_max_semanas, var_anomalia=var_anomalia, level_anomalia=level_anomalia)
+                qtdade_rodadas = kwargs.get('periods_cfs', 12)
 
                 for n_semana in tp_sop.tempo:
 
@@ -1430,7 +1547,7 @@ class GeraProdutosPrevisao:
                         titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                         )
 
                         if anomalia_sop:
@@ -1442,6 +1559,7 @@ class GeraProdutosPrevisao:
                                 footnote_text = 'Hindcast 1999-2010'
                             else:
                                 footnote_text = 'Outro hindcast'
+
                         else:
                             footnote_text = False
 
@@ -1452,7 +1570,7 @@ class GeraProdutosPrevisao:
                             variavel_plotagem = 'chuva_ons'
 
                         if self.modelo_fmt in ['cfsv2']:
-                            model_filename = f'prate_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                            model_filename = f'prate_anom_semana_energ-r{self.data_fmt}_{qtdade_rodadas}rodadas'
 
                         else:
                             model_filename = f'anom_semana_energ-r{self.data_fmt}'
@@ -1738,6 +1856,7 @@ class GeraProdutosPrevisao:
             elif modo == 'probabilidade_climatologia':
 
                 tp_sop = resample_variavel(self.tp_mean, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas, prob_semana=True, anomalia_sop=True)
+                qtdade_rodadas = kwargs.get('periods_cfs', 12)
 
                 for index_semana, n_semana in enumerate(tp_sop.tempo):
 
@@ -1762,14 +1881,18 @@ class GeraProdutosPrevisao:
                             tipo = 'abaixo'
 
                         titulo = gerar_titulo(
-                            modelo=self.modelo_fmt, tipo=f'Prob {tipo} clim. Semana{n_semana.item()}',
+                            modelo=self.modelo_fmt, tipo=f'P {tipo} clim. S{n_semana.item()}',
                             cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
-                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini:',
+                            semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
                         )
 
-
                         if self.modelo_fmt in ['cfsv2']:
-                            model_filename = f'{tipo}-probclimatologia_{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+                            model_filename = f'{tipo}-probclimatologia_{self.data_fmt}_{qtdade_rodadas}rodadas'
+
+                            # Retira o periods_cfs do kwargs
+                            kwargs.pop('periods_cfs', None)
+
+                            path_to_save = f'{self.path_savefiguras}/semana-energ-probabilidades'
 
                         else:
                             model_filename = f'{tipo}-probclimatologia'
@@ -1778,7 +1901,7 @@ class GeraProdutosPrevisao:
                             ds=prob,
                             variavel_plotagem='probabilidade',
                             title=titulo,
-                            filename=formato_filename(self.modelo_fmt, f'{tipo}-probclimatologia', f'{index_semana+1}{index}'),
+                            filename=formato_filename(self.modelo_fmt, model_filename, f'{index_semana+1}{index}'),
                             shapefiles=self.shapefiles,
                             path_to_save=path_to_save,
                             **kwargs
@@ -1994,13 +2117,17 @@ class GeraProdutosPrevisao:
     def _processar_varsdinamicas(self, modo, anomalia_frentes=False, resample_freq='24h', anomalia_sop=False, var_anomalia='gh', level_anomalia=500, anomalia_mensal=False,**kwargs):
 
         qtdade_max_semanas = self.qtdade_max_semanas
+
         if self.modo_atual:
 
             if modo in self.figs_24h:
                 path_save = '24-em-24-gifs'
 
             elif modo in self.figs_semana:
-                path_save = 'semana-energ'
+                if self.modelo_fmt in ['cfsv2']:
+                    path_save = 'semana-energ-anomalia'
+                else:
+                    path_save = 'semana-energ'
 
             elif modo in self.graficos_vento:
                 path_save = 'uv100_grafs'
@@ -3247,6 +3374,12 @@ class GeraProdutosPrevisao:
                 mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
                 ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
 
+                if os.path.isfile(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv') == False: # Casos de inicio de mes
+                    mes_atual = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%m')
+                    ano_atual = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=1)).strftime('%Y')
+                    mes_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=2)).strftime('%m')
+                    ano_anterior = (pd.to_datetime(self.t2m_mean.time.item()) - pd.DateOffset(months=2)).strftime('%Y')
+
                 obs_tmax_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMAX_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
                 obs_tmin_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMIN_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
                 obs_tmed_atual = pd.read_csv(f'{Constants().PATH_TO_SAVE_TXT_SAMET}/csv_files/SAMeT_CPTEC_TMED_{ano_atual}{mes_atual}.csv', parse_dates=['time']).drop(columns=['lon', 'lat', 'valid_time'], errors='ignore').rename(columns={'time': 'valid_time'})
@@ -3759,30 +3892,121 @@ class GeraProdutosPrevisao:
 
             elif modo == 'psi_cfsv2':
 
-                dates = pd.date_range(end=self.produto_config_sf.data, freq='6H', periods=kwargs.get('periods_cfs', 12))
+                self.psi200, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi200', prefix_cfs='psi200', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.psi850, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='psi850', prefix_cfs='psi850', data_fmt=self.data_fmt, ensemble=True, **kwargs)
 
-                tmps = []
-                
-                for date in dates:
+                psi200 = resample_variavel(self.psi200, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+                psi850 = resample_variavel(self.psi850, self.modelo_fmt, 'strf', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
 
-                    data_fmt = date.strftime('%Y%m%d')
-                    inicializacao_fmt = str(date.hour).zfill(2)
+                psi200 = psi200 - psi200.mean(dim='latitude').mean(dim='longitude')
+                psi200 = psi200 - psi200.mean(dim='longitude')
 
-                    print(f'Carregando {data_fmt} {inicializacao_fmt}Z...')
+                psi850 = psi850 - psi850.mean(dim='latitude').mean(dim='longitude')
+                psi850 = psi850 - psi850.mean(dim='longitude')
 
-                    psi200_tmp = self.produto_config_sf.open_model_file(variavel='psi200', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
-                    psi850_tmp = self.produto_config_sf.open_model_file(variavel='psi850', data_fmt=data_fmt, inicializacao_fmt=inicializacao_fmt)
-                    tmps.append(psi200_tmp)
-                    tmps.append(psi850_tmp)
+                psi200 = psi200.isel(lev=0)
+                psi850 = psi850.isel(lev=0)
 
-                self.psi = xr.concat(tmps, dim='valid_time')
-                self.psi = self.psi.groupby('valid_time').mean(dim='valid_time')
-                self.psi = self.psi.assign_coords(
-                    time=pd.to_datetime(self.data_fmt, format='%Y%m%d%H')
-                )
-                self.psi = self.psi.sel(valid_time=self.psi.valid_time >= pd.to_datetime(self.data_fmt, format='%Y%m%d%H'))
-                # self.cond_ini = f'Ini: {dates[0].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} a {dates[-1].strftime("%d/%m/%Y %H UTC").replace(" ", "\\ ")} ({len(dates)})Rod'
+                for index, n_semana in enumerate(psi200.tempo):
 
+                    print(f'Processando semana {n_semana.item()}...')
+                    psi200_plot = psi200.sel(tempo=n_semana)
+                    psi850_plot = psi850.sel(tempo=n_semana)
+                    intervalo = psi200_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = psi200_plot.days_of_weeks.item()
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
+                    )
+
+                    if anomalia_sop:
+                        if 'ecmwf' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2004-2023'
+                        elif 'gefs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2000-2019'
+                        elif 'cfs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 1999-2010'
+                        else:
+                            footnote_text = 'Outro hindcast'
+                    else:
+                        footnote_text = False
+
+                    if self.modelo_fmt in ['cfsv2']:
+                        model_filename = f'psi_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+
+                    else:
+                        model_filename = f'anom_semana_energ-r{self.data_fmt}'
+
+                    # Retira o periods_cfs do kwargs
+                    kwargs.pop('periods_cfs', None)
+
+                    plot_campos(
+                        ds=psi200_plot['strf']/1e6,
+                        variavel_plotagem='psi',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, model_filename, index),
+                        ds_contour=psi850_plot['strf']/1e6,
+                        variavel_contour='psi',
+                        color_contour='black',
+                        plot_bacias=False,
+                        path_to_save=path_to_save,
+                        with_logo=False,
+                        **kwargs
+                    )
+        
+            elif modo == 'sst_cfsv2':
+
+                self.sst, self.cond_ini = ajusta_cfs_n_rodadas(self.produto_config_sf, variavel='pt', prefix_cfs='ocnsst', data_fmt=self.data_fmt, ensemble=True, **kwargs)
+                self.sst = self.sst.isel(depth=0)
+                sst = resample_variavel(self.sst, self.modelo_fmt, 'pt', resample_freq, modo_agrupador='mean', qtdade_max_semanas=qtdade_max_semanas, anomalia_sop=anomalia_sop)
+
+                for n_semana in sst.tempo:
+
+                    print(f'Processando semana {n_semana.item()}...')
+                    sst_plot = sst.sel(tempo=n_semana)
+                    intervalo = sst_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = sst_plot.days_of_weeks.item()
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'Semana{n_semana.item()}',
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True, condicao_inicial='Condicao Inicial' if self.modelo_fmt not in ['cfsv2'] else 'Ini',
+                    )
+
+                    if anomalia_sop:
+                        if 'ecmwf' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2004-2023'
+                        elif 'gefs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 2000-2019'
+                        elif 'cfs' in self.modelo_fmt.lower():
+                            footnote_text = 'Hindcast 1999-2010'
+                        else:
+                            footnote_text = 'Outro hindcast'
+                    else:
+                        footnote_text = False
+
+                    if self.modelo_fmt in ['cfsv2']:
+                        model_filename = f'tsm_anom_semana_energ-r{self.data_fmt}_{kwargs.get("periods_cfs", 12)}rodadas'
+
+                    else:
+                        model_filename = f'anom_semana_energ-r{self.data_fmt}'
+
+                    # Retira o periods_cfs do kwargs
+                    kwargs.pop('periods_cfs', None)
+
+                    plot_campos(
+                        ds=sst_plot['pt'],
+                        variavel_plotagem='sst_anomalia', 
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
+                        path_to_save=path_to_save,
+                        # footnote_text=footnote_text,
+                        central_longitude=180,
+                        **kwargs
+                    )
+            
         except Exception as e:
             print(f'Erro ao gerar variaveis dinâmicas ({modo}): {e}')
 
@@ -4008,6 +4232,12 @@ class GeraProdutosPrevisao:
 
     def gerar_vento_weol(self, **kwargs):
         self._processar_varsdinamicas('vento_weol', **kwargs)
+
+    def gerar_ocnsst_cfsv2(self, **kwargs):
+        self._processar_varsdinamicas('sst_cfsv2', **kwargs)
+
+    def gerar_psi_cfsv2(self, **kwargs):
+        self._processar_varsdinamicas('psi_cfsv2', **kwargs)
 
     ###################################################################################################################
 

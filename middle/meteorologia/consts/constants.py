@@ -5,10 +5,11 @@ CONSTANTES = {
     'tipos_variaveis': {
         "surface": ['tp', 'u10', 'v10', 'prec', 'prate'],                  # Variáveis em superfície
         "height_above_ground": ['t2m', '2t', 'v100', 'u100', '100u', '100v'],                     # Variáveis a 2 metros
-        "isobaric_inhPa": ['u', 'v', 'z', 'gh', 't', 'q'],        # Variáveis isobáricas
+        "isobaric_inhPa": ['u', 'v', 'z', 'gh', 't', 'q', 'strf'],        # Variáveis isobáricas
         "mean_sea": ['pnmm', 'msl', 'prmsl'],                     # Pressão ao nível médio do mar
         "nominalTop": ['ttr', 'sulwrf'],
-        "mensal_sazonal": ['tpara']                         
+        "mensal_sazonal": ['tpara'],
+        "depthBelowSea": ['pt']                   
     },
 
     'shapefiles': ['C:/Temp/shapefiles/Bacias_Hidrograficas_SIN.shp', 
@@ -20,7 +21,7 @@ CONSTANTES = {
         '[m/s]': ['wind200', 'mag_vento100', 'mag_vento100_anomalia'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
-        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia'],
+        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia', 'sst_anomalia'],
         '[kg*m-1*s-1]': ['ivt'],
         '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes'],
