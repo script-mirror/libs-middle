@@ -1270,7 +1270,7 @@ class GeraProdutosPrevisao:
                     if self.modelo_fmt == 'eta':
                         variavel = 'prec'
 
-                    elif self.modelo_fmt == 'cmc-ens':
+                    elif self.modelo_fmt in ['cmc-ens', 'gefs-bc']:
                         variavel = 'unknown'
 
                     else:
