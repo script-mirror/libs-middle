@@ -173,7 +173,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                     try:
                                         os.system(f'/usr/local/bin/cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
                                         # Remove o grib2
-                                        os.remove(caminho_arquivo)
+                                        # os.remove(caminho_arquivo)
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
                                     except Exception as e:
                                         print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
@@ -613,7 +613,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'depthBelowSea'}, "indexpath": ""}
 
             else:
-                raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
+                backend_kwargs = None
+                # raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
             
             if arquivos_membros_diferentes:
 
@@ -1204,6 +1205,9 @@ class GeraProdutosPrevisao:
 
                     if self.modelo_fmt == 'eta':
                         variavel = 'prec'
+
+                    elif self.modelo_fmt == 'cmc-ens':
+                        variavel = 'unknown'
 
                     else:
                         variavel = 'tp'
