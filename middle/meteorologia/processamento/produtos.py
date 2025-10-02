@@ -525,7 +525,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         # Só imprime aqui quando realmente for tentar baixar
                         print(f'⬇️ Baixando {filename} ...')
 
-                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.{data_fmt}/{inicializacao_fmt}/prcp_bc_gb2/gepqpf.t{inicializacao_fmt}z.pgrb2a.{resolucao}.bc_06hf{i:03d}'
+                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.{data_fmt}/{inicializacao_fmt}/prcp_bc_gb2/geprcp.t{inicializacao_fmt}z.pgrb2a.{resolucao}.bc_06hf{i:03d}'
+                        # https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.20251002/00/prcp_bc_gb2/geprcp.t00z.pgrb2a.0p50.bc_06hf006
                         if sub_region_as_gribfilter:
                             url += sub_region_as_gribfilter
 
