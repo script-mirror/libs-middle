@@ -64,7 +64,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
                                modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11, membro_cfs='01',
-                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024) -> None:
+                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024, convert_nc=False) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -168,6 +168,15 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                 break  # Sai do for e tenta de novo no while
                             else:
                                 print(f'✅ {filename} baixado com sucesso!')
+
+                                if convert_nc:
+                                    try:
+                                        os.system(f'cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
+                                        # Remove o grib2
+                                        os.remove(caminho_arquivo)
+                                        print(f'✅ {filename} convertido para NetCDF com sucesso!')
+                                    except Exception as e:
+                                        print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
                         else:
                             print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
                             todos_sucesso = False
@@ -501,6 +510,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
                         ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
                         rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None, prefix_cfs=None,
+                        engine='cfgrib',
                         ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
@@ -568,8 +578,8 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 raise ValueError(f'Variável {variavel} não reconhecida ou não implementada para ensemble model.')
 
             # Abrindo o arquivo com xarray
-            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area)
-            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area)
+            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area, engine=engine)
+            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area, engine=engine)
             ds = xr.concat([cf, pf], dim='number')            
 
         else:
@@ -627,7 +637,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             else:
 
-                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area)
+                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine)
         
         # Pega apenas a hora das 12z
         if sel_12z:

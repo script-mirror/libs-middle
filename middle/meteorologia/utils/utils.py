@@ -397,7 +397,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
 ###################################################################################################################
 
-def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True):
+def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True, engine='cfgrib'):
 
     backend_kwargs = backend_kwargs or {}
     datasets = []
@@ -407,7 +407,7 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
         print(f'Abrindo {f}... ({index+1}/{len(files)})')
 
         try:
-            ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, decode_timedelta=True)
+            ds = xr.open_dataset(f, engine=engine, backend_kwargs=backend_kwargs, decode_timedelta=True)
 
             # Renomeando lat para latitude e lon para longitude
             if 'lat' in ds.dims:
