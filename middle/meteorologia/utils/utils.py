@@ -407,12 +407,7 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
         print(f'Abrindo {f}... ({index+1}/{len(files)})')
 
         try:
-
-            print(f, engine, backend_kwargs)
-
             ds = xr.open_dataset(f, engine=engine, backend_kwargs=backend_kwargs, decode_timedelta=True)
-
-            print(ds)
 
             # Renomeando lat para latitude e lon para longitude
             if 'lat' in ds.dims:
