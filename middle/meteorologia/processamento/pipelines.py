@@ -53,6 +53,17 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_vento_weol() if hora == 0 else None,    
             ]
 
+    elif modelo == 'cmc-ens':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+            ]
+
+        elif tipo == 'pl':
+            return [            
+            ]
+
     elif modelo == 'gefs':
 
         if tipo == 'sfc':
