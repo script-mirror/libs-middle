@@ -171,7 +171,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                                 if convert_nc:
                                     try:
-                                        os.system(f'cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
+                                        os.system(f'/usr/local/bin/cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
                                         # Remove o grib2
                                         os.remove(caminho_arquivo)
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
