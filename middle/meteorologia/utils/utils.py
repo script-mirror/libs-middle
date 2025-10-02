@@ -203,7 +203,7 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                     interval_end = day + pd.Timedelta(hours=36)
                     intervals.append((interval_start, interval_end))
 
-            elif any(m in modelo.lower() for m in ['gefs', 'gfs', 'ecmwf']):
+            elif any(m in modelo.lower() for m in ['gefs', 'gfs', 'ecmwf', 'cmc', 'cmc-ens']):
                 hour_ini = pd.to_datetime(dataini).hour
                 if hour_ini == 0:
                     interval_start = day + pd.Timedelta(hours=18)
