@@ -116,10 +116,14 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_gefs_atmos_{resolucao}a.pl?dir=%2F'
             prefix_modelo = f'gefs.{data_fmt}%2F{inicializacao_fmt}%2Fatmos%2Fpgrb2ap5&file=geavg.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
 
+        elif modelo_fmt == 'cmc-ens':
+            prefix_url = f'https://nomads.ncep.noaa.gov/cgi-bin/filter_cmcens.pl?dir=%2F'
+            prefix_modelo = f'cmce.{data_fmt}%2F{inicializacao_fmt}%2Fpgrb2ap5&file=cmc_geavg.t{inicializacao_fmt}z.pgrb2a.{resolucao}.f'
+
         # Baixando os arquivos
         if baixa_arquivos:
 
-            if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido']:
+            if modelo_fmt in ['gfs', 'gefs', 'gefs-estendido', 'cmc-ens']:
 
                 while True:
                     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
