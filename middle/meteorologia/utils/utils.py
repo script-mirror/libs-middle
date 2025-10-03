@@ -881,3 +881,20 @@ def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=Tr
     return ds, cond_ini
 
 ###################################################################################################################
+
+def ajusta_ctl(ctl_file="/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile1.ctl", 
+               dset_file="novo_dset", datefile="nova_data", output_file="/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/arquivo_modificado.ctl"):
+    
+    with open(ctl_file, "r") as f:
+        content = f.read()
+
+    # substituições
+    content = content.replace("dset_file", dset_file)
+    content = content.replace("datefile", datefile)
+
+    with open(output_file, "w") as f:
+        f.write(content)
+
+    return
+
+###################################################################################################################

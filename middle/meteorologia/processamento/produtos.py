@@ -37,7 +37,8 @@ from ..utils.utils import (
     abrir_modelo_sem_vazios,
     formato_filename,
     painel_png,
-    ajusta_cfs_n_rodadas
+    ajusta_cfs_n_rodadas,
+    ajusta_ctl
 )
 
 ###################################################################################################################
@@ -526,7 +527,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         print(f'⬇️ Baixando {filename} ...')
 
                         url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.{data_fmt}/{inicializacao_fmt}/prcp_bc_gb2/geprcp.t{inicializacao_fmt}z.pgrb2a.{resolucao}.bc_06hf{i:03d}'
-                        # https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.20251002/00/prcp_bc_gb2/geprcp.t00z.pgrb2a.0p50.bc_06hf006
+
                         if sub_region_as_gribfilter:
                             url += sub_region_as_gribfilter
 
@@ -554,10 +555,20 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                                 if convert_nc:
                                     try:
-                                        os.system(f'/usr/local/bin/cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
-                                        # Remove o grib2
-                                        # os.remove(caminho_arquivo)
+
+                                        if i <= 246:
+                                            ctl_file = '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile1.ctl'
+                                        else:
+                                            ctl_file = '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile2.ctl'
+
+                                        dset_file = filename
+                                        datefile = self.data + pd.Timedelta(hours=i)
+                                        datefile = datefile.strftime('%HZ%d%b%Y') 
+                                        ajusta_ctl(ctl_file=ctl_file, dset_file=dset_file, datefile=datefile, output_file=f'/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
+                                        os.system('/usr/local/grads-2.0.2.oga.2/Classic/bin/gribmap -i /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
+                                        os.system('/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/convert2nc.gs')
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
+                                        
                                     except Exception as e:
                                         print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
                         else:
