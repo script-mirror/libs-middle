@@ -561,14 +561,14 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                         else:
                                             ctl_file = '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile2.ctl'
 
-                                        dset_file = filename
+                                        dset_file = caminho_arquivo
                                         datefile = self.data + pd.Timedelta(hours=i)
                                         datefile = datefile.strftime('%HZ%d%b%Y') 
                                         ajusta_ctl(ctl_file=ctl_file, dset_file=dset_file, datefile=datefile, output_file=f'/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
                                         os.system('/usr/local/grads-2.0.2.oga.2/Classic/bin/gribmap -i /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
                                         os.system('/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/convert2nc.gs')
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
-                                        
+
                                     except Exception as e:
                                         print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
                         else:
