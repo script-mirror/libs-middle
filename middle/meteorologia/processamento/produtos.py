@@ -721,6 +721,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
             else:
 
                 ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine, add_valid_time=add_valid_time)
+
+                if add_valid_time:
+                    ds = ds.assign_coords(time=pd.to_datetime(f'{data_fmt} {inicializacao_fmt}', format='%Y%m%d%H'))  # Adiciona a coordenada 'time'
         
         # Pega apenas a hora das 12z
         if sel_12z:
