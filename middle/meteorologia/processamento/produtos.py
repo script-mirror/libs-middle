@@ -567,6 +567,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                         ajusta_ctl(ctl_file=ctl_file, dset_file=dset_file, datefile=datefile, output_file=f'/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
                                         os.system('/usr/local/grads-2.0.2.oga.2/Classic/bin/gribmap -i /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
                                         os.system('/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/convert2nc.gs')
+                                        os.system(f'mv /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*.nc {caminho_para_salvar}')
+                                        # os.system('rm -rf /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*')
+                                        os.system(f'rm -rf {caminho_arquivo}')
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
 
                                     except Exception as e:
