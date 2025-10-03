@@ -617,6 +617,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         # Caminho para salvar
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
+        files = sorted(os.listdir(caminho_para_salvar)) if sorted_key == False else sorted(os.listdir(caminho_para_salvar), key=nome_para_datetime)
 
         if self.name_prefix:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
@@ -624,8 +625,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         else:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
 
-        files = sorted(os.listdir(caminho_para_salvar)) if sorted_key == False else sorted(os.listdir(caminho_para_salvar), key=nome_para_datetime)
-
+        
         if prefix_cfs is not None:
             files = [f for f in files if prefix_cfs in f]
 
