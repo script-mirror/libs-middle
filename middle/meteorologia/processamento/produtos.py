@@ -38,7 +38,8 @@ from ..utils.utils import (
     formato_filename,
     painel_png,
     ajusta_cfs_n_rodadas,
-    ajusta_ctl
+    ajusta_ctl,
+    nome_para_datetime
 )
 
 ###################################################################################################################
@@ -568,8 +569,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                         os.system('/usr/local/grads-2.0.2.oga.2/Classic/bin/gribmap -i /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
                                         os.system('/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/convert2nc.gs')
                                         os.system(f'mv /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*.nc {caminho_para_salvar}')
-                                        # os.system('rm -rf /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*')
+                                        os.system('rm -rf /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*')
                                         os.system(f'rm -rf {caminho_arquivo}')
+                                        os.system(f'rm -rf {caminho_arquivo}.idx')
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
 
                                     except Exception as e:
@@ -588,7 +590,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
                         ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
                         rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None, prefix_cfs=None,
-                        engine='cfgrib',
+                        engine='cfgrib', sorted_key=False, add_valid_time=False
                         ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
@@ -615,7 +617,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         # Caminho para salvar
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
-        files = sorted(os.listdir(caminho_para_salvar))
+
+        files = sorted(os.listdir(caminho_para_salvar)) if sorted_key == False else sorted(os.listdir(caminho_para_salvar), key=nome_para_datetime)
+
         if self.name_prefix:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
 
@@ -716,7 +720,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             else:
 
-                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine)
+                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine, add_valid_time=add_valid_time)
         
         # Pega apenas a hora das 12z
         if sel_12z:

@@ -1,5 +1,3 @@
-from ast import mod
-from pickle import FALSE
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -397,7 +395,13 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
 ###################################################################################################################
 
-def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True, engine='cfgrib'):
+def nome_para_datetime(nome):
+    from datetime import datetime
+    return datetime.strptime(nome, f"%HZ%d%b%Y_sfc.nc")
+
+###################################################################################################################
+
+def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True, engine='cfgrib', add_valid_time=False):
 
     backend_kwargs = backend_kwargs or {}
     datasets = []
@@ -426,6 +430,10 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
+
+            if add_valid_time:
+                arquivo = os.path.basename(f)
+                ds = ds.assign_coords(valid_time=nome_para_datetime(arquivo))
                 
             if ds.variables:
                 datasets.append(ds)
