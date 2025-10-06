@@ -1,5 +1,3 @@
-from ast import mod
-from pickle import FALSE
 import pandas as pd
 import xarray as xr
 import numpy as np
@@ -397,7 +395,13 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
 
 ###################################################################################################################
 
-def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True, engine='cfgrib'):
+def nome_para_datetime(nome):
+    from datetime import datetime
+    return datetime.strptime(nome, f"%HZ%d%b%Y_sfc.nc")
+
+###################################################################################################################
+
+def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time', sel_area=True, engine='cfgrib', add_valid_time=False):
 
     backend_kwargs = backend_kwargs or {}
     datasets = []
@@ -408,9 +412,6 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
         try:
             ds = xr.open_dataset(f, engine=engine, backend_kwargs=backend_kwargs, decode_timedelta=True)
-
-            print(backend_kwargs)
-            print(ds)
 
             # Renomeando lat para latitude e lon para longitude
             if 'lat' in ds.dims:
@@ -429,6 +430,10 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
             if 'step' in ds.dims:
                 ds = ds.swap_dims({'step': 'valid_time'})
+
+            if add_valid_time:
+                arquivo = os.path.basename(f)
+                ds = ds.assign_coords(valid_time=nome_para_datetime(arquivo))
                 
             if ds.variables:
                 datasets.append(ds)
@@ -882,5 +887,22 @@ def ajusta_cfs_n_rodadas(produto_config, data_fmt, variavel='prate', ensemble=Tr
     cond_ini = f"{ini} a {fim} ({len(dates)})Rod"
 
     return ds, cond_ini
+
+###################################################################################################################
+
+def ajusta_ctl(ctl_file="/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile1.ctl", 
+               dset_file="novo_dset", datefile="nova_data", output_file="/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/arquivo_modificado.ctl"):
+    
+    with open(ctl_file, "r") as f:
+        content = f.read()
+
+    # substituições
+    content = content.replace("dset_file", dset_file)
+    content = content.replace("datefile", datefile)
+
+    with open(output_file, "w") as f:
+        f.write(content)
+
+    return
 
 ###################################################################################################################

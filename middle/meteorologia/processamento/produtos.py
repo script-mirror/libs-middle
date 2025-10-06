@@ -37,7 +37,9 @@ from ..utils.utils import (
     abrir_modelo_sem_vazios,
     formato_filename,
     painel_png,
-    ajusta_cfs_n_rodadas
+    ajusta_cfs_n_rodadas,
+    ajusta_ctl,
+    nome_para_datetime
 )
 
 ###################################################################################################################
@@ -526,7 +528,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         print(f'⬇️ Baixando {filename} ...')
 
                         url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.{data_fmt}/{inicializacao_fmt}/prcp_bc_gb2/geprcp.t{inicializacao_fmt}z.pgrb2a.{resolucao}.bc_06hf{i:03d}'
-                        # https://nomads.ncep.noaa.gov/pub/data/nccf/com/naefs/prod/gefs.20251002/00/prcp_bc_gb2/geprcp.t00z.pgrb2a.0p50.bc_06hf006
+
                         if sub_region_as_gribfilter:
                             url += sub_region_as_gribfilter
 
@@ -554,10 +556,24 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                                 if convert_nc:
                                     try:
-                                        os.system(f'/usr/local/bin/cdo -f nc copy {caminho_arquivo} {caminho_arquivo.replace(".grib2", ".nc")}')
-                                        # Remove o grib2
-                                        # os.remove(caminho_arquivo)
+
+                                        if i <= 246:
+                                            ctl_file = '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile1.ctl'
+                                        else:
+                                            ctl_file = '/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/controfile2.ctl'
+
+                                        dset_file = caminho_arquivo
+                                        datefile = self.data + pd.Timedelta(hours=i)
+                                        datefile = datefile.strftime('%HZ%d%b%Y') 
+                                        ajusta_ctl(ctl_file=ctl_file, dset_file=dset_file, datefile=datefile, output_file=f'/projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
+                                        os.system('/usr/local/grads-2.0.2.oga.2/Classic/bin/gribmap -i /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/ctl_modificado.ctl')
+                                        os.system('/usr/local/grads-2.0.2.oga.2/Contents/opengrads -lbcx /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/ctl_files/convert2nc.gs')
+                                        os.system(f'mv /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*.nc {caminho_para_salvar}')
+                                        os.system('rm -rf /projetos/arquivos/meteorologia/dados_modelos/arquivos_temp/nc_files/*')
+                                        os.system(f'rm -rf {caminho_arquivo}')
+                                        os.system(f'rm -rf {caminho_arquivo}.idx')
                                         print(f'✅ {filename} convertido para NetCDF com sucesso!')
+
                                     except Exception as e:
                                         print(f'❌ Erro ao converter {filename} para NetCDF: {e}')
                         else:
@@ -574,7 +590,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
                         ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
                         rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None, prefix_cfs=None,
-                        engine='cfgrib',
+                        engine='cfgrib', sorted_key=False, add_valid_time=False
                         ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
@@ -601,13 +617,15 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
         # Caminho para salvar
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
-        files = sorted(os.listdir(caminho_para_salvar))
+        files = sorted(os.listdir(caminho_para_salvar)) if sorted_key == False else sorted(os.listdir(caminho_para_salvar), key=nome_para_datetime)
+
         if self.name_prefix:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
 
         else:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
 
+        
         if prefix_cfs is not None:
             files = [f for f in files if prefix_cfs in f]
 
@@ -702,7 +720,10 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             else:
 
-                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine)
+                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine, add_valid_time=add_valid_time)
+
+                if add_valid_time:
+                    ds = ds.assign_coords(time=pd.to_datetime(f'{data_fmt}{inicializacao_fmt}', format='%Y%m%d%H'))  # Adiciona a coordenada 'time'
         
         # Pega apenas a hora das 12z
         if sel_12z:
@@ -1206,6 +1227,7 @@ class GeraProdutosPrevisao:
                                 salva_db=True, modelo_obs='merge', limiares_prob=[5, 10, 25, 50, 70, 100], freq_prob='sop', 
                                 timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False,
                                 var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='sudeste', resample_freq='24h',
+                                destinatario_wpp=Constants().WHATSAPP_METEOROLOGIA,
                                 **kwargs):
         
         """
@@ -1617,7 +1639,7 @@ class GeraProdutosPrevisao:
                 # Criando painel para enviar via wpp
                 if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
-                    send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    send_whatsapp_message(destinatario=destinatario_wpp, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivos=[path_painel], assunto=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', destinatario=[Constants().EMAIL_MIDDLE, Constants().EMAIL_FRONT])
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
@@ -1723,23 +1745,6 @@ class GeraProdutosPrevisao:
 
                         df_temp = pd.concat(df_temp, axis=1)
 
-                        # # Acumulando entre os dias
-                        # for dt_observada in date_ranges:
-
-                        #     observado = requests.get(f'{url}{dt_observada}', verify=False, headers=get_auth_header())
-
-                        #     try:
-                        #         if len(observado.json()) > 0:
-                        #             df_obs = pd.DataFrame(observado.json())
-                        #             df_obs['dt_observado'] = pd.to_datetime(df_obs['dt_observado']) + pd.Timedelta(days=1)
-                        #             chuva = df_obs['vl_chuva'].values
-                        #             acumulado = chuva + acumulado if acumulado is not None else chuva
-
-                        #     except Exception as e:
-                        #         print(f"Erro ao processar os dados para a data {dt_observada}: {e}")
-                        #         dt_final = dt_observada
-                        #         break
-        
                         # Colocando os dados em um dataframe
                         df_obs['chuva_acumulada'] = df_temp.sum(axis=1) #acumulado
                         df_obs = df_obs.merge(df_ons, on='cd_subbacia', how='left')
@@ -1810,7 +1815,7 @@ class GeraProdutosPrevisao:
                             )
 
                         path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_bacias_smap_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='chuva_acumulada')
-                        send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                        send_whatsapp_message(destinatario=destinatario_wpp, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                         print(f'Removendo painel ... {path_painel}')
                         os.remove(path_painel)
 
@@ -2021,7 +2026,7 @@ class GeraProdutosPrevisao:
                     )
 
                 path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='dif')
-                send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Diferença {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                send_whatsapp_message(destinatario=destinatario_wpp, mensagem=f'Diferença {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                 print(f'Removendo painel ... {path_painel}')
                 os.remove(path_painel)
 
