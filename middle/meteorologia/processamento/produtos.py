@@ -1227,6 +1227,7 @@ class GeraProdutosPrevisao:
                                 salva_db=True, modelo_obs='merge', limiares_prob=[5, 10, 25, 50, 70, 100], freq_prob='sop', 
                                 timedelta=1, dif_total=True, dif_01_15d=False, dif_15_final=False, anomalia_sop=False,
                                 var_anomalia='tp', level_anomalia=200, anomalia_mensal=False, regiao_estacao_chuvosa='sudeste', resample_freq='24h',
+                                destinatario_wpp=Constants().WHATSAPP_METEOROLOGIA,
                                 **kwargs):
         
         """
@@ -1638,7 +1639,7 @@ class GeraProdutosPrevisao:
                 # Criando painel para enviar via wpp
                 if ensemble and anomalia_sop == False:
                     path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png')
-                    send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                    send_whatsapp_message(destinatario=destinatario_wpp, mensagem=f'{self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                     send_email_message(mensagem=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', arquivos=[path_painel], assunto=f'MAPAS {self.modelo_fmt.upper()} {self.cond_ini}', destinatario=[Constants().EMAIL_MIDDLE, Constants().EMAIL_FRONT])
                     print(f'Removendo painel ... {path_painel}')
                     os.remove(path_painel)
@@ -1744,23 +1745,6 @@ class GeraProdutosPrevisao:
 
                         df_temp = pd.concat(df_temp, axis=1)
 
-                        # # Acumulando entre os dias
-                        # for dt_observada in date_ranges:
-
-                        #     observado = requests.get(f'{url}{dt_observada}', verify=False, headers=get_auth_header())
-
-                        #     try:
-                        #         if len(observado.json()) > 0:
-                        #             df_obs = pd.DataFrame(observado.json())
-                        #             df_obs['dt_observado'] = pd.to_datetime(df_obs['dt_observado']) + pd.Timedelta(days=1)
-                        #             chuva = df_obs['vl_chuva'].values
-                        #             acumulado = chuva + acumulado if acumulado is not None else chuva
-
-                        #     except Exception as e:
-                        #         print(f"Erro ao processar os dados para a data {dt_observada}: {e}")
-                        #         dt_final = dt_observada
-                        #         break
-        
                         # Colocando os dados em um dataframe
                         df_obs['chuva_acumulada'] = df_temp.sum(axis=1) #acumulado
                         df_obs = df_obs.merge(df_ons, on='cd_subbacia', how='left')
@@ -1831,7 +1815,7 @@ class GeraProdutosPrevisao:
                             )
 
                         path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_bacias_smap_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='chuva_acumulada')
-                        send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                        send_whatsapp_message(destinatario=destinatario_wpp, mensagem=f'Chuva total bacia {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                         print(f'Removendo painel ... {path_painel}')
                         os.remove(path_painel)
 
@@ -2042,7 +2026,7 @@ class GeraProdutosPrevisao:
                     )
 
                 path_painel = painel_png(path_figs=path_to_save, output_file=f'painel_semanas_operativas_{self.modelo_fmt}_{self.data_fmt}.png', str_contain='dif')
-                send_whatsapp_message(destinatario=Constants().WHATSAPP_METEOROLOGIA, mensagem=f'Diferença {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
+                send_whatsapp_message(destinatario=destinatario_wpp, mensagem=f'Diferença {self.modelo_fmt.upper()} {self.cond_ini}', arquivo=path_painel)
                 print(f'Removendo painel ... {path_painel}')
                 os.remove(path_painel)
 
