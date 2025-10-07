@@ -11,6 +11,7 @@ import shutil
 import xarray as xr
 import metpy.calc as mpcalc
 from metpy.units import units
+import wget
 from middle.utils import get_auth_header
 from middle.message.sender import send_whatsapp_message, send_email_message
 import scipy.ndimage as nd
@@ -532,16 +533,18 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if sub_region_as_gribfilter:
                             url += sub_region_as_gribfilter
 
-                        file = requests.get(url, allow_redirects=True)
-                        if file.status_code == 200:
-                            with open(caminho_arquivo, 'wb') as f:
-                                f.write(file.content)
-                        else:
-                            print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
-                            print(url)
-                            todos_sucesso = False
-                            time.sleep(5)
-                            break  # Sai do for e volta ao início do while
+                        wget.download(url, caminho_arquivo)
+
+                        # file = requests.get(url, allow_redirects=True)
+                        # if file.status_code == 200:
+                        #     with open(caminho_arquivo, 'wb') as f:
+                        #         f.write(file.content)
+                        # else:
+                        #     print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                        #     print(url)
+                        #     todos_sucesso = False
+                        #     time.sleep(5)
+                        #     break  # Sai do for e volta ao início do while
 
                         # Verifica se o arquivo foi baixado corretamente
                         if os.path.exists(caminho_arquivo):
@@ -551,6 +554,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                                 todos_sucesso = False
                                 time.sleep(5)
                                 break  # Sai do for e tenta de novo no while
+
                             else:
                                 print(f'✅ {filename} baixado com sucesso!')
 
