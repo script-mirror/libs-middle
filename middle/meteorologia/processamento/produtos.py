@@ -1615,6 +1615,19 @@ class GeraProdutosPrevisao:
                             **kwargs
                         )
 
+                        if anomalia_sop:
+                            # Anomalia com a escala antiga
+                            plot_campos(
+                                ds=tp_plot['tp'],
+                                variavel_plotagem='tp_anomalia_discretizado', 
+                                title=titulo,
+                                filename=formato_filename(self.modelo_fmt, f'semana_energ-r{self.data_fmt}', n_semana.item()) if not anomalia_sop else formato_filename(self.modelo_fmt, model_filename, n_semana.item()),
+                                shapefiles=self.shapefiles,
+                                path_to_save=f'{self.path_savefiguras}/semana-energ-anomalia-escala-antiga',
+                                footnote_text=footnote_text,
+                                **kwargs
+                            )
+
                     else:
 
                         for membro in self.tp['number']:

@@ -96,6 +96,13 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
         cbar_ticks = [-150, -125, -100, -75, -50, -25, 0, 25, 50, 75, 100, 125, 150]
 
+    elif variavel_plotagem in ['tp_anomalia_discretizado']:
+        colors = ['mediumvioletred', 'maroon', 'firebrick', 'red', 'chocolate', 'orange', 'gold', 'yellow', 'white', 'white', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
+        levels = range(-100, 110, 10)
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = range(-100, 110, 10)
+
     elif variavel_plotagem in ['tp_anomalia_mensal']:
         colors = ['mediumvioletred', 'maroon', 'firebrick', 'red', 'chocolate', 'orange', 'gold', 'yellow', 'white', 'aquamarine', 'mediumturquoise', 'cyan', 'lightblue', 'blue', 'purple', 'mediumpurple', 'blueviolet']
         levels = range(-300, 305, 5)
