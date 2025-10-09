@@ -590,6 +590,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         break  # Sai do while quando tudo estiver certo
 
             elif modelo_fmt == 'aigfs':
+                
                 while True:
                     todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
 
