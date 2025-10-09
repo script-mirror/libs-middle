@@ -17,7 +17,7 @@ CONSTANTES = {
 
     'labels_variaveis': {
 
-        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop', 'diferenca', 'desvpad', 'tp_anomalia', 'chuva_acumualada_merge', 'chuva_acumualada_merge_anomalia', 'chuva_boletim_consumidores', 'tp_anomalia_mensal'],
+        '[mm]': ['tp', 'chuva_ons', 'prec', 'acumulado_total', 'wind_prec_geop', 'diferenca', 'desvpad', 'tp_anomalia', 'chuva_acumualada_merge', 'chuva_acumualada_merge_anomalia', 'chuva_boletim_consumidores', 'tp_anomalia_mensal', 'tp_anomalia_discretizado'],
         '[m/s]': ['wind200', 'mag_vento100', 'mag_vento100_anomalia'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
