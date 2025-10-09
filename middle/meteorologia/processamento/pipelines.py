@@ -121,6 +121,23 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                          
             ]
 
+    elif modelo == 'aigfs':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, destinatario_wpp='11968606707'),
+                # lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True, destinatario_wpp='11968606707'),
+                # lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
+                # lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                # lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
+                # lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),     
+            ]
+
+        elif tipo == 'pl':
+            return [
+                         
+            ]
+
     elif modelo == 'gefs-estendido':
 
         if tipo == 'sfc':
