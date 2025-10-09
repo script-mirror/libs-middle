@@ -670,6 +670,10 @@ class Constants:
         return f"{self.BASE_URL}/api/v2/ons/produtibilidade"
 
     @property
+    def ENDPOINT_HISTORICO_VAZOES(self):
+        return f"{self.BASE_URL}/api/v2/decks/historico-vazoes"
+
+    @property
     def GET_NOME_UTE(self):
         return f"{self.BASE_URL}/api/v2/decks/siglas-cvu"
 
