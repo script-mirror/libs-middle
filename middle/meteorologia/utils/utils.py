@@ -164,7 +164,7 @@ def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().
         if 'isobaricInhPa' in ds_clim.dims and level_anomalia is not None:
             ds_clim = ds_clim.sel(isobaricInhPa=level_anomalia)
 
-    elif 'gefs' in modelo.lower():
+    elif modelo.lower() in ['gefs', 'gfs']:
 
         files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
         # Abre o arquivo de climatologia
