@@ -66,7 +66,7 @@ def send_email_message(
         logger.error("Arquivo .env não carregado ou BASE_URL não definida.")
         raise Exception("Arquivo .env não carregado ou BASE_URL não definida. "
                         "Utilize o load_env() para carregar as variáveis de ambiente.")
-    url = f"{url}/estudos-middle/api/email/send"
+    url = f"{url}/email/api/email/send"
     if type(destinatario) is str:
         destinatario = [destinatario]
     fields = {
