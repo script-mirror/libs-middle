@@ -167,7 +167,6 @@ def open_hindcast_file(var_anomalia, level_anomalia=None, path_clim=Constants().
     elif modelo.lower() in ['gefs', 'gfs', 'gefs-estendido']:
 
         files_clim = f'{mesdia}_GEFS_REFORECAST.nc'
-        print(file_clim)
         # Abre o arquivo de climatologia
         ds_clim = xr.open_dataset(f'{path_clim}/{files_clim}')
         ds_clim = ds_clim.rename({'valid_time': 'alvo_previsao'})
