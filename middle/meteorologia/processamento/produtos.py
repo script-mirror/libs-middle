@@ -1583,7 +1583,7 @@ class GeraProdutosPrevisao:
                                     ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
-                                elif 'gefs' in self.modelo_fmt.lower():
+                                elif self.modelo_fmt.lower() in ['gefs', 'gfs']:
                                     ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)      
 
