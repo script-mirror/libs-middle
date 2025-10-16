@@ -450,7 +450,8 @@ def abrir_modelo_sem_vazios(files, backend_kwargs=None, concat_dim='valid_time',
 
 ###################################################################################################################
 
-def ensemble_mean(data):
+def ensemble_mean(data, wind=False):
+    
     return data.mean(dim='number') if 'number' in data.dims else data.copy()
 
 ###################################################################################################################

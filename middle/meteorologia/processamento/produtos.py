@@ -1243,8 +1243,8 @@ class GeraProdutosPrevisao:
         varname_v = '100v' if 'ecmwf' in self.modelo_fmt else 'v100'
         us = get_dado_cacheado(varname_u, self.produto_config_sf, **self.pl_params)
         vs = get_dado_cacheado(varname_v, self.produto_config_sf, **self.pl_params)
-        us_mean = ensemble_mean(us)
-        vs_mean = ensemble_mean(vs)
+        us_mean = us if self.produto_config_sf.modelo in ['gefs-wind', 'gefs-estendido-wind'] else ensemble_mean(us)
+        vs_mean = vs if self.produto_config_sf.modelo in ['gefs-wind', 'gefs-estendido-wind'] else ensemble_mean(vs)
         cond_ini = get_inicializacao_fmt(us_mean)
 
         if '100u' in us.data_vars:
@@ -3425,6 +3425,13 @@ class GeraProdutosPrevisao:
                     us_plot = us_24h.sel(tempo=n_24h)
                     vs_plot = vs_24h.sel(tempo=n_24h)
                     magnitude = np.sqrt(us_plot['u100']**2 + vs_plot['v100']**2)
+                    
+                    if 'number' in us_plot.dims:
+                        us_plot = us_plot.mean(dim='number')
+                    if 'number' in vs_plot.dims:
+                        vs_plot = vs_plot.mean(dim='number')
+                    if 'number' in magnitude.dims:
+                        magnitude = magnitude.mean(dim='number')
 
                     ds_quiver = xr.Dataset({
                         'u': us_plot['u100'],
