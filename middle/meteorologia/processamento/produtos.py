@@ -307,7 +307,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if todos_sucesso:
                             break  # Sai do while se tudo deu certo
 
-            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido', 'gefs-wind', 'gefs-wind-estendido']:
+            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido', 'gefs-wind', 'gefs-estendido-wind']:
 
                 # Condição para o vento
                 if 'wind' not in modelo_fmt:
