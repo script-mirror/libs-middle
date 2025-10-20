@@ -1,3 +1,4 @@
+from re import T
 from ..consts.constants import CONSTANTES
 
 ###################################################################################################################
@@ -12,7 +13,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
                 lambda: produtos.gerar_prec24h_biomassa(extent=CONSTANTES['extents_mapa']['biomassa']),
-                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_mensal=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
                 # lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
@@ -74,7 +75,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_mensal=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
                 # lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
@@ -209,7 +210,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_mensal=True),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90, resample_freq='sop'),
                 lambda: produtos.gerar_prec_pnmm(margin_y=-90),
                 # lambda: produtos.gerar_diferenca_tp(margin_y=-90, add_valor_bacias=True) if hora == 0 else None,
@@ -252,7 +253,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_semanas_operativas(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
                 lambda: produtos.gerar_media_bacia_smap(plot_graf=True, ensemble=True, salva_db=True),
                 lambda: produtos.gerar_prec24h(extent=CONSTANTES['extents_mapa']['brasil']),
-                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True),
+                lambda: produtos.gerar_acumulado_total(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True, anomalia_mensal=True),
                 # lambda: produtos.gerar_diferenca_tp(extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True) if hora == 0 else None,
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='sudeste'),
                 lambda: produtos.gerar_estacao_chuvosa(regiao_estacao_chuvosa='norte'),

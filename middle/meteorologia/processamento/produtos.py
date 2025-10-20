@@ -307,7 +307,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if todos_sucesso:
                             break  # Sai do while se tudo deu certo
 
-            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido', 'gefs-wind', 'gefs-wind-estendido']:
+            elif modelo_fmt in ['gefs-membros', 'gefs-membros-estendido', 'gefs-wind', 'gefs-estendido-wind']:
 
                 # Condição para o vento
                 if 'wind' not in modelo_fmt:
@@ -1243,8 +1243,8 @@ class GeraProdutosPrevisao:
         varname_v = '100v' if 'ecmwf' in self.modelo_fmt else 'v100'
         us = get_dado_cacheado(varname_u, self.produto_config_sf, **self.pl_params)
         vs = get_dado_cacheado(varname_v, self.produto_config_sf, **self.pl_params)
-        us_mean = ensemble_mean(us)
-        vs_mean = ensemble_mean(vs)
+        us_mean = us if self.produto_config_sf.modelo in ['gefs-wind', 'gefs-estendido-wind'] else ensemble_mean(us)
+        vs_mean = vs if self.produto_config_sf.modelo in ['gefs-wind', 'gefs-estendido-wind'] else ensemble_mean(vs)
         cond_ini = get_inicializacao_fmt(us_mean)
 
         if '100u' in us.data_vars:
@@ -1564,7 +1564,7 @@ class GeraProdutosPrevisao:
                                     ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
-                                elif 'gefs' in self.modelo_fmt.lower():
+                                elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
                                     mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
                                     ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
@@ -1579,11 +1579,12 @@ class GeraProdutosPrevisao:
                             ds_acumulado = ds_resample_sel
 
                             if anomalia_mensal:    
+
                                 if 'ecmwf' in self.modelo_fmt.lower():
                                     ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
-                                elif 'gefs' in self.modelo_fmt.lower():
+                                elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
                                     ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
                                     ds_clim = interpola_ds(ds_clim, ds_acumulado)      
 
@@ -3424,6 +3425,13 @@ class GeraProdutosPrevisao:
                     us_plot = us_24h.sel(tempo=n_24h)
                     vs_plot = vs_24h.sel(tempo=n_24h)
                     magnitude = np.sqrt(us_plot['u100']**2 + vs_plot['v100']**2)
+                    
+                    if 'number' in us_plot.dims:
+                        us_plot = us_plot.mean(dim='number')
+                    if 'number' in vs_plot.dims:
+                        vs_plot = vs_plot.mean(dim='number')
+                    if 'number' in magnitude.dims:
+                        magnitude = magnitude.mean(dim='number')
 
                     ds_quiver = xr.Dataset({
                         'u': us_plot['u100'],
