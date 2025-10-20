@@ -13,6 +13,12 @@ def auth_airflow():
         "username": constants.USER_AIRFLOW,
         "password": constants.PASSWORD_AIRFLOW,
     }
+    
+    auth_data = {
+        "username": 'airflow',
+        "password": 'raizen',
+    }
+    
     logger.debug(f"Sending auth request to {auth_url} with username {constants.USER_AIRFLOW}")
     try:
         response = requests.post(auth_url, json=auth_data)
