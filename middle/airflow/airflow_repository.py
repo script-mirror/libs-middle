@@ -35,7 +35,29 @@ def trigger_dag(
     logger.info(f"Triggering DAG {dag_id}")
     trigger_dag_url = f"{constants.BASE_URL}/airflow-middle/api/v2/dags/{dag_id}/dagRuns"
     json = {"conf": conf}
-    json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()
+    
+    if "execution_date" in conf:
+        execution_date_str = conf.pop("execution_date")
+        try:
+            if isinstance(execution_date_str, str) and len(execution_date_str) == 10:
+                execution_date = datetime.datetime.strptime(execution_date_str, '%Y-%m-%d')
+                execution_date = execution_date.replace(tzinfo=pytz.timezone('America/Sao_Paulo'))
+                
+            elif isinstance(execution_date_str, datetime.datetime):
+                execution_date = execution_date_str
+                if execution_date.tzinfo is None:
+                    execution_date = execution_date.replace(tzinfo=pytz.timezone('America/Sao_Paulo'))
+                    
+            else:
+                raise ValueError(f"Formato de data inválido: {execution_date_str}")
+                
+            json["logical_date"] = execution_date.isoformat()
+            logger.info(f"Usando data de execução personalizada: {json['logical_date']}")
+        except Exception as e:
+            logger.warning(f"Erro ao processar execution_date: {str(e)}. Usando data atual.")
+            json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()
+    else:
+        json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()()
     logger.debug(f"Sending trigger request to {trigger_dag_url} with config {json}")
     try:
         answer = requests.post(trigger_dag_url, json=json, headers=auth_airflow())
