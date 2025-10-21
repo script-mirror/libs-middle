@@ -434,6 +434,25 @@ class Constants:
     @property
     def ATIVAR_ENV(self):
         return " . /projetos/env/bin/activate;"
+    
+    # CCEE
+    #==============================================================================================================================================================
+    @property
+    def CCEE_DECK_NEWANE(self):
+        return 'Deck de Preços - Newave'
+    
+    @property
+    def CCEE_DECK_NEWANE(self):
+        return "Deck de Preços - Newave Preliminar"
+    
+    @property
+    def CCEE_DECK_DECOMP(self):
+        return 'Deck de Preços - Decomp'
+    
+    @property
+    def CCEE_DECK_DESSEM(self):
+        return 'Decks de entrada e saída - Modelo DESSEM'
+      
         
     # WEBHOOK
     #==============================================================================================================================================================
