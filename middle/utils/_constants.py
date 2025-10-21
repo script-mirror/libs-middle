@@ -442,6 +442,10 @@ class Constants:
         return 'Deck Preliminar DECOMP - Valor Esperado'
     
     @property
+    def WEBHOOK_DECK_DESSEM(self):
+        return "Decks de entrada e saída - Modelo DESSEM"
+    
+    @property
     def WEBHOOK_DECK_NEWAVE_PRELIMINAR(self):
         return 'Deck NEWAVE Preliminar'
     
