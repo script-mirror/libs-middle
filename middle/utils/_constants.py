@@ -451,7 +451,7 @@ class Constants:
     
     @property
     def CCEE_DECK_DESSEM(self):
-        return 'Decks de entrada e saída - Modelo DESSEM'
+        return 'Deck de Preços - Dessem'
       
         
     # WEBHOOK
