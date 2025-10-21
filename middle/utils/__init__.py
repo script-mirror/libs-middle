@@ -35,6 +35,9 @@ from .file_manipulation import(
     create_directory,
 )
 
+from .download_deck_ccee import(
+    get_decks_ccee,
+)
 
 __all__ = [
     "SemanaOperativa",
@@ -50,4 +53,5 @@ __all__ = [
     "criar_logger",
     "create_directory",
     "html_style",
+    "get_decks_ccee",
 ]
