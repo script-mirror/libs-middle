@@ -63,7 +63,7 @@ def trigger_dag(
             logger.warning(f"Erro ao processar execution_date: {str(e)}. Usando data atual.")
             json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()
     else:
-        json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()()
+        json["logical_date"] = datetime.datetime.now(pytz.timezone('America/Sao_Paulo')).isoformat()
     logger.debug(f"Sending trigger request to {trigger_dag_url} with config {json}")
     try:
         answer = requests.post(trigger_dag_url, json=json, headers=auth_airflow())
