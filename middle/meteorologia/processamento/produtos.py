@@ -4713,7 +4713,14 @@ class GeraProdutosObservacao:
 
                     dateprev = n_dia.strftime('%Y%m%d%H')
 
-                    for modelo_prev in ['gfs', 'ecmwf', 'ecmwf-ens', 'gefs', 'pconjunto-ons', 'ecmwf-aifs']:
+                    for modelo_prev in [
+                        'gfs', 
+                        'ecmwf', 
+                        'ecmwf-ens', 
+                        'gefs', 
+                        # 'pconjunto-ons', 
+                        'ecmwf-aifs'
+                        ]:
 
                         try:
 
@@ -4790,7 +4797,7 @@ class GeraProdutosObservacao:
                 data_anterior = date_range[-1].strftime('%Y%m%d%H')
                 figura_obs = [
                     f'/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/mergegpm/gpm_diario/mergegpm_rain_{self.data.strftime("%Y%m%d")}.png',
-                    f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_pconjunto-ons-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
+                    # f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_pconjunto-ons-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
                     f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_ecmwf-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
                     f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_gfs-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
                     f'{Constants().PATH_DOWNLOAD_ARQUIVOS_DIFGPM}/dif_ecmwf-ens-gpm_{data_anterior}_f{self.data.strftime("%Y%m%d%H")}.png',
