@@ -13,7 +13,7 @@ pip install --upgrade --force-reinstall git+https://github.com/wx-middle/libs-mi
 Instalação SSH
 
 ```bash
-pip install --upgrade --force-reinstall git+ssh://git@github.com/wx-middle/libs-middle.git
+
 ```
 
 Instalação branch especifica:

@@ -6,6 +6,7 @@ from ..utils import Constants, setup_logger
 logger = setup_logger()
 constants = Constants()
 
+
 def auth_airflow():
     logger.info("Attempting Airflow authentication")
     auth_url = f"{constants.BASE_URL}/airflow-middle/auth/token"
