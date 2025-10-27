@@ -2943,7 +2943,7 @@ class GeraProdutosPrevisao:
                                 title=titulo, 
                                 filename=formato_filename(self.modelo_fmt, 'chuva_geop500_vento850', index),
                                 plot_bacias=False, ds_quiver=ds_quiver, 
-                                variavel_quiver='wind850', 
+                                variavel_quiver='wind850_prec6h', 
                                 ds_contour=ds_quiver['geop_500'], 
                                 variavel_contour='gh_500', 
                                 color_contour='black',
