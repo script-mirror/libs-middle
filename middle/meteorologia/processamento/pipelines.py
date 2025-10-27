@@ -41,7 +41,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_vento_div850(margin_y=-90),
                 lambda: produtos.gerar_ivt(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
-                lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_chuva_geop500_vento850(), # extent=CONSTANTES['extents_mapa']['brasil']
                 lambda: produtos.gerar_indices_itcz(),
                 
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
