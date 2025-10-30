@@ -2061,7 +2061,7 @@ class GeraProdutosPrevisao:
 
                         plot_campos(
                             ds=tp_plot['tp'],
-                            variavel_plotagem='desvpad',
+                            variavel_plotagem='chuva_ons',
                             title=titulo,
                             filename=formato_filename(self.modelo_fmt, f'quantil{int(quantis*100)}_{freq_prob}', n.item()),
                             shapefiles=self.shapefiles,
