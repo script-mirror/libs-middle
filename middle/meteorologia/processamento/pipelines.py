@@ -1,4 +1,3 @@
-from re import T
 from ..consts.constants import CONSTANTES
 
 ###################################################################################################################
@@ -41,7 +40,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_vento_div850(margin_y=-90),
                 lambda: produtos.gerar_ivt(margin_y=-90),
                 lambda: produtos.gerar_olr(margin_y=-90),
-                lambda: produtos.gerar_chuva_geop500_vento850(extent=CONSTANTES['extents_mapa']['brasil']),
+                lambda: produtos.gerar_chuva_geop500_vento850(), # extent=CONSTANTES['extents_mapa']['brasil']
                 lambda: produtos.gerar_indices_itcz(),
                 
                 # Não é PL mas vou deixar aqui para gerar as coisas mais importantes antes
@@ -68,7 +67,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
             return [            
             ]
 
-    elif modelo == 'gefs':
+    elif modelo == 'gefs': 
 
         if tipo == 'sfc':
             return [
@@ -184,6 +183,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
             ]  
         
         elif tipo == 'pl':
@@ -198,6 +199,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'],ensemble=False),
                 lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
             ]  
         
         elif tipo == 'pl':
@@ -332,6 +335,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
             ]  
         
         elif tipo == 'pl':
@@ -370,6 +375,8 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_desvpad(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
+                lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
             ]
 
         elif tipo == 'pl':

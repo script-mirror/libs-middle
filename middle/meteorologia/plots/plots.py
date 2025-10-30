@@ -538,6 +538,23 @@ def plot_campos(
             quiver_kwargs= {'headlength': 4, 'headwidth': 3,'angles': 'uv', 'scale':400}
             qp = ax.quiver(u_interp.longitude, u_interp.latitude, u_interp, v_interp, pivot='mid', transform=ccrs.PlateCarree(), zorder=5, **quiver_kwargs)
 
+        elif variavel_quiver == 'wind850_prec6h':
+
+            u = ds_quiver['u']
+            v = ds_quiver['v']
+            N_interp = 2.5
+
+            u_interp=u.interp(
+                longitude=np.arange(u.longitude.min().values,u.longitude.max().values, N_interp),
+                latitude=np.arange(u.latitude.min().values,u.latitude.max().values, N_interp))
+
+            v_interp=v.interp(
+                longitude=np.arange(v.longitude.min().values,v.longitude.max().values, N_interp),
+                latitude=np.arange(v.latitude.min().values,v.latitude.max().values, N_interp))
+
+            quiver_kwargs= {'headlength': 4, 'headwidth': 3,'angles': 'uv', 'scale': 450, 'alpha': 0.7}
+            qp = ax.quiver(u_interp.longitude, u_interp.latitude, u_interp, v_interp, pivot='mid', transform=ccrs.PlateCarree(), zorder=5, **quiver_kwargs)
+
         elif variavel_quiver == 'ivt':
 
             u = ds_quiver['qu']
