@@ -2087,7 +2087,7 @@ class GeraProdutosPrevisao:
                     tp_plot = tp_plot.quantile(0.75, dim='number') - tp_plot.quantile(0.25, dim='number')
 
                     titulo = gerar_titulo(
-                        modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} Q{int(quantis*100)}',
+                        modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} IQR (Q75 - Q25)',
                         cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
                         semana_operativa=True
                     )
@@ -2096,7 +2096,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='chuva_ons',
                         title=titulo,
-                        filename=formato_filename(self.modelo_fmt, f'quantil{int(quantis*100)}_{freq_prob}', n.item()),
+                        filename=formato_filename(self.modelo_fmt, f'iqr_{freq_prob}', n.item()),
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
                         **kwargs
