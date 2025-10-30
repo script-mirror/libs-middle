@@ -1056,7 +1056,7 @@ class ConfigProdutosObservado:
 
             elif modelo_fmt in ['cpc']:
                 ds = ds.rename({'time': 'valid_time'})
-                ds = ds.assign_coords(time=ds.valid_time)
+                ds = ds.assign_coords(time=ds.valid_time[-1])  # Adiciona a coordenada 'time' como o último valid_time
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
