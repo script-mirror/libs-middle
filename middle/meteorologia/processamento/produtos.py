@@ -1048,6 +1048,7 @@ class ConfigProdutosObservado:
             files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
             files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), format_data))
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
+            dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1][12:-3]) for f in files]
 
             # Troca time por valid_time
             if modelo_fmt in ['merge', 'mergegpm']:
@@ -1056,7 +1057,8 @@ class ConfigProdutosObservado:
 
             elif modelo_fmt in ['cpc']:
                 ds = ds.rename({'time': 'valid_time'})
-                ds = ds.assign_coords(time=ds.valid_time[-1])  # Adiciona a coordenada 'time' como o último valid_time
+                ds['valid_time'] = dates
+                ds = ds.assign_coords(time=dates[-1])  # Adiciona a coordenada 'time' como o último valid_time
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
