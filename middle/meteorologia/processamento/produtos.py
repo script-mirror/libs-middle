@@ -1059,6 +1059,7 @@ class ConfigProdutosObservado:
                 ds = ds.rename({'time': 'valid_time'})
                 ds['valid_time'] = dates
                 ds = ds.assign_coords(time=dates[-1])  # Adiciona a coordenada 'time' como o último valid_time
+                ds = ds.rename({'prec': 'tp'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
