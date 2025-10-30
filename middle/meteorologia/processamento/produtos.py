@@ -2038,6 +2038,37 @@ class GeraProdutosPrevisao:
                             **kwargs
                         )
 
+            elif modo == 'chuva_quantil':
+
+                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
+
+                for quantis in [0.10, 0.25, 0.75, 0.90]:
+
+                    for n in tp_sop['tempo']:
+
+                        print(f'Processando {n.item()}...')
+                        tp_plot = tp_sop.sel(tempo=n)
+                        intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = tp_plot.days_of_weeks.item()
+
+                        tp_plot = tp_plot.quantile(quantis, dim='number')
+
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} Q{int(quantis*100)}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                        )
+
+                        plot_campos(
+                            ds=tp_plot,
+                            variavel_plotagem='desvpad',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, f'quantil{int(quantis*100)}_{freq_prob}', n.item()),
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            **kwargs
+                        )
+
             elif modo == 'probabilidade_limiar':
 
                 tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
@@ -4376,6 +4407,9 @@ class GeraProdutosPrevisao:
 
     def gerar_psi_cfsv2(self, **kwargs):
         self._processar_varsdinamicas('psi_cfsv2', **kwargs)
+
+    def gerar_prec_quantil(self, **kwargs):
+        self._processar_precipitacao('chuva_quantil', **kwargs)
 
     ###################################################################################################################
 
