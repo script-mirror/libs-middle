@@ -1042,11 +1042,11 @@ class ConfigProdutosObservado:
         if apenas_mes_atual:
             data = self.data
             data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm'] else data.strftime('%Y.%m')
-            format = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "%Y.%m.%d"
+            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "%Y.%m.%d"
 
             # Filtrando arquivos pela data
             files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
-            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), "%Y%m%d"))
+            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), format_data))
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
 
             # Troca time por valid_time
