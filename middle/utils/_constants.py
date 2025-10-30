@@ -438,11 +438,11 @@ class Constants:
     # CCEE
     #==============================================================================================================================================================
     @property
-    def CCEE_DECK_NEWANE(self):
+    def CCEE_DECK_NEWAVE(self):
         return 'Deck de Preços - Newave'
     
     @property
-    def CCEE_DECK_NEWANE(self):
+    def CCEE_DECK_NEWAVE_PRELIMINAR(self):
         return "Deck de Preços - Newave Preliminar"
     
     @property
