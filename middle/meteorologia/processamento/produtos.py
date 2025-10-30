@@ -1028,7 +1028,7 @@ class ConfigProdutosObservado:
         # Caminho para salvar os arquivos
         caminho_para_salvar = f'{output_path}/'
         files = os.listdir(caminho_para_salvar)
-        files = [f for f in files if '.idx' not in f]
+        files = [f for f in files if '.idx' not in f if f.endswith((".grib2", ".grb", ".nc", "grb2"))]
 
         if variavel is not None:
             files = [f for f in files if variavel in f or variavel.lower() in f.lower()]
@@ -1041,12 +1041,14 @@ class ConfigProdutosObservado:
 
         if apenas_mes_atual:
             data = self.data
-            data_fmt = data.strftime('%Y%m')
+            data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm'] else data.strftime('%Y.%m')
+            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "0.50deg.lnx.%Y.%m.%d.nc"
 
             # Filtrando arquivos pela data
-            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), "%Y%m%d"))
             files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
+            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), format_data))
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
+            dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1][12:-3]) for f in files]
 
             # Troca time por valid_time
             if modelo_fmt in ['merge', 'mergegpm']:
@@ -1055,6 +1057,9 @@ class ConfigProdutosObservado:
 
             elif modelo_fmt in ['cpc']:
                 ds = ds.rename({'time': 'valid_time'})
+                ds['valid_time'] = dates
+                ds = ds.assign_coords(time=dates[-1])  # Adiciona a coordenada 'time' como o último valid_time
+                ds = ds.rename({'prec': 'tp'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
@@ -1170,6 +1175,7 @@ class GeraProdutosPrevisao:
         self.graficos_vento = ['graficos_vento']
         self.olr = ['olr']
         self.mag_vento100 = ['mag_vento100']
+        self.iqr = ['chuva_iqr']
         
     ###################################################################################################################
 
@@ -1377,6 +1383,9 @@ class GeraProdutosPrevisao:
 
             elif modo in self.figs_diferenca:
                 path_save = 'dif_prec'
+
+            elif modo in self.iqr:
+                path_save = 'chuva_quantil'
 
             else:
                 path_save = modo
@@ -2037,6 +2046,66 @@ class GeraProdutosPrevisao:
                             path_to_save=path_to_save,
                             **kwargs
                         )
+
+            elif modo == 'chuva_quantil':
+
+                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
+
+                for quantis in [0.10, 0.25, 0.75, 0.90]:
+
+                    for n in tp_sop['tempo']:
+
+                        print(f'Processando {n.item()}...')
+                        tp_plot = tp_sop.sel(tempo=n)
+                        intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = tp_plot.days_of_weeks.item()
+
+                        tp_plot = tp_plot.quantile(quantis, dim='number')
+
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} Q{int(quantis*100)}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                        )
+
+                        plot_campos(
+                            ds=tp_plot['tp'],
+                            variavel_plotagem='chuva_ons',
+                            title=titulo,
+                            filename=formato_filename(self.modelo_fmt, f'quantil{int(quantis*100)}_{freq_prob}', n.item()),
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            **kwargs
+                        )
+
+            elif modo == 'chuva_iqr':
+
+                tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
+
+                for n in tp_sop['tempo']:
+
+                    print(f'Processando {n.item()}...')
+                    tp_plot = tp_sop.sel(tempo=n)
+                    intervalo = tp_plot.intervalo.item().replace(' ', '\ ')
+                    days_of_week = tp_plot.days_of_weeks.item()
+
+                    tp_plot = tp_plot.quantile(0.75, dim='number') - tp_plot.quantile(0.25, dim='number')
+
+                    titulo = gerar_titulo(
+                        modelo=self.modelo_fmt, tipo=f'{self.freqs_map[freq_prob]["prefix_title"]}{n.item()} IQR (Q75 - Q25)',
+                        cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                        semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=tp_plot['tp'],
+                        variavel_plotagem='chuva_ons',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'iqr_{freq_prob}', n.item()),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )
 
             elif modo == 'probabilidade_limiar':
 
@@ -2943,7 +3012,7 @@ class GeraProdutosPrevisao:
                                 title=titulo, 
                                 filename=formato_filename(self.modelo_fmt, 'chuva_geop500_vento850', index),
                                 plot_bacias=False, ds_quiver=ds_quiver, 
-                                variavel_quiver='wind850', 
+                                variavel_quiver='wind850_prec6h', 
                                 ds_contour=ds_quiver['geop_500'], 
                                 variavel_contour='gh_500', 
                                 color_contour='black',
@@ -4376,6 +4445,12 @@ class GeraProdutosPrevisao:
 
     def gerar_psi_cfsv2(self, **kwargs):
         self._processar_varsdinamicas('psi_cfsv2', **kwargs)
+
+    def gerar_prec_quantil(self, **kwargs):
+        self._processar_precipitacao('chuva_quantil', **kwargs)
+
+    def gerar_chuva_iqr(self, **kwargs):
+        self._processar_precipitacao('chuva_iqr', **kwargs)
 
     ###################################################################################################################
 
