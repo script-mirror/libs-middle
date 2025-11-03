@@ -4709,7 +4709,8 @@ class GeraProdutosObservacao:
                         mes = 'dez'
                     tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc')
                     tp_plot_clim = tp_plot_clim.rename({'avg': 'tp', 'lat': 'latitude', 'lon': 'longitude'})  
-                    tp_plot_clim = interpola_ds(tp_plot_clim, tp_plot_acc)                  
+                    tp_plot_clim = interpola_ds(tp_plot_clim, tp_plot_acc)     
+                    tp_plot_clim = tp_plot_clim/10             
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
@@ -4742,22 +4743,27 @@ class GeraProdutosObservacao:
                     if data_var == 'acumulado_ate':
                         tipo = 'Acumulado total'
                         variavel_plotagem = 'chuva_acumualada_merge'
+                        data_varname = data_var
 
                     elif data_var == 'anomalia_total':
                         tipo = 'Anomalia total'
                         variavel_plotagem = 'chuva_acumualada_merge_anomalia'
+                        data_varname = data_var
 
                     elif data_var == 'anomalia_parcial':
                         tipo = 'Anomalia parcial'
                         variavel_plotagem = 'chuva_acumualada_merge_anomalia'
+                        data_varname = data_var
 
                     elif data_var == 'pct_climatologia':
                         tipo = '% da climatologia'
                         variavel_plotagem = 'pct_climatologia'
+                        data_varname = 'pct_climatologia' if self.modelo_fmt == 'mergegpm' else 'pctclim'
 
                     elif data_var == 'pct_climatologia_parcial':
                         tipo = '% da climatologia parcial'
                         variavel_plotagem = 'pct_climatologia'
+                        data_varname = 'pct_climatologia_parcial' if self.modelo_fmt == 'mergegpm' else 'pclimparcial'
 
                     titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
@@ -4771,7 +4777,7 @@ class GeraProdutosObservacao:
                         variavel_plotagem=variavel_plotagem,
                         title=titulo,
                         path_to_save=path_to_save,
-                        filename=f'{self.modelo_fmt}_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
+                        filename=f'{self.modelo_fmt}_{data_varname}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
