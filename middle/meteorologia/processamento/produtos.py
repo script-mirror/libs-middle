@@ -4707,7 +4707,7 @@ class GeraProdutosObservacao:
                     elif mes == 'dec':
                         mes = 'dez'
                     tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc')
-                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp'})  
+                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp', 'lat': 'latitude', 'lon': 'longitude'})  
                     tp_plot_clim = interpola_ds(tp_plot_clim, tp_plot_acc)                  
                 
                 # Anomalia total
