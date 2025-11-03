@@ -4678,6 +4678,7 @@ class GeraProdutosObservacao:
 
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                tp_plot_acc = tp_plot_acc/10 if self.modelo_fmt == 'cpc' else tp_plot_acc
 
                 tempo_ini = pd.to_datetime(tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(tp['valid_time'].values[-1])
