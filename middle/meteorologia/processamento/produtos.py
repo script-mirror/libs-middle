@@ -4936,6 +4936,47 @@ class GeraProdutosObservacao:
                     response = requests.post(f'{API_URL}/rodadas/chuva/observada', verify=False, json=ds_to_df.to_dict('records'), headers=get_auth_header())
                     print(f'Código POST: {response.status_code}')
 
+            elif modo == 'estacao_chuvosa':
+
+                regioes = ['seb', 'norte']
+
+                for regiao in regioes:
+
+                    print(f'Processando região: {regiao}')
+
+                    if regiao == 'seb':
+                        lati = -15
+                        latf = -25
+                        loni = 307.5
+                        lonf = 320
+
+                    elif regiao == 'norte':
+                        lati = -2
+                        latf = -6
+                        loni = 360-56
+                        lonf = 360-46.4
+
+                    self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+
+                    if len(self.cond_ini) > 0:
+                        cond_ini = self.cond_ini[index]
+                    else:
+                        cond_ini = self.cond_ini
+
+                    ds = self.tp.isel(valid_time=0)
+                    ds = ds.sel(lat=slice(latf, lati), lon=slice(loni, lonf))
+                    ds_mean = ds.mean(('latitude', 'longitude'))
+                    ds_mean_df = pd.DataFrame([ds_mean['tp']], columns=['vl_chuva'])
+                    ds_mean_df['dt_observada'] = pd.to_datetime(cond_ini, format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d')
+                    ds_mean_df = ds_mean_df[['dt_observada', 'vl_chuva']]
+
+                    print(ds_mean_df)
+
+                    print('Salvando dados no db')
+                    API_URL = Constants().API_URL_APIV2
+                    response = requests.post(f'{API_URL}/meteorologia/estacao-chuvosa', verify=False, json=ds_mean_df.to_dict('records'), headers=get_auth_header())
+                    print(f'Código POST: {response.status_code}')
+
         except Exception as e:
             print(f'Erro ao processar {modo}: {e}')
 
@@ -5098,6 +5139,9 @@ class GeraProdutosObservacao:
 
     def gerar_bacias_smap(self, **kwargs):
         self._processar_precipitacao('bacias_smap', **kwargs)
+
+    def gerar_estacao_chuvosa(self, **kwargs):
+        self._processar_precipitacao('estacao_chuvosa', **kwargs)
 
     def gerar_temp_diario(self, **kwargs):
         self._processar_temperatura('temp_diario', **kwargs)
