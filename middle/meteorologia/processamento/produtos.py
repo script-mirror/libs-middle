@@ -4959,7 +4959,7 @@ class GeraProdutosObservacao:
                     self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
 
                     if len(self.cond_ini) > 0:
-                        cond_ini = self.cond_ini[index]
+                        cond_ini = self.cond_ini[0]
                     else:
                         cond_ini = self.cond_ini
 
