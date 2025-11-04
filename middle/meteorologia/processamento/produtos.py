@@ -1041,8 +1041,8 @@ class ConfigProdutosObservado:
 
         if apenas_mes_atual:
             data = self.data
-            data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm'] else data.strftime('%Y.%m')
-            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "0.50deg.lnx.%Y.%m.%d.nc"
+            data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm', 'cpc'] else data.strftime('%Y.%m')
+            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "0.50deg.lnx.%Y%m%d.nc"
 
             # Filtrando arquivos pela data
             files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
