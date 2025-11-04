@@ -4964,7 +4964,7 @@ class GeraProdutosObservacao:
                         cond_ini = self.cond_ini
 
                     ds = self.tp.isel(valid_time=0)
-                    ds = ds.sel(lat=slice(latf, lati), lon=slice(loni, lonf))
+                    ds = ds.sel(latitude=slice(latf, lati), longitude=slice(loni, lonf))
                     ds_mean = ds.mean(('latitude', 'longitude'))
                     ds_mean_df = pd.DataFrame([ds_mean['tp']], columns=['vl_chuva'])
                     ds_mean_df['dt_observada'] = pd.to_datetime(cond_ini, format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d')
