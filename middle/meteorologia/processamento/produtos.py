@@ -1060,7 +1060,8 @@ class ConfigProdutosObservado:
                 ds = ds.rename({'time': 'valid_time'})
                 ds['valid_time'] = dates
                 ds = ds.assign_coords(time=dates[-1])  # Adiciona a coordenada 'time' como o último valid_time
-                ds = ds.rename({'prec': 'tp'})
+                if 'prec' in ds.data_vars:
+                    ds = ds.rename({'prec': 'tp'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
@@ -4679,7 +4680,7 @@ class GeraProdutosObservacao:
 
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
-                tp_plot_acc = tp_plot_acc/10 if self.modelo_fmt == 'cpc' else tp_plot_acc
+                # tp_plot_acc = tp_plot_acc/10 if self.modelo_fmt == 'cpc' else tp_plot_acc
 
                 tempo_ini = pd.to_datetime(tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(tp['valid_time'].values[-1])
