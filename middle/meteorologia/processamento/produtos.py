@@ -3776,7 +3776,7 @@ class GeraProdutosPrevisao:
 
                 # Pnmm
                 if self.pnmm_mean is None:
-                    _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
+                    _, self.pnmm_mean, self.cond_ini = self._carregar_pnmm_mean()
 
                 pnmm_24h = resample_variavel(self.pnmm_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean')
 
@@ -3791,10 +3791,10 @@ class GeraProdutosPrevisao:
 
                     if resample_freq == '24h':
                         tempo_ini = ajustar_hora_utc(pd.to_datetime(pnmm_plot.data_inicial.item()))
-                        semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.pnmm_mean.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.pnmm_mean.time.values), tempo_ini, ds_tempo_final=self.pnmm_mean.valid_time[-1].values, modelo=self.modelo_fmt)[0]
 
                         titulo = self._ajustar_tempo_e_titulo(
-                            tp_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Posicionamento ASAS', semana, self.cond_ini,
+                            pnmm_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Posicionamento ASAS', semana, self.cond_ini,
                         )
 
                     else:
