@@ -179,6 +179,13 @@ def custom_colorbar(variavel_plotagem):
         cmap = ListedColormap(colors)
         cbar_ticks = None     
 
+    elif variavel_plotagem in ['pos_asas']:
+        levels = np.arange(995, 1025.5, 0.5)
+        colors = ['purple', 'blue', 'green', 'orange', 'red', 'pink']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1) 
+        cbar_ticks = np.arange(995, 1030, 5)
+
     elif variavel_plotagem == 'frentes':
         levels = list(range(0, 6))
         colors = [
@@ -500,9 +507,12 @@ def plot_campos(
             plt.clabel(cf_neg, inline=True, fmt='%.0f', fontsize=10, colors='black')
             plt.clabel(cf_pos, inline=True, fmt='%.0f', fontsize=10, colors='black')
 
-
         elif variavel_contour == 'olr':
             cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(220, 250, 10))
+            plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)            
+
+        elif variavel_contour == 'pos_asas':
+            cf2 = ax.contour(lon, lat, ds_contour, transform=ccrs.PlateCarree(), colors='black', linestyles='solid', levels=np.arange(1018, 1100, 30))
             plt.clabel(cf2, inline=True, fmt='%.0f', fontsize=10, colors=color_contour)            
 
     if ds_streamplot is not None:

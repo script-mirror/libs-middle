@@ -1129,3 +1129,7 @@ class Constants:
     @property 
     def PATH_FIGURAS_CPC_CLIM(self):
         return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_clim'
+    
+    @property 
+    def PATH_REANALISE_NCEP(self):
+        return '/WX2TB/Documentos/dados/reanI-ncep'

@@ -1,5 +1,6 @@
 from datetime import datetime
 import geopandas as gpd
+from idna import decode
 import requests
 import os
 import time
@@ -3769,6 +3770,54 @@ class GeraProdutosPrevisao:
                 df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
                 df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv', index=False)
 
+            elif modo == 'posicionamento_asas':
+
+                varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
+
+                # Pnmm
+                if self.pnmm_mean is None:
+                    _, self.pnmm_mean, _ = self._carregar_pnmm_mean()
+
+                pnmm_24h = resample_variavel(self.pnmm_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean')
+
+                # Abrindo dado de posição climatologico da asas
+                # ds_pnmm_clim = xr.open_dataset(f'{Constants().PATH_REANALISE_NCEP}/diarios/ciclos_anuais-40x/ciclo_anual_slp0.nc', decode_times=False)
+
+                for p_24h in pnmm_24h.tempo:
+
+                    print(f'Processando {p_24h.item()}...')
+                    pnmm_plot = pnmm_24h.sel(tempo=p_24h)
+                    pnmm_plot = nd.gaussian_filter(pnmm_plot[varname]*1e-2, sigma=2)
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(pnmm_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.tp.time.values), tempo_ini, ds_tempo_final=self.pnmm_mean.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            tp_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Posicionamento ASAS', semana, self.cond_ini,
+                        )
+
+                    else:
+                        intervalo = pnmm_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = pnmm_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{p_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=pnmm_plot,
+                        variavel_plotagem='pos_asas',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'pos_asas_{self.freqs_map[resample_freq]["prefix_filename"]}', p_24h.item()),
+                        ds_contour=pnmm_plot,
+                        variavel_contour='pos_asas',
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )  
+
             elif modo == 'pnmm_vento850':
 
                 varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
@@ -4453,6 +4502,9 @@ class GeraProdutosPrevisao:
 
     def gerar_chuva_iqr(self, **kwargs):
         self._processar_precipitacao('chuva_iqr', **kwargs)
+
+    def gerar_posicionamento_asas(self, **kwargs):
+        self._processar_varsdinamicas('posicionamento_asas', **kwargs)
 
     ###################################################################################################################
 
