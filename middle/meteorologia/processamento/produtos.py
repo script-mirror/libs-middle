@@ -3787,7 +3787,7 @@ class GeraProdutosPrevisao:
 
                     print(f'Processando {p_24h.item()}...')
                     pnmm_plot = pnmm_24h.sel(tempo=p_24h)
-                    pnmm_plot = nd.gaussian_filter(pnmm_plot[varname]*1e-2, sigma=2)
+                    pnmm_plot_map = nd.gaussian_filter(pnmm_plot[varname]*1e-2, sigma=2)
 
                     if resample_freq == '24h':
                         tempo_ini = ajustar_hora_utc(pd.to_datetime(pnmm_plot.data_inicial.item()))
@@ -3807,7 +3807,7 @@ class GeraProdutosPrevisao:
                     )
 
                     plot_campos(
-                        ds=pnmm_plot,
+                        ds=pnmm_plot_map,
                         variavel_plotagem='pos_asas',
                         title=titulo,
                         filename=formato_filename(self.modelo_fmt, f'pos_asas_{self.freqs_map[resample_freq]["prefix_filename"]}', p_24h.item()),
