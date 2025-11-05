@@ -28,7 +28,7 @@ CONSTANTES = {
         '[%]': ['probabilidade', 'pct_climatologia'],
         '[agdp]': ['geop_500_anomalia'],
         '[W/m²]': ['olr'],
-        '[hPa]': ['pnmm_vento']
+        '[hPa]': ['pnmm_vento', 'pos_asas']
     },
 
     'path_save_netcdf': '/projetos/arquivos/meteorologia/dados_modelos/netcdf_salvos', # '/WX2TB/Documentos/saidas-modelos-novo'
