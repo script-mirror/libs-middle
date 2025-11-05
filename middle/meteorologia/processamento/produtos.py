@@ -1041,12 +1041,13 @@ class ConfigProdutosObservado:
 
         if apenas_mes_atual:
             data = self.data
-            data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm'] else data.strftime('%Y.%m')
-            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "0.50deg.lnx.%Y.%m.%d.nc"
+            data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm', 'cpc'] else data.strftime('%Y.%m')
+            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "0.50deg.lnx.%Y%m%d.nc"
 
             # Filtrando arquivos pela data
-            files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
+            files = [f for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
             files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), format_data))
+            files = [f'{caminho_para_salvar}/{f}' for f in files]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
             dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1][12:-3]) for f in files]
 
@@ -1059,7 +1060,8 @@ class ConfigProdutosObservado:
                 ds = ds.rename({'time': 'valid_time'})
                 ds['valid_time'] = dates
                 ds = ds.assign_coords(time=dates[-1])  # Adiciona a coordenada 'time' como o último valid_time
-                ds = ds.rename({'prec': 'tp'})
+                if 'prec' in ds.data_vars:
+                    ds = ds.rename({'prec': 'tp'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
@@ -4678,6 +4680,7 @@ class GeraProdutosObservacao:
 
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                # tp_plot_acc = tp_plot_acc/10 if self.modelo_fmt == 'cpc' else tp_plot_acc
 
                 tempo_ini = pd.to_datetime(tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(tp['valid_time'].values[-1])
@@ -4707,7 +4710,9 @@ class GeraProdutosObservacao:
                     elif mes == 'dec':
                         mes = 'dez'
                     tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc')
-                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp'})                    
+                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp', 'lat': 'latitude', 'lon': 'longitude'})  
+                    tp_plot_clim = interpola_ds(tp_plot_clim, tp_plot_acc)     
+                    tp_plot_clim = tp_plot_clim/10             
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
@@ -4740,22 +4745,27 @@ class GeraProdutosObservacao:
                     if data_var == 'acumulado_ate':
                         tipo = 'Acumulado total'
                         variavel_plotagem = 'chuva_acumualada_merge'
+                        data_varname = data_var
 
                     elif data_var == 'anomalia_total':
                         tipo = 'Anomalia total'
                         variavel_plotagem = 'chuva_acumualada_merge_anomalia'
+                        data_varname = data_var
 
                     elif data_var == 'anomalia_parcial':
                         tipo = 'Anomalia parcial'
                         variavel_plotagem = 'chuva_acumualada_merge_anomalia'
+                        data_varname = data_var
 
                     elif data_var == 'pct_climatologia':
                         tipo = '% da climatologia'
                         variavel_plotagem = 'pct_climatologia'
+                        data_varname = 'pct_climatologia' if self.modelo_fmt == 'mergegpm' else 'pctclim'
 
                     elif data_var == 'pct_climatologia_parcial':
                         tipo = '% da climatologia parcial'
                         variavel_plotagem = 'pct_climatologia'
+                        data_varname = 'pct_climatologia_parcial' if self.modelo_fmt == 'mergegpm' else 'pclimparcial'
 
                     titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
@@ -4769,7 +4779,7 @@ class GeraProdutosObservacao:
                         variavel_plotagem=variavel_plotagem,
                         title=titulo,
                         path_to_save=path_to_save,
-                        filename=f'{self.modelo_fmt}_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
+                        filename=f'{self.modelo_fmt}_{data_varname}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
@@ -4924,6 +4934,49 @@ class GeraProdutosObservacao:
                 if salva_db:
                     print('Salvando dados no db')
                     response = requests.post(f'{API_URL}/rodadas/chuva/observada', verify=False, json=ds_to_df.to_dict('records'), headers=get_auth_header())
+                    print(f'Código POST: {response.status_code}')
+
+            elif modo == 'estacao_chuvosa':
+
+                regioes = ['seb', 'norte']
+
+                for regiao in regioes:
+
+                    print(f'Processando região: {regiao}')
+
+                    if regiao == 'seb':
+                        lati = -15
+                        latf = -25
+                        loni = 307.5
+                        lonf = 320
+
+                    elif regiao == 'norte':
+                        lati = -2
+                        latf = -6
+                        loni = 360-56
+                        lonf = 360-46.4
+
+                    self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+
+                    if len(self.cond_ini) > 0:
+                        cond_ini = self.cond_ini[0]
+                    else:
+                        cond_ini = self.cond_ini
+
+                    ds = self.tp.isel(valid_time=0)
+                    ds = ds.sel(latitude=slice(latf, lati), longitude=slice(loni, lonf))
+                    print(ds)
+                    ds_mean = ds.mean(('latitude', 'longitude'))
+                    ds_mean_df = pd.DataFrame([ds_mean['tp'].values], columns=['vl_chuva'])
+                    ds_mean_df['dt_observada'] = pd.to_datetime(cond_ini, format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d')
+                    ds_mean_df = ds_mean_df[['dt_observada', 'vl_chuva']]
+                    ds_mean_df['regiao'] = 'sudeste' if regiao == 'seb' else regiao
+
+                    print(ds_mean_df)
+
+                    print('Salvando dados no db')
+                    API_URL = Constants().API_URL_APIV2
+                    response = requests.post(f'{API_URL}/meteorologia/estacao-chuvosa', verify=False, json=ds_mean_df.to_dict('records'), headers=get_auth_header())
                     print(f'Código POST: {response.status_code}')
 
         except Exception as e:
@@ -5088,6 +5141,9 @@ class GeraProdutosObservacao:
 
     def gerar_bacias_smap(self, **kwargs):
         self._processar_precipitacao('bacias_smap', **kwargs)
+
+    def gerar_estacao_chuvosa(self, **kwargs):
+        self._processar_precipitacao('estacao_chuvosa', **kwargs)
 
     def gerar_temp_diario(self, **kwargs):
         self._processar_temperatura('temp_diario', **kwargs)
