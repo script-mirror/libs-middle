@@ -718,7 +718,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         # Só imprime aqui quando realmente for tentar baixar
                         print(f'⬇️ Baixando {filename} ...')
 
-                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/aigefs/para/hgefs.{data_fmt}/{inicializacao_fmt}/ensstat/products/atmos/grib2/hgefs.t{inicializacao_fmt}z.sfc.avg.f{i:03d}.grib2'
+                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/hgefs/para/hgefs.{data_fmt}/{inicializacao_fmt}/ensstat/products/atmos/grib2/hgefs.t{inicializacao_fmt}z.sfc.avg.f{i:03d}.grib2'
     
                         file = requests.get(url, allow_redirects=True)
                         if file.status_code == 200:
