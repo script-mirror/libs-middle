@@ -92,6 +92,9 @@ CONSTANTES = {
         'ecmwf-ens-estendido': 7,
         'ecmwf-ens-membros-estendido': 7,
         'cfsv2': 7,
+        'hgefs': 2,
+        'aigefs': 3,
+        'aigfs': 3,
 
     },
 
