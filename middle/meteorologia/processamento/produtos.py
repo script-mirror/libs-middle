@@ -2151,7 +2151,7 @@ class GeraProdutosPrevisao:
                     ds_obs = xr.open_mfdataset(files_to_use, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
                     ds_obs = ds_obs.rename({'rdp': 'tp'})
                     ds_obs = ds_obs['tp']
-                    tempo_ini = ds_obs.time[0].values
+                    tempo_ini_obs = ds_obs.time[0].values
                     ultimo_tempo = ds_obs.time[-1]
                     ds_obs = ds_obs.sum(dim='time')
                     ds_obs = interpola_ds(ds_obs, self.tp).to_dataset()
@@ -2169,7 +2169,7 @@ class GeraProdutosPrevisao:
                             ds_resample_sel = ds_resample.sel(valid_time=time)
                             mes = pd.to_datetime(time.values).strftime('%b/%Y')
 
-                            if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini).month:
+                            if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini_obs).month:
                                 tipo=f'MERGE + Prev'
                                 ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
                                 ds_acumulado = ds_acumulado.to_dataset()
