@@ -2142,29 +2142,6 @@ class GeraProdutosPrevisao:
 
             elif modo == 'chuva_quantil_mensal':
 
-                tempo_ini = pd.to_datetime(self.tp_mean.valid_time.values[0])
-                tempo_fim = pd.to_datetime(self.tp_mean.valid_time.values[-1])
-                tp_plot = self.tp_mean.sum(dim='valid_time')
-
-                titulo = gerar_titulo(
-                    modelo=self.modelo_fmt,
-                    tipo='Acumulado total',
-                    cond_ini=self.cond_ini,
-                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
-                    sem_intervalo_semana=True
-                )
-
-                plot_campos(
-                    ds=tp_plot['tp'],
-                    variavel_plotagem='acumulado_total',
-                    title=titulo,
-                    filename=formato_filename(self.modelo_fmt, 'acumuladototal'),
-                    shapefiles=self.shapefiles,
-                    path_to_save=path_to_save,
-                    **kwargs
-                )
-
                 # Acumulado com MERGE
                 path_merge = '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
                 ano_mes_atual = pd.to_datetime(self.tp.time.values).strftime('%Y%m')
