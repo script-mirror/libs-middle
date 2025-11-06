@@ -2183,77 +2183,77 @@ class GeraProdutosPrevisao:
                     ds_obs = ds_obs.sum(dim='time')
                     ds_obs = interpola_ds(ds_obs, self.tp).to_dataset()
 
-                    # Dando o resample nos dados de chuva prevista
-                    ds_resample = self.tp_mean.sel(valid_time=self.tp_mean.valid_time > ultimo_tempo).resample(valid_time='M').sum()
+                    for quantil in [0.10, 0.25, 0.75, 0.90]:
 
-                    for index, time in enumerate(ds_resample.valid_time):
-                        ds_resample_sel = ds_resample.sel(valid_time=time)
-                        mes = pd.to_datetime(time.values).strftime('%b/%Y')
+                        print(f'Processando quantil {int(quantil*100)}...')
 
-                        if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini).month:
-                            tipo=f'MERGE + Prev'
-                            ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
-                            ds_acumulado = ds_acumulado.to_dataset()
+                        tp_plot = self.tp_mean.quantile(quantil, dim='number')
 
-                            if anomalia_mensal: 
-                                if 'ecmwf' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
-                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                        # Dando o resample nos dados de chuva prevista
+                        ds_resample = tp_plot.sel(valid_time=tp_plot.valid_time > ultimo_tempo).resample(valid_time='M').sum()
 
-                                elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
-                                    mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
-                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
-                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
-                                    
-                                # Anos iniciais e finais da climatologia
-                                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
-                                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+                        for index, time in enumerate(ds_resample.valid_time):
+                            ds_resample_sel = ds_resample.sel(valid_time=time)
+                            mes = pd.to_datetime(time.values).strftime('%b/%Y')
 
-                        else:
-                            tempo_ini = self.tp_mean.sel(valid_time=self.tp_mean.valid_time.dt.month == time.dt.month).valid_time[0].values
-                            tipo=f'Acumulado total'
-                            ds_acumulado = ds_resample_sel
+                            if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini).month:
+                                tipo=f'MERGE + Prev'
+                                ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
+                                ds_acumulado = ds_acumulado.to_dataset()
 
-                            print(ds_acumulado)
+                                if anomalia_mensal: 
+                                    if 'ecmwf' in self.modelo_fmt.lower():
+                                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
-                            if anomalia_mensal:    
+                                    elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
+                                        mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
+                                        ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                                        
+                                    # Anos iniciais e finais da climatologia
+                                    ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                    ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
 
-                                if 'ecmwf' in self.modelo_fmt.lower():
-                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
-                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                            else:
+                                tempo_ini = tp_plot.sel(valid_time=tp_plot.valid_time.dt.month == time.dt.month).valid_time[0].values
+                                tipo=f'Acumulado total'
+                                ds_acumulado = ds_resample_sel
 
-                                elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
-                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
-                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)      
+                                if anomalia_mensal:    
 
-                                # Anos iniciais e finais da climatologia
-                                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
-                                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+                                    if 'ecmwf' in self.modelo_fmt.lower():
+                                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)
 
-                        tempo_fim = self.tp_mean.sel(valid_time=self.tp_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values
-                        data_ini=pd.to_datetime(tempo_ini).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
-                        data_fim=pd.to_datetime(tempo_fim).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
+                                    elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
+                                        ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)      
 
-                        if anomalia_mensal:
+                                    # Anos iniciais e finais da climatologia
+                                    ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                    ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
 
-                            path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
+                            tempo_fim = tp_plot.sel(valid_time=tp_plot.valid_time.dt.month == time.dt.month).valid_time[-1].values
+                            data_ini=pd.to_datetime(tempo_ini).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
+                            data_fim=pd.to_datetime(tempo_fim).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
 
-                            inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
-                            fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
-                            
-                            t_clim_ini = inicio.replace(inicio[:4], ano_ini)
-                            t_clim_fim = fim.replace(fim[:4], ano_fim)
+                            if anomalia_mensal:
 
-                            # Sel nos tempos encontrados
-                            ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
+                                path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
 
-                            # Anomalia
-                            ds_anomalia = ds_acumulado['tp'] - ds_clim_sel['tp']
-                            ds_anomalia = ds_anomalia.to_dataset()
+                                inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
+                                fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
+                                
+                                t_clim_ini = inicio.replace(inicio[:4], ano_ini)
+                                t_clim_fim = fim.replace(fim[:4], ano_fim)
 
-                            for quantil in [0.10, 0.25, 0.75, 0.90]:
+                                # Sel nos tempos encontrados
+                                ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
 
-                                tp_plot = ds_anomalia['tp'].quantile(quantil, dim='number')
+                                # Anomalia
+                                ds_anomalia = ds_acumulado['tp'] - ds_clim_sel['tp']
+                                ds_anomalia = ds_anomalia.to_dataset()
 
                                 titulo = gerar_titulo(
                                     modelo=self.modelo_fmt,
@@ -2266,7 +2266,7 @@ class GeraProdutosPrevisao:
                                 )
 
                                 plot_campos(
-                                    ds=tp_plot,
+                                    ds=ds_anomalia['tp'],
                                     variavel_plotagem='tp_anomalia_mensal',
                                     title=titulo,
                                     filename=formato_filename(self.modelo_fmt, f'anomaliaacumuladomensal_Q{int(quantil*100)}', index),
