@@ -2136,6 +2136,140 @@ class GeraProdutosPrevisao:
                             **kwargs
                         )
 
+            elif modo == 'chuva_quantil_mensal':
+
+                tempo_ini = pd.to_datetime(self.tp_mean.valid_time.values[0])
+                tempo_fim = pd.to_datetime(self.tp_mean.valid_time.values[-1])
+                tp_plot = self.tp_mean.sum(dim='valid_time')
+
+                titulo = gerar_titulo(
+                    modelo=self.modelo_fmt,
+                    tipo='Acumulado total',
+                    cond_ini=self.cond_ini,
+                    data_ini=tempo_ini.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    data_fim=tempo_fim.strftime('%d/%m/%Y %H UTC').replace(' ', '\\ '),
+                    sem_intervalo_semana=True
+                )
+
+                plot_campos(
+                    ds=tp_plot['tp'],
+                    variavel_plotagem='acumulado_total',
+                    title=titulo,
+                    filename=formato_filename(self.modelo_fmt, 'acumuladototal'),
+                    shapefiles=self.shapefiles,
+                    path_to_save=path_to_save,
+                    **kwargs
+                )
+
+                # Acumulado com MERGE
+                path_merge = '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
+                ano_mes_atual = pd.to_datetime(self.tp.time.values).strftime('%Y%m')
+                files = os.listdir(path_merge)
+
+                files_to_use = [x for x in files if f'{ano_mes_atual}' in x if '.idx' not in x if 'tmp' not in x if x.endswith('.grib2')]
+                files_to_use = sorted(files_to_use)
+
+                if len(files_to_use) > 0:
+                    files_to_use = [path_merge + '/' + x for x in files_to_use]
+                    ds_obs = xr.open_mfdataset(files_to_use, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
+                    ds_obs = ds_obs.rename({'rdp': 'tp'})
+                    ds_obs = ds_obs['tp']
+                    tempo_ini = ds_obs.time[0].values
+                    ultimo_tempo = ds_obs.time[-1]
+                    ds_obs = ds_obs.sum(dim='time')
+                    ds_obs = interpola_ds(ds_obs, self.tp).to_dataset()
+
+                    # Dando o resample nos dados de chuva prevista
+                    ds_resample = self.tp_mean.sel(valid_time=self.tp_mean.valid_time > ultimo_tempo).resample(valid_time='M').sum()
+
+                    for index, time in enumerate(ds_resample.valid_time):
+                        ds_resample_sel = ds_resample.sel(valid_time=time)
+                        mes = pd.to_datetime(time.values).strftime('%b/%Y')
+
+                        if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini).month:
+                            tipo=f'MERGE + Prev'
+                            ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
+                            ds_acumulado = ds_acumulado.to_dataset()
+
+                            if anomalia_mensal: 
+                                if 'ecmwf' in self.modelo_fmt.lower():
+                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
+                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+
+                                elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
+                                    mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
+                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
+                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                                    
+                                # Anos iniciais e finais da climatologia
+                                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+
+                        else:
+                            tempo_ini = self.tp_mean.sel(valid_time=self.tp_mean.valid_time.dt.month == time.dt.month).valid_time[0].values
+                            tipo=f'Acumulado total'
+                            ds_acumulado = ds_resample_sel
+
+                            if anomalia_mensal:    
+
+                                if 'ecmwf' in self.modelo_fmt.lower():
+                                    ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
+                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)
+
+                                elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
+                                    ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
+                                    ds_clim = interpola_ds(ds_clim, ds_acumulado)      
+
+                                # Anos iniciais e finais da climatologia
+                                ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+
+                        tempo_fim = self.tp_mean.sel(valid_time=self.tp_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values
+                        data_ini=pd.to_datetime(tempo_ini).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
+                        data_fim=pd.to_datetime(tempo_fim).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
+
+                        if anomalia_mensal:
+
+                            path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
+
+                            inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
+                            fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
+                            
+                            t_clim_ini = inicio.replace(inicio[:4], ano_ini)
+                            t_clim_fim = fim.replace(fim[:4], ano_fim)
+
+                            # Sel nos tempos encontrados
+                            ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
+
+                            # Anomalia
+                            ds_anomalia = ds_acumulado['tp'] - ds_clim_sel['tp']
+                            ds_anomalia = ds_anomalia.to_dataset()
+
+                            for quantil in [0.10, 0.25, 0.75, 0.90]:
+
+                                tp_plot = ds_anomalia['tp'].quantile(quantil, dim='number')
+
+                                titulo = gerar_titulo(
+                                    modelo=self.modelo_fmt,
+                                    tipo=tipo,
+                                    cond_ini=self.cond_ini,
+                                    data_ini=data_ini,
+                                    data_fim=data_fim,
+                                    prefixo_negrito=True,
+                                    prefixo=f'para\\ {mes.title()} Q{int(quantil*100)}'
+                                )
+
+                                plot_campos(
+                                    ds=tp_plot,
+                                    variavel_plotagem='tp_anomalia_mensal',
+                                    title=titulo,
+                                    filename=formato_filename(self.modelo_fmt, f'anomaliaacumuladomensal_Q{int(quantil*100)}', index),
+                                    shapefiles=self.shapefiles,
+                                    path_to_save=path_to_save_anomalia,
+                                    footnote_text='Hindcast 2004-2023' if 'ecmwf' in self.modelo_fmt.lower() else 'Hindcast 2000-2019',
+                                    **kwargs
+                                )     
+            
             elif modo == 'chuva_iqr':
 
                 tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
