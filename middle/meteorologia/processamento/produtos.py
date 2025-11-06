@@ -1234,6 +1234,7 @@ class GeraProdutosPrevisao:
         self.olr = ['olr']
         self.mag_vento100 = ['mag_vento100']
         self.iqr = ['chuva_iqr']
+        self.chuva_quantil = ['chuva_quantil_mensal']
         
     ###################################################################################################################
 
@@ -1444,6 +1445,9 @@ class GeraProdutosPrevisao:
 
             elif modo in self.iqr:
                 path_save = 'chuva_quantil'
+
+            elif modo in self.chuva_quantil:
+                path_save = 'chuva_quantil_mensal'
 
             else:
                 path_save = modo
