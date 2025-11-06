@@ -4677,6 +4677,9 @@ class GeraProdutosPrevisao:
     def gerar_posicionamento_asas(self, **kwargs):
         self._processar_varsdinamicas('posicionamento_asas', **kwargs)
 
+    def gerar_chuva_quantil_mensal(self, **kwargs):
+        self._processar_precipitacao('chuva_quantil_mensal', **kwargs)
+
     ###################################################################################################################
 
     def salva_netcdf(self, variavel: str, ensemble=True):
