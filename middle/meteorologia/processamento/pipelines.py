@@ -206,6 +206,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_probabilidade_climatologia(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
                 lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_quantil_mensal(eextent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True, ensemble=False),
             ]  
         
         elif tipo == 'pl':
@@ -222,6 +223,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
                 lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_quantil_mensal(eextent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True, ensemble=False),
             ]  
         
         elif tipo == 'pl':
@@ -360,6 +362,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_probabilidade_limiar(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False),
                 lambda: produtos.gerar_prec_quantil(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
                 lambda: produtos.gerar_chuva_iqr(extent=CONSTANTES['extents_mapa']['brasil'], ensemble=False, add_valor_bacias=True),
+                lambda: produtos.gerar_chuva_quantil_mensal(eextent=CONSTANTES['extents_mapa']['brasil'], anomalia_mensal=True, add_valor_bacias=True, ensemble=False),
             ]  
         
         elif tipo == 'pl':
