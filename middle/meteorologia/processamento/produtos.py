@@ -2214,6 +2214,8 @@ class GeraProdutosPrevisao:
                             tipo=f'Acumulado total'
                             ds_acumulado = ds_resample_sel
 
+                            print(ds_acumulado)
+
                             if anomalia_mensal:    
 
                                 if 'ecmwf' in self.modelo_fmt.lower():
