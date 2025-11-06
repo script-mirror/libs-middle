@@ -2171,7 +2171,7 @@ class GeraProdutosPrevisao:
 
                             if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini_obs).month:
                                 tipo=f'MERGE + Prev'
-                                tempo_ini = ds_obs.time[0].values
+                                tempo_ini = tempo_ini_obs
                                 ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
                                 ds_acumulado = ds_acumulado.to_dataset()
 
