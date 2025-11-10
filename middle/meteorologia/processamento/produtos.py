@@ -4741,11 +4741,9 @@ class GeraProdutosPrevisao:
 
         self.tp = self.produto_config_sf.open_model_file(variavel='prate', sazonal=True, **kwargs)
         self.cond_ini = pd.to_datetime(self.tp.valid_time.values[0])
-
-        if self.modelo_fmt in ['c3s', 'nmme']:
-            self.t2m = self.produto_config_sf.open_model_file(variavel='tmp2m',  sazonal=True, **kwargs)
-            self.sst = self.produto_config_sf.open_model_file(variavel='tmpsfc',  sazonal=True, **kwargs)
-            self.sst = xr.where((self.sst == -999.) | (self.sst >= 10) | (self.sst <= -10), np.nan, self.sst)
+        self.t2m = self.produto_config_sf.open_model_file(variavel='tmp2m',  sazonal=True, **kwargs)
+        self.sst = self.produto_config_sf.open_model_file(variavel='tmpsfc',  sazonal=True, **kwargs)
+        self.sst = xr.where((self.sst == -999.) | (self.sst >= 10) | (self.sst <= -10), np.nan, self.sst)
 
         if self.modo_atual:
 
@@ -4786,10 +4784,8 @@ class GeraProdutosPrevisao:
             for modelo in self.tp.modelo:
 
                 tp_modelo = self.tp.sel(modelo=modelo)
-
-                if self.modelo_fmt in ['c3s', 'nmme']:
-                    t2m_modelo = self.t2m.sel(modelo=modelo)
-                    sst_modelo = self.sst.sel(modelo=modelo)
+                t2m_modelo = self.t2m.sel(modelo=modelo)
+                sst_modelo = self.sst.sel(modelo=modelo)
 
                 for index, valid_time in enumerate(tp_modelo.valid_time):
 
@@ -4865,18 +4861,14 @@ class GeraProdutosPrevisao:
         elif modo == 'anom_sazonal':
 
             tp_3m = self.tp.resample(valid_time='3M').mean()
-
-            if self.modelo_fmt in ['c3s', 'nmme']:
-                t2m_3m = self.t2m.resample(valid_time='3M').mean()
-                sst_3m = self.sst.resample(valid_time='3M').mean()
+            t2m_3m = self.t2m.resample(valid_time='3M').mean()
+            sst_3m = self.sst.resample(valid_time='3M').mean()
 
             for modelo in self.tp.modelo:
 
                 tp_modelo = tp_3m.sel(modelo=modelo)
-
-                if self.modelo_fmt in ['c3s', 'nmme']:
-                    t2m_modelo = t2m_3m.sel(modelo=modelo)
-                    sst_modelo = sst_3m.sel(modelo=modelo)
+                t2m_modelo = t2m_3m.sel(modelo=modelo)
+                sst_modelo = sst_3m.sel(modelo=modelo)
 
                 for index, valid_time in enumerate(tp_modelo.valid_time):
 
