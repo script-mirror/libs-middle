@@ -7,7 +7,7 @@ import matplotlib
 matplotlib.use('Agg')  # Backend para geração de imagens, sem interface gráfica
 import matplotlib.pyplot as plt
 import geopandas as gpd
-import cartopy.crs as ccrs
+import cartopy, cartopy.crs as ccrs
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 from matplotlib.colors import LinearSegmentedColormap, BoundaryNorm, ListedColormap
 import matplotlib.ticker as mticker
@@ -370,6 +370,13 @@ def custom_colorbar(variavel_plotagem):
         cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
         cbar_ticks = np.arange(-3, 3.5, 0.5)
 
+    elif variavel_plotagem == 't2m_anomalia':
+        levels = np.arange(-3, 3.2, 0.2)
+        colors = ['blue', 'white', 'red']
+        custom_cmap = LinearSegmentedColormap.from_list("CustomCmap", colors)
+        cmap = plt.get_cmap(custom_cmap, len(levels)  + 1)
+        cbar_ticks = np.arange(-3, 3.5, 0.5)
+
     return levels, colors, cmap, cbar_ticks
 
 ###################################################################################################################
@@ -402,6 +409,7 @@ def plot_campos(
                 with_norm=False,
                 footnote_text=False,
                 with_logo=True,
+                add_rect=False,
     ):
 
     os.makedirs(path_to_save, exist_ok=True)
@@ -682,6 +690,40 @@ def plot_campos(
     # Footnote se existir
     if footnote_text:
         ax.text(-79.5, -34, footnote_text, ha='left', va='bottom', fontsize=10, color='#70279C', weight='bold')
+
+    if add_rect:
+                
+        ax.add_feature(cartopy.feature.LAND, zorder=100, edgecolor='k', facecolor='white')
+
+        lati = [-5, -10, -5, -5, -10, -10, 5, -20, 0, 20] # adicione a latitude mais baixa
+        latf = [5, 0, 5, 5, 10, 0, 25, 0, 60, 60] # adicione a latitude mais alta
+        loni = [200, 270, 210, 160, 50, 90, 305, 330, 290, 140] # adicione a longitude mais a oeste
+        lonf = [240, 280, 270, 210, 70, 110, 345, 365, 345, 240] # adicione a longitude mais a leste
+
+        for index, (latini, latfim, lonini, lonfim) in enumerate(zip(lati, latf, loni, lonf)):
+
+            latitudes = [latini, latini, latfim, latfim, latini]
+            longitudes = [lonini, lonfim, lonfim, lonini, lonini]
+
+            x_med = (lonini+lonfim)/2 - 7
+
+            if lati == 0 and latf == 60: # AMO
+                y_med = latf + 0.5
+
+            else:
+                y_med = latini - 5
+
+            indice = ds.sel(latitude=slice(latfim, latini), longitude=slice(lonini, lonfim)).mean(dim='latitude').mean(dim='longitude')
+            indice = round(float(indice.values), 2)
+
+            if indice < 0:
+                color_box = 'blue'
+
+            else:
+                color_box = 'red'
+
+            ax.plot(longitudes, latitudes, transform=ccrs.PlateCarree(), linestyle='--', color=color_box)
+            ax.text(x=x_med, y=y_med, s=indice, transform=ccrs.PlateCarree(), fontdict=dict(weight='bold', color=color_box))
 
     plt.savefig(f'{path_to_save}/{filename}.png', bbox_inches='tight')
     plt.close(fig)

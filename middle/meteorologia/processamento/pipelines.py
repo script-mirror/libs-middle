@@ -511,6 +511,18 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         elif tipo == 'pl':
             return []
 
+    elif modelo == 'nmme':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_produtos_modelos_climaticos_mensal(),
+                lambda: produtos.gerar_produtos_modelos_climaticos_sazonal(),
+                lambda: produtos.gerar_produtos_modelos_climaticos_probabilidade(),
+            ]
+    
+        elif tipo == 'pl':
+            return []
+
     return 
 
 ###################################################################################################################
