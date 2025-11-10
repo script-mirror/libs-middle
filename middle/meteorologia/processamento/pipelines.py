@@ -518,6 +518,7 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
                 lambda: produtos.gerar_produtos_modelos_climaticos_mensal(),
                 lambda: produtos.gerar_produtos_modelos_climaticos_sazonal(),
                 lambda: produtos.gerar_produtos_modelos_climaticos_probabilidade(),
+                lambda: produtos.gerar_produtos_indices_sst_previsoes(),
             ]
     
         elif tipo == 'pl':
