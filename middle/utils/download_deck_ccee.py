@@ -90,7 +90,12 @@ def get_decks_ccee(
 
         # Get the URL of the first matching file
         url = df_produto['url'].iloc[0]
-
+        for index, row in df_produto.iterrows():
+            if len(str(row['nomeComplementar']).split("-")) == 2:
+                url = row['url']
+                logger.info(f"Found document: {row['nomeComplementar']}")
+                break
+        logger.info(f"Downloading file from URL: {url}")        
         # Ensure the directory exists
         os.makedirs(path, exist_ok=True)
 
@@ -121,8 +126,8 @@ if __name__ == '__main__':
     try:
         result = get_decks_ccee(
             path=constants.PATH_ARQUIVOS_TEMP,
-            deck='decomp',
-            file_name='Deck de Preços - Decomp'
+            deck='dessem',
+            file_name='Deck de Preços - Dessem'
         )
         if result:
             print(f"Successfully downloaded file to: {result}")
