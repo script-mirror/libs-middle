@@ -228,28 +228,29 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         if not os.path.isfile(dest_file):
                             print(f'Falha ao copiar {src_file} depois de {max_attempts} tentativas.')
 
+                elif modelo_fmt in ['ecmwf-mensal']:
 
-                # elif modelo_fmt in ['ecmwf-mensal']:
+                    import glob
 
-                #     ftp_dir = Constants().PATH_FTP_ECMWF
-                #     mes_fmt = self.data.strftime(f'%m')
-                #     inicializacao_fmt = self.data.strftime(f'%m01')
-                #     ultimo_arquivo = f'A1L{inicializacao_fmt}0000{mes_fmt}______1'
+                    ftp_dir = Constants().PATH_FTP_ECMWF
+                    mes_fmt = self.data.strftime(f'%m')
+                    inicializacao_fmt = self.data.strftime(f'%m01')
+                    ultimo_arquivo = f'A1L{inicializacao_fmt}0000{mes_fmt}______1'
 
-                #     while os.path.isfile(f'{ftp_dir}/{ultimo_arquivo}') == False:
-                #         print(f'❌ Arquivo {ultimo_arquivo} não encontrado, tentando novamente...')
-                #         time.sleep(5)
+                    while os.path.isfile(f'{ftp_dir}/{ultimo_arquivo}') == False:
+                        print(f'❌ Arquivo {ultimo_arquivo} não encontrado, tentando novamente...')
+                        time.sleep(5)
 
-                #     if os.path.isfile(f'{ftp_dir}/{ultimo_arquivo}'):
-                #         # Lista os arquivos que casam com o padrão
-                #         padrao = os.path.join(ftp_dir, f"A1L{inicializacao_fmt}*")
-                #         arquivos = glob.glob(padrao)
+                    if os.path.isfile(f'{ftp_dir}/{ultimo_arquivo}'):
+                        # Lista os arquivos que casam com o padrão
+                        padrao = os.path.join(ftp_dir, f"A1L{inicializacao_fmt}*")
+                        arquivos = glob.glob(padrao)
 
-                #         # Copia todos
-                #         for arquivo in arquivos:
-                #             destino = f'{caminho_para_salvar}/{self.name_prefix}_{os.path.basename(arquivo)}' if self.name_prefix else f'{caminho_para_salvar}/{os.path.basename(arquivo)}'
-                #             shutil.copy(arquivo, destino)
-                #             print(f"Copiado: {arquivo} -> {destino}")
+                        # Copia todos
+                        for arquivo in arquivos:
+                            destino = f'{caminho_para_salvar}/{self.name_prefix}_{os.path.basename(arquivo)}' if self.name_prefix else f'{caminho_para_salvar}/{os.path.basename(arquivo)}'
+                            shutil.copy(arquivo, destino)
+                            print(f"Copiado: {arquivo} -> {destino}")
 
                 else:
 
@@ -1056,6 +1057,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     'tmp2m': 't2a',
                 }
             
+            elif modelo_fmt == 'ecmwf-mensal':
+                files = [f'{caminho_para_salvar}/{f}' for f in files]
+
             dss = []
 
             for index, f in enumerate(files):
@@ -1093,6 +1097,16 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                         # interpolando para o ds_inicial
                         ds = interpola_ds(ds, ds_inicial)
 
+                elif modelo_fmt == 'ecmwf-mensal':
+
+                    backend_kwargs = {"filter_by_keys": {'dataType': 'em'}, "indexpath": ""}
+                    ds = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs)
+                    ds['valid_time'] = (ds.valid_time.to_pandas() - pd.DateOffset(months=1)).to_numpy()
+                    
+                    # backend_kwargs = {"filter_by_keys": {'dataType': 'fcmean'}, "indexpath": ""}
+                    # ds_individual_members = xr.open_dataset(f, engine='cfgrib', backend_kwargs=backend_kwargs, concat_dim='valid_time', combine='nested').sortby('valid_time')
+                    # ds_individual_members['valid_time'] = (ds_individual_members.valid_time.to_pandas() - pd.DateOffset(months=1)).to_numpy()
+
                 dss.append(ds)
 
             # Extrai o nome do modelo a partir do nome do arquivo
@@ -1113,6 +1127,16 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 ds_mean = ds_mean.expand_dims(dim='modelo')
                 ds_mean = ds_mean.assign_coords(modelo=['MME'])
                 ds = xr.concat([ds, ds_mean], dim='modelo')
+
+            elif modelo_fmt == 'ecmwf-mensal':
+
+                ds = ds.swap_dims({'modelo': 'valid_time'})
+                ds = ds.sortby('valid_time')
+                ds['dados'] = ds['dados']*1000*60*60*24*30 if variavel == 'prate' else ds['dados']
+
+                # Definir a variavel modelo e remover se ja existir
+                ds = ds.assign_coords(modelo=['ECMWF-MENSAL'])
+
 
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')
@@ -4716,11 +4740,13 @@ class GeraProdutosPrevisao:
     def _processar_previsao_sazonal(self, modo, **kwargs):
 
         self.tp = self.produto_config_sf.open_model_file(variavel='prate', sazonal=True, **kwargs)
-        self.t2m = self.produto_config_sf.open_model_file(variavel='tmp2m',  sazonal=True, **kwargs)
-        self.sst = self.produto_config_sf.open_model_file(variavel='tmpsfc',  sazonal=True, **kwargs)
-        self.sst = xr.where((self.sst == -999.) | (self.sst >= 10) | (self.sst <= -10), np.nan, self.sst)
         self.cond_ini = pd.to_datetime(self.tp.valid_time.values[0])
-        
+
+        if self.modelo_fmt in ['c3s', 'nmme']:
+            self.t2m = self.produto_config_sf.open_model_file(variavel='tmp2m',  sazonal=True, **kwargs)
+            self.sst = self.produto_config_sf.open_model_file(variavel='tmpsfc',  sazonal=True, **kwargs)
+            self.sst = xr.where((self.sst == -999.) | (self.sst >= 10) | (self.sst <= -10), np.nan, self.sst)
+
         if self.modo_atual:
 
             if modo in self.figs_24h:

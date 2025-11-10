@@ -537,6 +537,17 @@ def pipelines(modelo, produtos, tipo=None, hora=None):
         elif tipo == 'pl':
             return []
 
+    elif modelo == 'ecmwf-mensal':
+
+        if tipo == 'sfc':
+            return [
+                lambda: produtos.gerar_produtos_modelos_climaticos_mensal(),
+                lambda: produtos.gerar_produtos_modelos_climaticos_sazonal(),
+            ]
+    
+        elif tipo == 'pl':
+            return []
+        
     return 
 
 ###################################################################################################################
