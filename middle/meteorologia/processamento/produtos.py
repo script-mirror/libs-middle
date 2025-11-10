@@ -4820,43 +4820,45 @@ class GeraProdutosPrevisao:
                         extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
                     )     
 
-                    titulo_t2m = gerar_titulo(
-                        unico_tempo=True,
-                        tipo='Anomalia Mensal de Temperatura',
-                        modelo=modelo.item(),
-                        cond_ini=self.cond_ini.strftime('%b/%Y'),
-                        data_ini=f'{dataini}',
-                    )
+                    if self.modelo_fmt in ['c3s', 'nmme']:
 
-                    plot_campos(
-                        ds=t2m_plot['dados'],
-                        variavel_plotagem='temp_anomalia',
-                        title=titulo_t2m,
-                        filename=formato_filename(modelo.item(), 'tmp2m_mensal_as', index),
-                        shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
-                        extent=CONSTANTES['extents_mapa']['brasil']
-                    )     
+                        titulo_t2m = gerar_titulo(
+                            unico_tempo=True,
+                            tipo='Anomalia Mensal de Temperatura',
+                            modelo=modelo.item(),
+                            cond_ini=self.cond_ini.strftime('%b/%Y'),
+                            data_ini=f'{dataini}',
+                        )
 
-                    titulo_sst = gerar_titulo(
-                        unico_tempo=True,
-                        tipo='Anomalia Mensal de SST',
-                        modelo=modelo.item(),
-                        cond_ini=self.cond_ini.strftime('%b/%Y'),
-                        data_ini=f'{dataini}',
-                    )
+                        plot_campos(
+                            ds=t2m_plot['dados'],
+                            variavel_plotagem='temp_anomalia',
+                            title=titulo_t2m,
+                            filename=formato_filename(modelo.item(), 'tmp2m_mensal_as', index),
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            extent=CONSTANTES['extents_mapa']['brasil']
+                        )     
 
-                    plot_campos(
-                        ds=sst_plot['dados'],
-                        variavel_plotagem='sst_anomalia',
-                        title=titulo_sst,
-                        filename=formato_filename(modelo.item(), 'tmpsfc_mensal_global', index),
-                        shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
-                        extent=CONSTANTES['extents_mapa']['global'],
-                        add_rect=True,
-                        central_longitude=180, figsize=(12, 12), with_logo=False,
-                    )     
+                        titulo_sst = gerar_titulo(
+                            unico_tempo=True,
+                            tipo='Anomalia Mensal de SST',
+                            modelo=modelo.item(),
+                            cond_ini=self.cond_ini.strftime('%b/%Y'),
+                            data_ini=f'{dataini}',
+                        )
+
+                        plot_campos(
+                            ds=sst_plot['dados'],
+                            variavel_plotagem='sst_anomalia',
+                            title=titulo_sst,
+                            filename=formato_filename(modelo.item(), 'tmpsfc_mensal_global', index),
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            extent=CONSTANTES['extents_mapa']['global'],
+                            add_rect=True,
+                            central_longitude=180, figsize=(12, 12), with_logo=False,
+                        )     
 
         elif modo == 'anom_sazonal':
 
@@ -4906,43 +4908,45 @@ class GeraProdutosPrevisao:
                         extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
                     )     
 
-                    titulo_t2m = gerar_titulo(
-                        unico_tempo=True,
-                        tipo='Anomalia sazonal de Temperatura',
-                        modelo=modelo.item(),
-                        cond_ini=self.cond_ini.strftime('%b/%Y'),
-                        data_ini=f'{dataini}',
-                    )
+                    if self.modelo_fmt in ['c3s', 'nmme']:
 
-                    plot_campos(
-                        ds=t2m_plot['dados'],
-                        variavel_plotagem='temp_anomalia',
-                        title=titulo_t2m,
-                        filename=formato_filename(modelo.item(), 'tmp2m_sazonal_as', index),
-                        shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
-                        extent=CONSTANTES['extents_mapa']['brasil']
-                    )     
+                        titulo_t2m = gerar_titulo(
+                            unico_tempo=True,
+                            tipo='Anomalia sazonal de Temperatura',
+                            modelo=modelo.item(),
+                            cond_ini=self.cond_ini.strftime('%b/%Y'),
+                            data_ini=f'{dataini}',
+                        )
 
-                    titulo_sst = gerar_titulo(
-                        unico_tempo=True,
-                        tipo='Anomalia sazonal de SST',
-                        modelo=modelo.item(),
-                        cond_ini=self.cond_ini.strftime('%b/%Y'),
-                        data_ini=f'{dataini}',
-                    )
+                        plot_campos(
+                            ds=t2m_plot['dados'],
+                            variavel_plotagem='temp_anomalia',
+                            title=titulo_t2m,
+                            filename=formato_filename(modelo.item(), 'tmp2m_sazonal_as', index),
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            extent=CONSTANTES['extents_mapa']['brasil']
+                        )     
 
-                    plot_campos(
-                        ds=sst_plot['dados'],
-                        variavel_plotagem='sst_anomalia',
-                        title=titulo_sst,
-                        filename=formato_filename(modelo.item(), 'tmpsfc_sazonal_global', index),
-                        shapefiles=self.shapefiles,
-                        path_to_save=path_to_save,
-                        extent=CONSTANTES['extents_mapa']['global'],
-                        add_rect=True,
-                        central_longitude=180, figsize=(12, 12), with_logo=False,
-                    )     
+                        titulo_sst = gerar_titulo(
+                            unico_tempo=True,
+                            tipo='Anomalia sazonal de SST',
+                            modelo=modelo.item(),
+                            cond_ini=self.cond_ini.strftime('%b/%Y'),
+                            data_ini=f'{dataini}',
+                        )
+
+                        plot_campos(
+                            ds=sst_plot['dados'],
+                            variavel_plotagem='sst_anomalia',
+                            title=titulo_sst,
+                            filename=formato_filename(modelo.item(), 'tmpsfc_sazonal_global', index),
+                            shapefiles=self.shapefiles,
+                            path_to_save=path_to_save,
+                            extent=CONSTANTES['extents_mapa']['global'],
+                            add_rect=True,
+                            central_longitude=180, figsize=(12, 12), with_logo=False,
+                        )     
 
         elif modo == 'probabilidades':
 
