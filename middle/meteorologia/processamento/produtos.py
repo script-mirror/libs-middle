@@ -4627,6 +4627,7 @@ class GeraProdutosPrevisao:
         self.tp = self.produto_config_sf.open_model_file(variavel='prate', sazonal=True, **kwargs)
         self.t2m = self.produto_config_sf.open_model_file(variavel='tmp2m',  sazonal=True, **kwargs)
         self.sst = self.produto_config_sf.open_model_file(variavel='tmpsfc',  sazonal=True, **kwargs)
+        self.sst = xr.where((self.sst == -999.) | (self.sst >= 10) | (self.sst <= -10), np.nan, self.sst)
         self.cond_ini = pd.to_datetime(self.tp.valid_time.values[0])
         
         if self.modo_atual:
@@ -4891,6 +4892,115 @@ class GeraProdutosPrevisao:
                         extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
                     )  
 
+        elif modo == 'teleconexoes':
+
+            teleconexoes = {
+
+                'NINO34': {
+
+                    'lati': -5,
+                    'latf': 5,
+                    'loni': 190,
+                    'lonf': 240,
+
+                },
+
+                'NINO12': {
+
+                    'lati': -10,
+                    'latf': 0,
+                    'loni': 270,
+                    'lonf': 280,            
+
+                },        
+
+                'IODW': {
+
+                    'lati': -10,
+                    'latf': 10,
+                    'loni': 50,
+                    'lonf': 70,            
+
+                },
+
+                'IODE': {
+
+                    'lati': -10,
+                    'latf': 0,
+                    'loni': 90,
+                    'lonf': 110,            
+
+                },
+
+                'AMO': {
+
+                    'lati': 0,
+                    'latf': 60,
+                    'loni': 290,
+                    'lonf': 345,            
+
+                },
+
+                'TNA': {
+
+                    'lati': 5,
+                    'latf': 25,
+                    'loni': 305,
+                    'lonf': 345,            
+
+                },
+
+                'TSA': {
+
+                    'lati': -20,
+                    'latf': 0,
+                    'loni': 330,
+                    'lonf': 365,            
+
+                },
+
+                'TSA': {
+
+                    'lati': -20,
+                    'latf': 0,
+                    'loni': 330,
+                    'lonf': 365,            
+
+                },
+
+            }
+
+            for modelo_name_plot in self.sst.modelo:
+
+                ds = self.sst.sel(modelo=modelo_name_plot)
+
+                for name_tc in teleconexoes:
+
+                    lat_lon = teleconexoes.get(name_tc)
+                    lati, latf, loni, lonf = lat_lon['lati'], lat_lon['latf'], lat_lon['loni'], lat_lon['lonf']
+                    teleconexao = ds.sel(latitude=slice(latf, lati), longitude=slice(loni, lonf)).mean(dim='latitude').mean(dim='longitude').to_dataframe()
+                    teleconexao = teleconexao.rename({'dados': 'vl_indice'}, axis=1)
+                    teleconexao['indice'] = name_tc
+                    teleconexao['dt_rodada'] = pd.to_datetime(ds.valid_time.values[0], format='%m%Y')
+                    teleconexao['dt_rodada'] = (
+                        pd.to_datetime(teleconexao['dt_rodada'])
+                        .dt.to_period('M')
+                        .dt.to_timestamp()
+                        .dt.strftime('%Y-%m-%d')
+                    )
+                    teleconexao['str_modelo'] = modelo_name_plot.item() if modelo_name_plot != 'GEM5' else 'GEM5.2_NEMO'
+                    teleconexao = teleconexao[['vl_indice', 'indice', 'dt_rodada', 'str_modelo']]
+                    teleconexao = teleconexao.reset_index().rename({'index': 'dt_prevista'}, axis=1)
+                    teleconexao = teleconexao.rename(columns={'valid_time': 'dt_prevista'})
+                    teleconexao['dt_prevista'] = (
+                        pd.to_datetime(teleconexao['dt_prevista'])
+                        .dt.to_period('M')
+                        .dt.to_timestamp()
+                        .dt.strftime('%Y-%m-%d')
+                    )
+                    teleconexao = teleconexao.dropna()
+                    response = requests.post(f'{Constants().API_URL_APIV2}/meteorologia/indices-sst-previstos', verify=False, json=teleconexao.to_dict('records'), headers=get_auth_header())
+
     ###################################################################################################################
 
     def gerar_prec24h(self, **kwargs):
@@ -5015,6 +5125,9 @@ class GeraProdutosPrevisao:
 
     def gerar_produtos_modelos_climaticos_probabilidade(self, **kwargs):
         self._processar_previsao_sazonal(modo='probabilidades', **kwargs)
+
+    def gerar_produtos_indices_sst_previsoes(self, **kwargs):
+        self._processar_previsao_sazonal(modo='teleconexoes', **kwargs)
 
     ###################################################################################################################
 
