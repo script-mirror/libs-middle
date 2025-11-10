@@ -1,6 +1,5 @@
 from datetime import datetime
 import geopandas as gpd
-from idna import decode
 import requests
 import os
 import time
@@ -68,7 +67,9 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
                                modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11, membro_cfs='01',
-                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024, convert_nc=False, modelos_nmme=CONSTANTES['MODELOS_NMME']) -> None:
+                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024, 
+                               convert_nc=False, modelos_nmme=CONSTANTES['MODELOS_NMME'], modelos_c3s=CONSTANTES['MODELOS_C3S']
+                               ) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -778,6 +779,56 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                             else:
                                 open(f'{caminho_para_salvar}/{filename}', 'ab').write(file.content)
 
+            elif modelo_fmt == 'c3s':
+
+                import cdsapi
+
+                client = cdsapi.Client()
+                dataset = "seasonal-postprocessed-single-levels"
+
+                DIA_ATUAL_MES = self.data.strftime(f'%Y%m')
+                ano = str(self.data.year)
+                mes = str(self.data.month).zfill(2)
+
+                variables = ['2m_temperature_anomaly', 'sea_surface_temperature_anomaly', 'total_precipitation_anomalous_rate_of_accumulation']
+
+                for modelo in modelos_c3s.keys():
+
+                    print(modelo)
+
+                    while os.path.isfile(f'{caminho_para_salvar}/{modelo}_c3s_{DIA_ATUAL_MES}.nc') == False:
+
+                        try:
+
+                            if os.path.isfile(f'{caminho_para_salvar}/{modelo}_c3s_{DIA_ATUAL_MES}.nc'):
+                                print('já existe')
+                                continue
+                                
+                            else:
+
+                                request = {
+                                    "originating_centre": modelo,
+                                    "system": modelos_c3s.get(modelo),
+                                    "variable": variables,
+                                    "product_type": ["ensemble_mean"],
+                                    "year": [ano],
+                                    "month": [mes],
+                                    "leadtime_month": [
+                                        "1",
+                                        "2",
+                                        "3",
+                                        "4",
+                                        "5",
+                                        "6"
+                                    ],
+                                    "data_format": "netcdf"
+                                }
+                            
+                                client.retrieve(dataset, request, f'{caminho_para_salvar}/{modelo}_c3s_{DIA_ATUAL_MES}.nc').download()
+
+                        except:
+                                time.sleep(20)                
+
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, 
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
@@ -993,26 +1044,59 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         else:
 
             files = sorted(os.listdir(caminho_para_salvar))
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".nc")) if variavel in f]  # Todos os arquivos]
+
+            if modelo_fmt == 'nmme':
+                files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".nc")) if variavel in f]
+
+            elif modelo_fmt == 'c3s':
+                files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".nc"))]
+                variavel_map = {
+                    'prate': 'tpara',
+                    'tmpsfc': 'ssta',
+                    'tmp2m': 't2a',
+                }
             
             dss = []
 
-            for f in files:
+            for index, f in enumerate(files):
 
-                ds = xr.open_dataset(f, decode_times=False)
+                if modelo_fmt == 'nmme':
+                    ds = xr.open_dataset(f, decode_times=False)
+                    ds = ds.isel(initial_time=0)
+                    qtde_meses = len(ds['target'])
+                    meses_fcst = pd.date_range(start=self.data, periods=qtde_meses, freq='M')
+                    ds['target'] = meses_fcst
+                    ds = ds.rename({'lon': 'longitude', 'lat': 'latitude', 'target': 'valid_time'})
+                    ds['fcst'] = ds['fcst']*60*60*24*30 if variavel == 'prate' else ds['fcst']
+                    ds = ds.rename({'fcst': f.split('/')[-1].split('.')[0]})
 
-                ds = ds.isel(initial_time=0)
-                lon, lat = np.meshgrid(ds['lon'], ds['lat'])
-                qtde_meses = len(ds['target'])
-                meses_fcst = pd.date_range(start=self.data, periods=qtde_meses, freq='M')
-                ds['target'] = meses_fcst
-                ds = ds.rename({'lon': 'longitude', 'lat': 'latitude', 'target': 'valid_time'})
-                ds['fcst'] = ds['fcst']*60*60*24*30 if variavel == 'prate' else ds['fcst']
-                ds = ds.rename({'fcst': f.split('/')[-1].split('.')[0]})
+                elif modelo_fmt == 'c3s':
+
+                    ds = xr.open_dataset(f)
+
+                    if index == 0:
+                        ds_inicial = ds
+                    
+                    if 'forecast_reference_time' in ds.dims:
+                        ds = ds.isel(forecast_reference_time=0)
+
+                    ds = ds[variavel_map[variavel]].to_dataset()
+
+                    qtde_meses = len(ds['forecastMonth'])
+                    meses_fcst = pd.date_range(start=self.data, periods=qtde_meses, freq='M')
+                    ds['forecastMonth'] = meses_fcst
+                    ds[variavel_map[variavel]] = ds[variavel_map[variavel]]*1000*60*60*24*30 if variavel == 'prate' else ds[variavel_map[variavel]]
+                    ds = ds.rename({'forecastMonth': 'valid_time'})
+                    ds = ds.rename({variavel_map[variavel]: f.split('/')[-1].split('_')[0].split('_')[0].upper()})
+
+                    if index > 0:
+                        # interpolando para o ds_inicial
+                        ds = interpola_ds(ds, ds_inicial)
+
                 dss.append(ds)
 
             # Extrai o nome do modelo a partir do nome do arquivo
-            nomes_modelos = [f.split('/')[-1].split('.')[0] for f in files]
+            nomes_modelos = [f.split('/')[-1].split('_')[0].split('_')[0].upper() for f in files]
 
             # Renomeia todas as variáveis internas para um nome comum (ex: 'dados')
             dss_renomeados = []
@@ -1022,6 +1106,13 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
             # Concatena criando uma nova dimensão 'modelo'
             ds = xr.concat(dss_renomeados, dim=pd.Index(nomes_modelos, name='modelo'))
+
+            if modelo_fmt == 'c3s':
+                # Calculando o ensemble
+                ds_mean = ds.mean(dim='modelo')
+                ds_mean = ds_mean.expand_dims(dim='modelo')
+                ds_mean = ds_mean.assign_coords(modelo=['MME'])
+                ds = xr.concat([ds, ds_mean], dim='modelo')
 
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')
@@ -4975,6 +5066,8 @@ class GeraProdutosPrevisao:
                 ds = self.sst.sel(modelo=modelo_name_plot)
 
                 for name_tc in teleconexoes:
+
+                    print('Processando teleconexão:', name_tc, 'modelo:', modelo_name_plot.item())
 
                     lat_lon = teleconexoes.get(name_tc)
                     lati, latf, loni, lonf = lat_lon['lati'], lat_lon['latf'], lat_lon['loni'], lat_lon['lonf']
