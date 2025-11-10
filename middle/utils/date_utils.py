@@ -63,7 +63,7 @@ class SemanaOperativa:
 
     @staticmethod
     def get_current_revision(first_day_of_month: datetime.date, date: datetime.date) -> float:
-        return SemanaOperativa.diff_week(first_day_of_month, SemanaOperativa.get_last_saturday(date))
+        return int(SemanaOperativa.diff_week(first_day_of_month, SemanaOperativa.get_last_saturday(date)))
 
     @staticmethod
     def get_week_weights(first_day_of_month: datetime.date) -> List[int]:

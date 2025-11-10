@@ -1,5 +1,6 @@
 from datetime import datetime
 import geopandas as gpd
+from idna import decode
 import requests
 import os
 import time
@@ -67,7 +68,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
     def download_files_models(self, variables=None, levels=None, steps=[i for i in range(0, 390, 6)], provedor_ecmwf_opendata='ecmwf',
                                model_ecmwf_opendata='ifs', file_size=1000, stream_ecmwf_opendata='oper', wait_members=False, last_member_file=None, 
                                modelo_last_member=None, type_ecmwf_opendata='fc', levtype_ecmwf_opendata='sfc', days_eta=11, membro_cfs='01',
-                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024, convert_nc=False) -> None:
+                               levlist_ecmwf_opendata=None, sub_region_as_gribfilter=False, baixa_arquivos=True, tamanho_min_bytes=45*1024*1024, convert_nc=False, modelos_nmme=CONSTANTES['MODELOS_NMME']) -> None:
 
         # Formatação da data e inicialização
         data_fmt = self.data.strftime('%Y%m%d')
@@ -697,12 +698,92 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                     if todos_sucesso:
                         break  # Sai do while quando tudo estiver certo
 
+            elif modelo_fmt == 'hgefs':
+                
+                while True:
+                    todos_sucesso = True  # Flag para sair do while quando todos forem baixados corretamente
+
+                    for i in steps:
+                        filename = (
+                            f'{self.name_prefix}_{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                            if self.name_prefix
+                            else f'{modelo_fmt}_{data_fmt}{inicializacao_fmt}_{i:03d}.grib2'
+                        )
+                        caminho_arquivo = f'{caminho_para_salvar}/{filename}'
+
+                        # Se o arquivo já existe e está com tamanho esperado, pula sem printar
+                        if os.path.exists(caminho_arquivo) and os.path.getsize(caminho_arquivo) >= file_size:
+                            continue
+
+                        # Só imprime aqui quando realmente for tentar baixar
+                        print(f'⬇️ Baixando {filename} ...')
+
+                        url = f'https://nomads.ncep.noaa.gov/pub/data/nccf/com/hgefs/para/hgefs.{data_fmt}/{inicializacao_fmt}/ensstat/products/atmos/grib2/hgefs.t{inicializacao_fmt}z.sfc.avg.f{i:03d}.grib2'
+    
+                        file = requests.get(url, allow_redirects=True)
+                        if file.status_code == 200:
+                            with open(caminho_arquivo, 'wb') as f:
+                                f.write(file.content)
+                        else:
+                            print(f'❌ Erro ao baixar {filename}: {file.status_code}, tentando novamente...')
+                            print(url)
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break  # Sai do for e volta ao início do while
+
+                        # Verifica se o arquivo foi baixado corretamente
+                        if os.path.exists(caminho_arquivo):
+                            if os.path.getsize(caminho_arquivo) < file_size:
+                                print(f'⚠️ Arquivo {filename} está vazio/corrompido, removendo...')
+                                os.remove(caminho_arquivo)
+                                todos_sucesso = False
+                                time.sleep(5)
+                                break  # Sai do for e tenta de novo no while
+
+                            else:
+                                print(f'✅ {filename} baixado com sucesso!')
+
+                        else:
+                            print(f'❌ Arquivo {filename} não foi salvo corretamente, tentando novamente...')
+                            todos_sucesso = False
+                            time.sleep(5)
+                            break
+
+                    if todos_sucesso:
+                        break  # Sai do while quando tudo estiver certo
+
+            elif modelo_fmt == 'nmme':
+
+                DIA_ATUAL_URL = self.data.strftime(f'%Y%m0800')
+                DIA_ATUAL_MES = self.data.strftime(f'%Y%m')
+                url = f'https://ftp.cpc.ncep.noaa.gov/NMME/realtime_anom/ENSMEAN/{DIA_ATUAL_URL}'
+
+                for modelo in modelos_nmme:
+
+                    variaveis = ['prate', 'tmpsfc', 'tmp2m']
+
+                    for variavel in variaveis:
+
+                        filename = f'{modelo}.{variavel}.ENSMEAN.anom.nc'
+    
+                        while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
+                            url_download = f'{url}/{modelo}.{variavel}.{DIA_ATUAL_MES}.ENSMEAN.anom.nc'
+                            file = requests.get(url_download, allow_redirects=True)
+                            print(f'Baixando...{filename}')
+                        
+                            if file.status_code != 200:
+                                print(url_download)
+                                time.sleep(5)
+
+                            else:
+                                open(f'{caminho_para_salvar}/{filename}', 'ab').write(file.content)
+
     # --- ABERTURA DOS DADOS ---
     def open_model_file(self, variavel: str, sel_area=True, ensemble_mean=False, cf_pf_members=False, 
                         arquivos_membros_diferentes=False, ajusta_acumulado=False, m_to_mm=False, 
                         ajusta_longitude=True, sel_12z=False, expand_isobaric_dims=False, membros_prefix=False, 
                         rename_var=False, var_dim=None, data_fmt=None, inicializacao_fmt=None, prefix_cfs=None,
-                        engine='cfgrib', sorted_key=False, add_valid_time=False
+                        engine='cfgrib', sorted_key=False, add_valid_time=False, sazonal=False
                         ):
 
         print(f'\n************* ABRINDO DADOS {variavel} DO MODELO {self.modelo.upper()} *************\n')
@@ -725,186 +806,222 @@ class ConfigProdutosPrevisaoCurtoPrazo:
         output_path = self.output_path
 
         # Formatando modelo
-        modelo_fmt = self.modelo.lower()# if not membros_prefix else self.modelo.lower().replace('-membros', '')
+        modelo_fmt = self.modelo.lower()
 
         # Caminho para salvar
         caminho_para_salvar = f'{output_path}/{modelo_fmt}{resolucao}/{data_fmt}{inicializacao_fmt}'
-        files = sorted(os.listdir(caminho_para_salvar)) if sorted_key == False else sorted(os.listdir(caminho_para_salvar), key=nome_para_datetime)
 
-        if self.name_prefix:
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
+        if sazonal == False:
 
-        else:
-            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
+            files = sorted(os.listdir(caminho_para_salvar)) if sorted_key == False else sorted(os.listdir(caminho_para_salvar), key=nome_para_datetime)
 
-        
-        if prefix_cfs is not None:
-            files = [f for f in files if prefix_cfs in f]
+            if self.name_prefix:
+                files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2")) if self.name_prefix in f]  # Filtra pelo prefixo se existir
 
-        if len(files) == 0:
-            raise FileNotFoundError(f'Nenhum arquivo encontrado no diretório: {caminho_para_salvar}')
-        
-        # Definindo o backend_kwargs com base na variavel. Se ensemble model, terá pf e cf nos backend_kwargs
-        if cf_pf_members:
+            else:
+                files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc", "grb2"))]  # Todos os arquivos
+
             
-            if variavel in surface:
-                backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface', 'dataType': 'pf'}, "indexpath": ""}
-                backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface', 'dataType': 'cf'}, "indexpath": ""}
+            if prefix_cfs is not None:
+                files = [f for f in files if prefix_cfs in f]
 
-            elif variavel in height_above_ground:
-                backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'heightAboveGround', 'dataType': 'pf'}, "indexpath": ""}
-                backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'heightAboveGround', 'dataType': 'cf'}, "indexpath": ""}
-                            
-            elif variavel in isobaric_inhPa:  # variaveis isobaricas
-                backend_kwargs_pf = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa', 'dataType': 'pf'}, "indexpath": ""}
-                backend_kwargs_cf = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa', 'dataType': 'cf'}, "indexpath": ""}
-
-            elif variavel in mean_sea:
-                backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'meanSea', 'dataType': 'pf'}, "indexpath": ""}
-                backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'meanSea', 'dataType': 'cf'}, "indexpath": ""}
-
-            elif variavel in nominalTop:
-                backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop', 'dataType': 'pf'}, "indexpath": ""}
-                backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop', 'dataType': 'cf'}, "indexpath": ""}
-                files = files[1:]
+            if len(files) == 0:
+                raise FileNotFoundError(f'Nenhum arquivo encontrado no diretório: {caminho_para_salvar}')
+            
+            # Definindo o backend_kwargs com base na variavel. Se ensemble model, terá pf e cf nos backend_kwargs
+            if cf_pf_members:
                 
-            else:
-                raise ValueError(f'Variável {variavel} não reconhecida ou não implementada para ensemble model.')
+                if variavel in surface:
+                    backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface', 'dataType': 'pf'}, "indexpath": ""}
+                    backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface', 'dataType': 'cf'}, "indexpath": ""}
 
-            # Abrindo o arquivo com xarray
-            pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area, engine=engine)
-            cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area, engine=engine)
-            ds = xr.concat([cf, pf], dim='number')            
+                elif variavel in height_above_ground:
+                    backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'heightAboveGround', 'dataType': 'pf'}, "indexpath": ""}
+                    backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'heightAboveGround', 'dataType': 'cf'}, "indexpath": ""}
+                                
+                elif variavel in isobaric_inhPa:  # variaveis isobaricas
+                    backend_kwargs_pf = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa', 'dataType': 'pf'}, "indexpath": ""}
+                    backend_kwargs_cf = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa', 'dataType': 'cf'}, "indexpath": ""}
+
+                elif variavel in mean_sea:
+                    backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'meanSea', 'dataType': 'pf'}, "indexpath": ""}
+                    backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'meanSea', 'dataType': 'cf'}, "indexpath": ""}
+
+                elif variavel in nominalTop:
+                    backend_kwargs_pf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop', 'dataType': 'pf'}, "indexpath": ""}
+                    backend_kwargs_cf = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop', 'dataType': 'cf'}, "indexpath": ""}
+                    files = files[1:]
+                    
+                else:
+                    raise ValueError(f'Variável {variavel} não reconhecida ou não implementada para ensemble model.')
+
+                # Abrindo o arquivo com xarray
+                pf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_pf, sel_area=sel_area, engine=engine)
+                cf = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs_cf, sel_area=sel_area, engine=engine)
+                ds = xr.concat([cf, pf], dim='number')            
+
+            else:
+
+                if variavel in surface:
+                    backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface'}, "indexpath": ""}
+                
+                elif variavel in height_above_ground:
+
+                    if variavel in ['u100', 'v100']:
+                        name = 'cfVarName'
+                    else:
+                        name = 'shortName'
+
+                    backend_kwargs = {"filter_by_keys": {name: variavel, 'typeOfLevel': 'heightAboveGround'}, "indexpath": ""}
+
+                elif variavel in isobaric_inhPa:  # variaveis isobaricas
+                    backend_kwargs = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa'}, "indexpath": ""}
+
+                elif variavel in mean_sea:  # pressao ao nivel do mar
+                    backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'meanSea'}, "indexpath": ""}
+
+                elif variavel in nominalTop:
+                    backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop'}, "indexpath": ""}
+                    # files = files[1:] # Remove o primeiro arquivo
+
+                elif variavel in mensal_sazonal:
+                    backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'dataType': 'em'}, "indexpath": ""}
+
+                elif variavel in depthBelowSea:
+                    backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'depthBelowSea'}, "indexpath": ""}
+
+                else:
+                    backend_kwargs = None
+                    # raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
+                
+                if arquivos_membros_diferentes:
+
+                    ds_total = []
+                            
+                    for membros in range(0, 31, 1):
+                        membros_fmt = str(membros).zfill(2)
+
+                        if membros == 0:
+                            membro_name = 'gec'
+                        else:
+                            membro_name = 'gep'
+
+                        path_to_files = [x for x in files if f'{membro_name}{membros_fmt}' in x]
+                        prec_membro = abrir_modelo_sem_vazios(path_to_files, backend_kwargs=backend_kwargs, sel_area=sel_area)
+                        # prec_membro = xr.open_mfdataset(path_to_files, engine='cfgrib', backend_kwargs=backend_kwargs, combine='nested', concat_dim='valid_time', decode_timedelta=True)
+                        prec_membro['number'] = membros
+                        ds_total.append(prec_membro)
+
+                    ds = xr.concat(ds_total, dim='number')
+
+                else:
+
+                    ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine, add_valid_time=add_valid_time)
+
+                    if add_valid_time:
+                        ds = ds.assign_coords(time=pd.to_datetime(f'{data_fmt}{inicializacao_fmt}', format='%Y%m%d%H'))  # Adiciona a coordenada 'time'
+            
+            # Pega apenas a hora das 12z
+            if sel_12z:
+                ds = ds.isel(valid_time=ds.valid_time.dt.hour == 12)
+
+            # Sortando as coordenadas
+            ds = ds.sortby(['valid_time', 'latitude', 'longitude'])
+
+            # Se for ensemble, faz a média ao longo da dimensão 'number'
+            if ensemble_mean:
+                if 'number' in ds.dims:
+                    ds = ds.mean(dim='number')
+
+            # Ajusta acumulado de precipitação (nao necessariamente precisa ser feito, mas é uma opção geralmente apenas para o ECMWF)
+            if ajusta_acumulado:
+                ds = ajusta_acumulado_ds(ds, m_to_mm=False)
+
+            # Ajusta a unidade de medida
+            if m_to_mm and variavel in ['tp', 'prec', 'precip']:
+                # Converte de metros para milímetros
+                ds[variavel] = ds[variavel] * 1000
+
+            # torna isobaricHpa em dimensaon
+            if expand_isobaric_dims:
+                if "isobaricInhPa" not in ds.dims and variavel in isobaric_inhPa:
+                    ds = ds.expand_dims({"isobaricInhPa": [ds.isobaricInhPa.item()]})
+
+            if rename_var and var_dim:
+                ds = ds.rename({variavel: var_dim})
+
+            if modelo_fmt in ['cfsv2']:
+
+                path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
+                if prefix_cfs == 'prate':
+                    file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc'
+                else:
+                    file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily.nc'
+                ds_climatologia = xr.open_dataset(f'{path_climatologia}/{file_clim}')
+                ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
+                ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
+                ds_list = []
+
+                for valid_time in ds.valid_time[:360]:
+
+                    # print(f'Gerando a anomalia para {valid_time.values}')
+
+                    ds_sel = ds.sel(valid_time=valid_time)
+                    tempo_dt = pd.to_datetime(valid_time.values)
+                    ano = tempo_dt.year
+
+                    if ano == self.data.year:
+                        ano_clim = 2000
+                    else:
+                        ano_clim = 2001
+
+                    tempo_climatologia = f'{ano_clim}-{tempo_dt.month}-{tempo_dt.day}T{tempo_dt.hour:02d}'
+
+                    if pd.to_datetime(tempo_climatologia) not in ds_climatologia.time:
+                        print(f"Tempo {tempo_climatologia} não encontrado na climatologia.")
+                        continue
+
+                    ds_climatologia_sel = ds_climatologia.sel(time=tempo_climatologia)
+                    ds_climatologia_sel = interpola_ds(ds_climatologia_sel, ds_sel)
+                    ds_anomalia = ds_sel[variavel] - ds_climatologia_sel[variavel]
+                    ds_anomalia['valid_time'] = valid_time
+                    ds_anomalia = ds_anomalia.to_dataset(name='tp' if variavel == 'prate' else variavel)
+                    ds_list.append(ds_anomalia)
+
+                ds = xr.concat(ds_list, dim='valid_time')
 
         else:
 
-            if variavel in surface:
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'surface'}, "indexpath": ""}
+            files = sorted(os.listdir(caminho_para_salvar))
+            files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".nc")) if variavel in f]  # Todos os arquivos]
             
-            elif variavel in height_above_ground:
+            dss = []
 
-                if variavel in ['u100', 'v100']:
-                    name = 'cfVarName'
-                else:
-                    name = 'shortName'
+            for f in files:
 
-                backend_kwargs = {"filter_by_keys": {name: variavel, 'typeOfLevel': 'heightAboveGround'}, "indexpath": ""}
+                ds = xr.open_dataset(f, decode_times=False)
 
-            elif variavel in isobaric_inhPa:  # variaveis isobaricas
-                backend_kwargs = {"filter_by_keys": {'cfVarName': variavel, 'typeOfLevel': 'isobaricInhPa'}, "indexpath": ""}
+                ds = ds.isel(initial_time=0)
+                lon, lat = np.meshgrid(ds['lon'], ds['lat'])
+                qtde_meses = len(ds['target'])
+                meses_fcst = pd.date_range(start=self.data, periods=qtde_meses, freq='M')
+                ds['target'] = meses_fcst
+                ds = ds.rename({'lon': 'longitude', 'lat': 'latitude', 'target': 'valid_time'})
+                ds['fcst'] = ds['fcst']*60*60*24*30 if variavel == 'prate' else ds['fcst']
+                ds = ds.rename({'fcst': f.split('/')[-1].split('.')[0]})
+                dss.append(ds)
 
-            elif variavel in mean_sea:  # pressao ao nivel do mar
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'meanSea'}, "indexpath": ""}
+            # Extrai o nome do modelo a partir do nome do arquivo
+            nomes_modelos = [f.split('/')[-1].split('.')[0] for f in files]
 
-            elif variavel in nominalTop:
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'nominalTop'}, "indexpath": ""}
-                # files = files[1:] # Remove o primeiro arquivo
+            # Renomeia todas as variáveis internas para um nome comum (ex: 'dados')
+            dss_renomeados = []
+            for ds in dss:
+                var_name = list(ds.data_vars)[0]
+                dss_renomeados.append(ds.rename({var_name: 'dados'}))
 
-            elif variavel in mensal_sazonal:
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'dataType': 'em'}, "indexpath": ""}
-
-            elif variavel in depthBelowSea:
-                backend_kwargs = {"filter_by_keys": {'shortName': variavel, 'typeOfLevel': 'depthBelowSea'}, "indexpath": ""}
-
-            else:
-                backend_kwargs = None
-                # raise ValueError(f'Variável {variavel} não reconhecida ou não implementada.')
-            
-            if arquivos_membros_diferentes:
-
-                ds_total = []
-                        
-                for membros in range(0, 31, 1):
-                    membros_fmt = str(membros).zfill(2)
-
-                    if membros == 0:
-                        membro_name = 'gec'
-                    else:
-                        membro_name = 'gep'
-
-                    path_to_files = [x for x in files if f'{membro_name}{membros_fmt}' in x]
-                    prec_membro = abrir_modelo_sem_vazios(path_to_files, backend_kwargs=backend_kwargs, sel_area=sel_area)
-                    # prec_membro = xr.open_mfdataset(path_to_files, engine='cfgrib', backend_kwargs=backend_kwargs, combine='nested', concat_dim='valid_time', decode_timedelta=True)
-                    prec_membro['number'] = membros
-                    ds_total.append(prec_membro)
-
-                ds = xr.concat(ds_total, dim='number')
-
-            else:
-
-                ds = abrir_modelo_sem_vazios(files, backend_kwargs=backend_kwargs, sel_area=sel_area, engine=engine, add_valid_time=add_valid_time)
-
-                if add_valid_time:
-                    ds = ds.assign_coords(time=pd.to_datetime(f'{data_fmt}{inicializacao_fmt}', format='%Y%m%d%H'))  # Adiciona a coordenada 'time'
-        
-        # Pega apenas a hora das 12z
-        if sel_12z:
-            ds = ds.isel(valid_time=ds.valid_time.dt.hour == 12)
-
-        # Sortando as coordenadas
-        ds = ds.sortby(['valid_time', 'latitude', 'longitude'])
-
-        # Se for ensemble, faz a média ao longo da dimensão 'number'
-        if ensemble_mean:
-            if 'number' in ds.dims:
-                ds = ds.mean(dim='number')
-
-        # Ajusta acumulado de precipitação (nao necessariamente precisa ser feito, mas é uma opção geralmente apenas para o ECMWF)
-        if ajusta_acumulado:
-            ds = ajusta_acumulado_ds(ds, m_to_mm=False)
-
-        # Ajusta a unidade de medida
-        if m_to_mm and variavel in ['tp', 'prec', 'precip']:
-            # Converte de metros para milímetros
-            ds[variavel] = ds[variavel] * 1000
-
-        # torna isobaricHpa em dimensaon
-        if expand_isobaric_dims:
-            if "isobaricInhPa" not in ds.dims and variavel in isobaric_inhPa:
-                ds = ds.expand_dims({"isobaricInhPa": [ds.isobaricInhPa.item()]})
-
-        if rename_var and var_dim:
-            ds = ds.rename({variavel: var_dim})
-
-        if modelo_fmt in ['cfsv2']:
-
-            path_climatologia = '/WX4TB/Documentos/saidas-modelos/cfsv2/climatologia/1999.2010/diario'
-            if prefix_cfs == 'prate':
-                file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily_grade.nc'
-            else:
-                file_clim = f'{prefix_cfs}.{self.data.strftime("%m") if data_fmt is None else data_fmt[4:6]}.{self.data.strftime("%d") if data_fmt is None else data_fmt[6:8]}.{inicializacao_fmt}Z.mean.clim.daily.nc'
-            ds_climatologia = xr.open_dataset(f'{path_climatologia}/{file_clim}')
-            ds_climatologia = ds_climatologia.rename({'lat': 'latitude', 'lon': 'longitude'})
-            ds_climatologia = ds_climatologia.sortby('latitude', ascending=False)
-            ds_list = []
-
-            for valid_time in ds.valid_time[:360]:
-
-                # print(f'Gerando a anomalia para {valid_time.values}')
-
-                ds_sel = ds.sel(valid_time=valid_time)
-                tempo_dt = pd.to_datetime(valid_time.values)
-                ano = tempo_dt.year
-
-                if ano == self.data.year:
-                    ano_clim = 2000
-                else:
-                    ano_clim = 2001
-
-                tempo_climatologia = f'{ano_clim}-{tempo_dt.month}-{tempo_dt.day}T{tempo_dt.hour:02d}'
-
-                if pd.to_datetime(tempo_climatologia) not in ds_climatologia.time:
-                    print(f"Tempo {tempo_climatologia} não encontrado na climatologia.")
-                    continue
-
-                ds_climatologia_sel = ds_climatologia.sel(time=tempo_climatologia)
-                ds_climatologia_sel = interpola_ds(ds_climatologia_sel, ds_sel)
-                ds_anomalia = ds_sel[variavel] - ds_climatologia_sel[variavel]
-                ds_anomalia['valid_time'] = valid_time
-                ds_anomalia = ds_anomalia.to_dataset(name='tp' if variavel == 'prate' else variavel)
-                ds_list.append(ds_anomalia)
-
-            ds = xr.concat(ds_list, dim='valid_time')
+            # Concatena criando uma nova dimensão 'modelo'
+            ds = xr.concat(dss_renomeados, dim=pd.Index(nomes_modelos, name='modelo'))
 
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')
@@ -1028,7 +1145,7 @@ class ConfigProdutosObservado:
         # Caminho para salvar os arquivos
         caminho_para_salvar = f'{output_path}/'
         files = os.listdir(caminho_para_salvar)
-        files = [f for f in files if '.idx' not in f]
+        files = [f for f in files if '.idx' not in f if f.endswith((".grib2", ".grb", ".nc", "grb2"))]
 
         if variavel is not None:
             files = [f for f in files if variavel in f or variavel.lower() in f.lower()]
@@ -1041,12 +1158,15 @@ class ConfigProdutosObservado:
 
         if apenas_mes_atual:
             data = self.data
-            data_fmt = data.strftime('%Y%m')
+            data_fmt = data.strftime('%Y%m') if self.modelo in ['merge', 'mergegpm', 'cpc'] else data.strftime('%Y.%m')
+            format_data = "%Y%m%d" if self.modelo in ['merge', 'mergegpm'] else "0.50deg.lnx.%Y%m%d.nc"
 
             # Filtrando arquivos pela data
-            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), "%Y%m%d"))
-            files = [f'{caminho_para_salvar}/{f}' for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
+            files = [f for f in files if data_fmt in f if f.endswith((".grib2", ".grb", ".nc"))]
+            files = sorted(files,key=lambda x: datetime.strptime(x.split("_")[-1].replace(".grib2", ""), format_data))
+            files = [f'{caminho_para_salvar}/{f}' for f in files]
             ds = xr.open_mfdataset(files, combine='nested', concat_dim='time', backend_kwargs=backend_kwargs)
+            dates = [pd.to_datetime(f.split('/')[-1].split('_')[-1][12:-3]) for f in files]
 
             # Troca time por valid_time
             if modelo_fmt in ['merge', 'mergegpm']:
@@ -1055,6 +1175,10 @@ class ConfigProdutosObservado:
 
             elif modelo_fmt in ['cpc']:
                 ds = ds.rename({'time': 'valid_time'})
+                ds['valid_time'] = dates
+                ds = ds.assign_coords(time=dates[-1])  # Adiciona a coordenada 'time' como o último valid_time
+                if 'prec' in ds.data_vars:
+                    ds = ds.rename({'prec': 'tp'})
 
         if todo_dir:
             files = [f'{caminho_para_salvar}/{f}' for f in files if f.endswith((".grib2", ".grb", ".nc"))]
@@ -2073,6 +2197,120 @@ class GeraProdutosPrevisao:
                             **kwargs
                         )
 
+            elif modo == 'chuva_quantil_mensal':
+
+                # Acumulado com MERGE
+                path_merge = '/WX2TB/Documentos/saidas-modelos-novo/mergegpm/data/mergegpm'
+                ano_mes_atual = pd.to_datetime(self.tp.time.values).strftime('%Y%m')
+                files = os.listdir(path_merge)
+
+                files_to_use = [x for x in files if f'{ano_mes_atual}' in x if '.idx' not in x if 'tmp' not in x if x.endswith('.grib2')]
+                files_to_use = sorted(files_to_use)
+
+                if len(files_to_use) > 0:
+                    files_to_use = [path_merge + '/' + x for x in files_to_use]
+                    ds_obs = xr.open_mfdataset(files_to_use, engine='cfgrib', combine='nested', concat_dim='time', backend_kwargs={"indexpath": ""})
+                    ds_obs = ds_obs.rename({'rdp': 'tp'})
+                    ds_obs = ds_obs['tp']
+                    tempo_ini_obs = ds_obs.time[0].values
+                    ultimo_tempo = ds_obs.time[-1]
+                    ds_obs = ds_obs.sum(dim='time')
+                    ds_obs = interpola_ds(ds_obs, self.tp).to_dataset()
+
+                    for quantil in [0.10, 0.25, 0.50, 0.75, 0.90]:
+
+                        print(f'Processando quantil {int(quantil*100)}...')
+
+                        tp_plot = self.tp_mean.quantile(quantil, dim='number')
+
+                        # Dando o resample nos dados de chuva prevista
+                        ds_resample = tp_plot.sel(valid_time=tp_plot.valid_time > ultimo_tempo).resample(valid_time='M').sum()
+
+                        for index, time in enumerate(ds_resample.valid_time):
+                            ds_resample_sel = ds_resample.sel(valid_time=time)
+                            mes = pd.to_datetime(time.values).strftime('%b/%Y')
+
+                            if pd.to_datetime(time.item()).month == pd.to_datetime(tempo_ini_obs).month:
+                                tipo=f'MERGE + Prev'
+                                tempo_ini = tempo_ini_obs
+                                ds_acumulado = ds_obs['tp'] + ds_resample_sel['tp']
+                                ds_acumulado = ds_acumulado.to_dataset()
+
+                                if anomalia_mensal: 
+                                    if 'ecmwf' in self.modelo_fmt.lower():
+                                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia, inicio_mes=True, modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)
+
+                                    elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
+                                        mesdia = pd.to_datetime(self.tp.time.data).strftime('%m01')
+                                        ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=mesdia, inicio_mes=True, modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)
+                                        
+                                    # Anos iniciais e finais da climatologia
+                                    ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                    ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+
+                            else:
+                                tempo_ini = tp_plot.sel(valid_time=tp_plot.valid_time.dt.month == time.dt.month).valid_time[0].values
+                                tipo=f'Acumulado total'
+                                ds_acumulado = ds_resample_sel
+
+                                if anomalia_mensal:    
+
+                                    if 'ecmwf' in self.modelo_fmt.lower():
+                                        ds_clim = open_hindcast_file(var_anomalia, level_anomalia, modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)
+
+                                    elif self.modelo_fmt.lower() in ['gefs', 'gfs', 'gefs-estendido']:
+                                        ds_clim = open_hindcast_file(var_anomalia, path_clim=Constants().PATH_HINDCAST_GEFS_EST, mesdia=pd.to_datetime(self.tp.time.data).strftime('%m%d'), modelo=self.modelo_fmt)
+                                        ds_clim = interpola_ds(ds_clim, ds_acumulado)      
+
+                                    # Anos iniciais e finais da climatologia
+                                    ano_ini = pd.to_datetime(ds_clim.alvo_previsao[0].values).strftime('%Y')
+                                    ano_fim = pd.to_datetime(ds_clim.alvo_previsao[-1].values).strftime('%Y')
+
+                            tempo_fim = tp_plot.sel(valid_time=tp_plot.valid_time.dt.month == time.dt.month).valid_time[-1].values
+                            data_ini=pd.to_datetime(tempo_ini).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
+                            data_fim=pd.to_datetime(tempo_fim).strftime('%d/%m/%Y %H UTC').replace(' ', '\\ ')
+
+                            if anomalia_mensal:
+
+                                # path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
+
+                                inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
+                                fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
+                                
+                                t_clim_ini = inicio.replace(inicio[:4], ano_ini)
+                                t_clim_fim = fim.replace(fim[:4], ano_fim)
+
+                                # Sel nos tempos encontrados
+                                ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
+
+                                # Anomalia
+                                ds_anomalia = ds_acumulado['tp'] - ds_clim_sel['tp']
+                                ds_anomalia = ds_anomalia.to_dataset()
+
+                                titulo = gerar_titulo(
+                                    modelo=self.modelo_fmt,
+                                    tipo=tipo,
+                                    cond_ini=self.cond_ini,
+                                    data_ini=data_ini,
+                                    data_fim=data_fim,
+                                    prefixo_negrito=True,
+                                    prefixo=f'p\\ {mes.title()}\\ Q{int(quantil*100)}'
+                                )
+
+                                plot_campos(
+                                    ds=ds_anomalia['tp'],
+                                    variavel_plotagem='tp_anomalia_mensal',
+                                    title=titulo,
+                                    filename=formato_filename(self.modelo_fmt, f'anomaliaacumuladomensal_Q{int(quantil*100)}', index),
+                                    shapefiles=self.shapefiles,
+                                    path_to_save=path_to_save,
+                                    footnote_text='Hindcast 2004-2023' if 'ecmwf' in self.modelo_fmt.lower() else 'Hindcast 2000-2019',
+                                    **kwargs
+                                )     
+            
             elif modo == 'chuva_iqr':
 
                 tp_sop = resample_variavel(self.tp, self.modelo_fmt, 'tp', freq=freq_prob, qtdade_max_semanas=qtdade_max_semanas)
@@ -3762,6 +4000,53 @@ class GeraProdutosPrevisao:
                 df_media[''] = df_temp['datas_fmt'].iloc[:, 0]
                 df_media[['', f'{pd.to_datetime(self.us100.time.values).strftime("%Y%m%d%H")}', 'Climatologia']].to_csv(f'{path_to_save_csv}/{self.modelo_fmt}_MEDIANORDESTE_{self.data_fmt}_diario.csv', index=False)
 
+            elif modo == 'posicionamento_asas':
+
+                varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
+
+                # Pnmm
+                if self.pnmm_mean is None:
+                    _, self.pnmm_mean, self.cond_ini = self._carregar_pnmm_mean()
+
+                pnmm_24h = resample_variavel(self.pnmm_mean, self.modelo_fmt, varname, resample_freq, modo_agrupador='mean')
+
+                # Abrindo dado de posição climatologico da asas
+                # ds_pnmm_clim = xr.open_dataset(f'{Constants().PATH_REANALISE_NCEP}/diarios/ciclos_anuais-40x/ciclo_anual_slp0.nc', decode_times=False)
+
+                for p_24h in pnmm_24h.tempo:
+
+                    print(f'Processando {p_24h.item()}...')
+                    pnmm_plot = pnmm_24h.sel(tempo=p_24h)
+
+                    if resample_freq == '24h':
+                        tempo_ini = ajustar_hora_utc(pd.to_datetime(pnmm_plot.data_inicial.item()))
+                        semana = encontra_semanas_operativas(pd.to_datetime(self.pnmm_mean.time.values), tempo_ini, ds_tempo_final=self.pnmm_mean.valid_time[-1].values, modelo=self.modelo_fmt)[0]
+
+                        titulo = self._ajustar_tempo_e_titulo(
+                            pnmm_plot, f'{self.freqs_map[resample_freq]["prefix_title"]}Posicionamento ASAS', semana, self.cond_ini,
+                        )
+
+                    else:
+                        intervalo = pnmm_plot.intervalo.item().replace(' ', '\ ')
+                        days_of_week = pnmm_plot.days_of_weeks.item()
+                        titulo = gerar_titulo(
+                            modelo=self.modelo_fmt, tipo=f'Semana{p_24h.item()}',
+                            cond_ini=self.cond_ini, intervalo=intervalo, days_of_week=days_of_week,
+                            semana_operativa=True
+                    )
+
+                    plot_campos(
+                        ds=pnmm_plot[varname]/100,
+                        variavel_plotagem='pos_asas',
+                        title=titulo,
+                        filename=formato_filename(self.modelo_fmt, f'pos_asas_{self.freqs_map[resample_freq]["prefix_filename"]}', p_24h.item()),
+                        ds_contour=pnmm_plot[varname]/100,
+                        variavel_contour='pos_asas',
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        **kwargs
+                    )  
+
             elif modo == 'pnmm_vento850':
 
                 varname = 'msl' if 'ecmwf' in self.modelo_fmt else 'prmsl'
@@ -4337,6 +4622,275 @@ class GeraProdutosPrevisao:
         except Exception as e:
             print(f'Erro ao gerar mapas db: {e}')
 
+    def _processar_previsao_sazonal(self, modo, **kwargs):
+
+        self.tp = self.produto_config_sf.open_model_file(variavel='prate', sazonal=True, **kwargs)
+        self.t2m = self.produto_config_sf.open_model_file(variavel='tmp2m',  sazonal=True, **kwargs)
+        self.sst = self.produto_config_sf.open_model_file(variavel='tmpsfc',  sazonal=True, **kwargs)
+        self.cond_ini = pd.to_datetime(self.tp.valid_time.values[0])
+        
+        if self.modo_atual:
+
+            if modo in self.figs_24h:
+                path_save = '24-em-24-gifs'
+
+            elif modo in self.graficos_vento:
+                path_save = 'uv100_grafs'
+
+            elif modo in self.figs_6h:
+                path_save = 'figs-6h'
+
+            elif modo in self.prob_acm:
+                path_save = 'prob-acm'
+
+            elif modo in self.semana_membros:
+                path_save = 'semana-energ-membros'
+
+            elif modo in self.precip_grafs:
+                path_save = 'precip_grafs'
+
+            elif modo in self.figs_diferenca:
+                path_save = 'dif_prec'
+
+            elif modo in self.iqr:
+                path_save = 'chuva_quantil'
+
+            else:
+                path_save = modo
+
+        else:
+            path_save = modo
+
+        path_to_save = f'{self.path_savefiguras}/{path_save}'
+
+        if modo == 'anom_mensal':
+
+            for modelo in self.tp.modelo:
+
+                tp_modelo = self.tp.sel(modelo=modelo)
+                t2m_modelo = self.t2m.sel(modelo=modelo)
+                sst_modelo = self.sst.sel(modelo=modelo)
+
+                for index, valid_time in enumerate(tp_modelo.valid_time):
+
+                    print(f'Processando {modelo.item()} - {pd.to_datetime(valid_time.values).strftime("%b/%Y")}...')
+
+                    dataini = pd.to_datetime(valid_time.values).strftime('%b/%Y').replace(' ', '\\ ')
+
+                    tp_plot = tp_modelo.sel(valid_time=valid_time)
+                    t2m_plot = t2m_modelo.sel(valid_time=valid_time)
+                    sst_plot = sst_modelo.sel(valid_time=valid_time)
+                    sst_plot = xr.where((sst_plot == -999.) | (sst_plot >= 10) | (sst_plot <= -10), np.nan, sst_plot)
+
+                    tp_plot = tp_plot.rename({'dados': 'tp'})
+
+                    titulo_tp = gerar_titulo(
+                        unico_tempo=True,
+                        tipo='Anomalia Mensal de Precipitação',
+                        modelo=modelo.item(),
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=tp_plot['tp'],
+                        variavel_plotagem='tp_anomalia_mensal',
+                        title=titulo_tp,
+                        filename=formato_filename(modelo.item(), 'prate_mensal_as', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
+                    )     
+
+                    titulo_t2m = gerar_titulo(
+                        unico_tempo=True,
+                        tipo='Anomalia Mensal de Temperatura',
+                        modelo=modelo.item(),
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=t2m_plot['dados'],
+                        variavel_plotagem='temp_anomalia',
+                        title=titulo_t2m,
+                        filename=formato_filename(modelo.item(), 'tmp2m_mensal_as', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['brasil']
+                    )     
+
+                    titulo_sst = gerar_titulo(
+                        unico_tempo=True,
+                        tipo='Anomalia Mensal de SST',
+                        modelo=modelo.item(),
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=sst_plot['dados'],
+                        variavel_plotagem='sst_anomalia',
+                        title=titulo_sst,
+                        filename=formato_filename(modelo.item(), 'tmpsfc_mensal_global', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['global'],
+                        add_rect=True,
+                        central_longitude=180, figsize=(12, 12), with_logo=False,
+                    )     
+
+        elif modo == 'anom_sazonal':
+
+            tp_3m = self.tp.resample(valid_time='3M').mean()
+            t2m_3m = self.t2m.resample(valid_time='3M').mean()
+            sst_3m = self.sst.resample(valid_time='3M').mean()
+
+            for modelo in self.tp.modelo:
+
+                tp_modelo = tp_3m.sel(modelo=modelo)
+                t2m_modelo = t2m_3m.sel(modelo=modelo)
+                sst_modelo = sst_3m.sel(modelo=modelo)
+
+                for index, valid_time in enumerate(tp_modelo.valid_time):
+
+                    print(f'Processando {modelo.item()} - {pd.to_datetime(valid_time.values).strftime("%b/%Y")}...')
+
+                    dataini = pd.to_datetime(valid_time.values)
+                    dataini = pd.date_range(start=dataini, periods=3, freq='M').strftime('%b/%Y').to_list()
+                    dataini = r"{} - {}".format(
+                        dataini[0].replace(" ", r"\ "),
+                        dataini[-1].replace(" ", r"\ ")
+                    )
+
+                    tp_plot = tp_modelo.sel(valid_time=valid_time)
+                    t2m_plot = t2m_modelo.sel(valid_time=valid_time)
+                    sst_plot = sst_modelo.sel(valid_time=valid_time)
+                    sst_plot = xr.where((sst_plot == -999.) | (sst_plot >= 10) | (sst_plot <= -10), np.nan, sst_plot)
+
+                    tp_plot = tp_plot.rename({'dados': 'tp'})
+
+                    titulo_tp = gerar_titulo(
+                        unico_tempo=True,
+                        tipo='Anomalia sazonal de Precipitação',
+                        modelo=modelo.item(),
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=tp_plot['tp'],
+                        variavel_plotagem='tp_anomalia_mensal',
+                        title=titulo_tp,
+                        filename=formato_filename(modelo.item(), 'prate_sazonal_as', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
+                    )     
+
+                    titulo_t2m = gerar_titulo(
+                        unico_tempo=True,
+                        tipo='Anomalia sazonal de Temperatura',
+                        modelo=modelo.item(),
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=t2m_plot['dados'],
+                        variavel_plotagem='temp_anomalia',
+                        title=titulo_t2m,
+                        filename=formato_filename(modelo.item(), 'tmp2m_sazonal_as', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['brasil']
+                    )     
+
+                    titulo_sst = gerar_titulo(
+                        unico_tempo=True,
+                        tipo='Anomalia sazonal de SST',
+                        modelo=modelo.item(),
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=sst_plot['dados'],
+                        variavel_plotagem='sst_anomalia',
+                        title=titulo_sst,
+                        filename=formato_filename(modelo.item(), 'tmpsfc_sazonal_global', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['global'],
+                        add_rect=True,
+                        central_longitude=180, figsize=(12, 12), with_logo=False,
+                    )     
+
+        elif modo == 'probabilidades':
+
+            ds_concat = []
+            grid_lats, grid_lons = None, None  # Variáveis para armazenar a grade do primeiro arquivo
+
+            for number, model_name in enumerate(self.tp.modelo):
+                ds = self.tp.sel(modelo=model_name)
+                ds = ds.assign_coords({'number': number})
+
+                # Pegando a grade do primeiro arquivo
+                if number == 0:
+                    grid_lats = ds.latitude
+                    grid_lons = ds.longitude
+                else:
+                    # Interpolando para a grade do primeiro arquivo
+                    ds = ds.interp(latitude=grid_lats, longitude=grid_lons, method="linear")
+
+                ds_concat.append(ds)
+
+            ds_concat = xr.concat(ds_concat, dim='number')
+
+            for index, valid_time in enumerate(ds_concat.valid_time):
+
+                print(f'Processando NMME - Probabilidade - {pd.to_datetime(valid_time.values).strftime("%b/%Y")}...')
+
+                dataini = pd.to_datetime(valid_time.values).strftime('%b/%Y').replace(' ', '\\ ')
+                dataini_svg = pd.to_datetime(valid_time.values).strftime('%m%Y')
+
+                tp_plot = ds_concat.sel(valid_time=valid_time)
+                tp_plot = tp_plot.rename({'dados': 'tp'})
+
+                # Calculando as probabilidades
+                ds_prob_acima = xr.where(tp_plot['tp'] > 0, 1, 0)
+                ds_prob_abaixo = xr.where(tp_plot['tp'] < 0, 1, 0)
+                ds_probs = [ds_prob_acima, ds_prob_abaixo]
+
+                for index_prob, probs in enumerate(ds_probs):
+
+                    soma = probs.sum(dim='number')
+                    prob = soma/len(probs.number)
+
+                    if index_prob == 0:
+                        tipo = 'acima'
+
+                    elif index_prob == 1:
+                        tipo = 'abaixo'
+
+                    titulo_tp = gerar_titulo(
+                        unico_tempo=True,
+                        tipo=f'Prob de Precipitação {tipo} da Média',
+                        modelo='NMME',
+                        cond_ini=self.cond_ini.strftime('%b/%Y'),
+                        data_ini=f'{dataini}',
+                    )
+
+                    plot_campos(
+                        ds=prob*100,
+                        variavel_plotagem='probabilidade',
+                        title=titulo_tp,
+                        filename=formato_filename('nmme', f'{tipo}_{dataini_svg}', index),
+                        shapefiles=self.shapefiles,
+                        path_to_save=path_to_save,
+                        extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
+                    )  
+
     ###################################################################################################################
 
     def gerar_prec24h(self, **kwargs):
@@ -4446,6 +5000,21 @@ class GeraProdutosPrevisao:
 
     def gerar_chuva_iqr(self, **kwargs):
         self._processar_precipitacao('chuva_iqr', **kwargs)
+
+    def gerar_posicionamento_asas(self, **kwargs):
+        self._processar_varsdinamicas('posicionamento_asas', **kwargs)
+
+    def gerar_chuva_quantil_mensal(self, **kwargs):
+        self._processar_precipitacao('chuva_quantil_mensal', **kwargs)
+
+    def gerar_produtos_modelos_climaticos_mensal(self, **kwargs):
+        self._processar_previsao_sazonal(modo='anom_mensal', **kwargs)
+
+    def gerar_produtos_modelos_climaticos_sazonal(self, **kwargs):
+        self._processar_previsao_sazonal(modo='anom_sazonal', **kwargs)
+
+    def gerar_produtos_modelos_climaticos_probabilidade(self, **kwargs):
+        self._processar_previsao_sazonal(modo='probabilidades', **kwargs)
 
     ###################################################################################################################
 
@@ -4673,6 +5242,7 @@ class GeraProdutosObservacao:
 
                 # Acumulando no mes
                 tp_plot_acc = tp.resample(valid_time='1M').sum().isel(valid_time=0)
+                # tp_plot_acc = tp_plot_acc/10 if self.modelo_fmt == 'cpc' else tp_plot_acc
 
                 tempo_ini = pd.to_datetime(tp['valid_time'].values[0]) - pd.Timedelta(days=1)
                 tempo_fim = pd.to_datetime(tp['valid_time'].values[-1])
@@ -4702,7 +5272,9 @@ class GeraProdutosObservacao:
                     elif mes == 'dec':
                         mes = 'dez'
                     tp_plot_clim = xr.open_dataset(f'{path_clim}/prec_{mes}1981-2010.nc')
-                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp'})                    
+                    tp_plot_clim = tp_plot_clim.rename({'avg': 'tp', 'lat': 'latitude', 'lon': 'longitude'})  
+                    tp_plot_clim = interpola_ds(tp_plot_clim, tp_plot_acc)     
+                    tp_plot_clim = tp_plot_clim/10             
                 
                 # Anomalia total
                 tp_plot_anomalia_total = tp_plot_acc['tp'].values - tp_plot_clim['tp'].values 
@@ -4735,22 +5307,27 @@ class GeraProdutosObservacao:
                     if data_var == 'acumulado_ate':
                         tipo = 'Acumulado total'
                         variavel_plotagem = 'chuva_acumualada_merge'
+                        data_varname = data_var
 
                     elif data_var == 'anomalia_total':
                         tipo = 'Anomalia total'
                         variavel_plotagem = 'chuva_acumualada_merge_anomalia'
+                        data_varname = data_var
 
                     elif data_var == 'anomalia_parcial':
                         tipo = 'Anomalia parcial'
                         variavel_plotagem = 'chuva_acumualada_merge_anomalia'
+                        data_varname = data_var
 
                     elif data_var == 'pct_climatologia':
                         tipo = '% da climatologia'
                         variavel_plotagem = 'pct_climatologia'
+                        data_varname = 'pct_climatologia' if self.modelo_fmt == 'mergegpm' else 'pctclim'
 
                     elif data_var == 'pct_climatologia_parcial':
                         tipo = '% da climatologia parcial'
                         variavel_plotagem = 'pct_climatologia'
+                        data_varname = 'pct_climatologia_parcial' if self.modelo_fmt == 'mergegpm' else 'pclimparcial'
 
                     titulo = gerar_titulo(
                             modelo=self.modelo_fmt, tipo=tipo, cond_ini=cond_ini,
@@ -4764,7 +5341,7 @@ class GeraProdutosObservacao:
                         variavel_plotagem=variavel_plotagem,
                         title=titulo,
                         path_to_save=path_to_save,
-                        filename=f'{self.modelo_fmt}_{data_var}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
+                        filename=f'{self.modelo_fmt}_{data_varname}_{tempo_fim.strftime("%Y%m%d")}_{tempo_fim.strftime("%b%Y")}', # mergegpm_acumulado_ate_20250827_Aug2025.png
                         shapefiles=self.shapefiles,
                         **kwargs
                     )
@@ -4919,6 +5496,49 @@ class GeraProdutosObservacao:
                 if salva_db:
                     print('Salvando dados no db')
                     response = requests.post(f'{API_URL}/rodadas/chuva/observada', verify=False, json=ds_to_df.to_dict('records'), headers=get_auth_header())
+                    print(f'Código POST: {response.status_code}')
+
+            elif modo == 'estacao_chuvosa':
+
+                regioes = ['seb', 'norte']
+
+                for regiao in regioes:
+
+                    print(f'Processando região: {regiao}')
+
+                    if regiao == 'seb':
+                        lati = -15
+                        latf = -25
+                        loni = 307.5
+                        lonf = 320
+
+                    elif regiao == 'norte':
+                        lati = -2
+                        latf = -6
+                        loni = 360-56
+                        lonf = 360-46.4
+
+                    self.tp, self.cond_ini = self._carregar_tp_mean(unico=True)
+
+                    if len(self.cond_ini) > 0:
+                        cond_ini = self.cond_ini[0]
+                    else:
+                        cond_ini = self.cond_ini
+
+                    ds = self.tp.isel(valid_time=0)
+                    ds = ds.sel(latitude=slice(latf, lati), longitude=slice(loni, lonf))
+                    print(ds)
+                    ds_mean = ds.mean(('latitude', 'longitude'))
+                    ds_mean_df = pd.DataFrame([ds_mean['tp'].values], columns=['vl_chuva'])
+                    ds_mean_df['dt_observada'] = pd.to_datetime(cond_ini, format='%d/%m/%Y %H UTC').strftime('%Y-%m-%d')
+                    ds_mean_df = ds_mean_df[['dt_observada', 'vl_chuva']]
+                    ds_mean_df['regiao'] = 'sudeste' if regiao == 'seb' else regiao
+
+                    print(ds_mean_df)
+
+                    print('Salvando dados no db')
+                    API_URL = Constants().API_URL_APIV2
+                    response = requests.post(f'{API_URL}/meteorologia/estacao-chuvosa', verify=False, json=ds_mean_df.to_dict('records'), headers=get_auth_header())
                     print(f'Código POST: {response.status_code}')
 
         except Exception as e:
@@ -5083,6 +5703,9 @@ class GeraProdutosObservacao:
 
     def gerar_bacias_smap(self, **kwargs):
         self._processar_precipitacao('bacias_smap', **kwargs)
+
+    def gerar_estacao_chuvosa(self, **kwargs):
+        self._processar_precipitacao('estacao_chuvosa', **kwargs)
 
     def gerar_temp_diario(self, **kwargs):
         self._processar_temperatura('temp_diario', **kwargs)

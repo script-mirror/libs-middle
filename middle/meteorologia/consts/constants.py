@@ -21,14 +21,14 @@ CONSTANTES = {
         '[m/s]': ['wind200', 'mag_vento100', 'mag_vento100_anomalia'],
         '[dam]': ['geop_500'],
         '[1/s]': ['vorticidade', 'divergencia', 'divergencia850'],
-        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia', 'sst_anomalia'],
+        '[°C]': ['temp850', 't2m', '2t', 'geada', 'temp_anomalia', 'sst_anomalia', 'tp_anomalia_mensal'],
         '[kg*m-1*s-1]': ['ivt'],
         '[Anomalia de frentes frias]': ['frentes_anomalia'],
         '[Número de eventos]': ['frentes'],
         '[%]': ['probabilidade', 'pct_climatologia'],
         '[agdp]': ['geop_500_anomalia'],
         '[W/m²]': ['olr'],
-        '[hPa]': ['pnmm_vento']
+        '[hPa]': ['pnmm_vento', 'pos_asas']
     },
 
     'path_save_netcdf': '/projetos/arquivos/meteorologia/dados_modelos/netcdf_salvos', # '/WX2TB/Documentos/saidas-modelos-novo'
@@ -92,6 +92,9 @@ CONSTANTES = {
         'ecmwf-ens-estendido': 7,
         'ecmwf-ens-membros-estendido': 7,
         'cfsv2': 7,
+        'hgefs': 2,
+        'aigefs': 3,
+        'aigfs': 3,
 
     },
 
@@ -174,6 +177,17 @@ CONSTANTES = {
     'PATH_COORDENADAS_CIDADES': './tmp/data', # '/WX2TB/Documentos/fontes/tempo/novos_produtos/COORDENADAS_CIDADES/'
 
     'PATH_DOWNLOAD_ARQUIVOS_METEOROLOGIA': './tmp/downloads', # '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS'
+
+    'MODELOS_NMME': [
+        'NMME',
+        'CFSv2',
+        'CanESM5',
+        'GEM5.2_NEMO',
+        'NASA_GEOS5v2',
+        'NCAR_CCSM4',
+        'NCAR_CESM1',
+    ]
+
 
 }
 

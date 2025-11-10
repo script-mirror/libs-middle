@@ -233,3 +233,4 @@ produtos_meteorologia.py
 teste*.ipynb
 *.RT
 *.nc
+.grib2

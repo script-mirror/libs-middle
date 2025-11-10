@@ -715,6 +715,22 @@ class Constants:
     @property
     def POST_PREV_ENA(self):
         return f"{self.BASE_URL}/api/v2/ons/prev/ena"
+    
+    @property
+    def POST_PREV_SEMANAL_ENA(self):
+        return f"{self.BASE_URL}/api/v2/ons/prev-semanal/ena"
+    
+    @property
+    def GET_PREV_SEMANAL_ENA(self):
+        return f"{self.BASE_URL}/api/v2/ons/prev-semanal/ena"
+    
+    @property
+    def POST_PREV_SEMANAL_ENA_POR_BACIA(self):
+        return f"{self.BASE_URL}/api/v2/ons/prev-semanal/ena/bacia"
+    
+    @property
+    def GET_PREV_SEMANAL_ENA_POR_BACIA(self):
+        return f"{self.BASE_URL}/api/v2/ons/prev-semanal/ena/bacia"
 
     # BBCE Endpoints
     @property
@@ -1129,3 +1145,7 @@ class Constants:
     @property 
     def PATH_FIGURAS_CPC_CLIM(self):
         return '/WX2TB/Documentos/saidas-modelos/NOVAS_FIGURAS/cpc/cpc_clim'
+    
+    @property 
+    def PATH_REANALISE_NCEP(self):
+        return '/WX2TB/Documentos/dados/reanI-ncep'
