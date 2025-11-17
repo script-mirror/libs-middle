@@ -1854,6 +1854,9 @@ class GeraProdutosPrevisao:
                             dif_anos_ini = tempo_ini.dt.year - int(ano_ini)
                             dif_anos_fim = tempo_fim.dt.year - int(ano_fim)
 
+                            if dif_anos_fim < dif_anos_ini:
+                                dif_anos_fim = dif_anos_ini
+
                             t_clim_ini = inicio - pd.DateOffset(years=int(dif_anos_ini))
                             t_clim_fim = fim - pd.DateOffset(years=int(dif_anos_fim))
 
