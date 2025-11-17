@@ -1851,14 +1851,17 @@ class GeraProdutosPrevisao:
                             inicio = pd.to_datetime(tempo_ini)
                             fim = pd.to_datetime(tempo_fim)
 
-                            dif_anos_ini = inicio - int(ano_ini)
-                            dif_anos_fim = fim - int(ano_fim)
+                            # diferença em anos
+                            dif_anos_ini = inicio.year - int(ano_ini)
+                            dif_anos_fim = fim.year - int(ano_fim)
 
+                            # Garantindo que o fim não seja menor que o início
                             if dif_anos_fim < dif_anos_ini:
                                 dif_anos_fim = dif_anos_ini
 
-                            t_clim_ini = inicio - pd.DateOffset(years=int(dif_anos_ini))
-                            t_clim_fim = fim - pd.DateOffset(years=int(dif_anos_fim))
+                            # aplicar o deslocamento corretamente
+                            t_clim_ini = inicio - pd.DateOffset(years=dif_anos_ini)
+                            t_clim_fim = fim - pd.DateOffset(years=dif_anos_fim)
 
                             # Sel nos tempos encontrados
                             print(t_clim_ini, t_clim_fim)
