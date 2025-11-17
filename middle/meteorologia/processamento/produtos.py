@@ -1842,17 +1842,23 @@ class GeraProdutosPrevisao:
 
                             path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
 
-                            inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
-                            fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
+                            # inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
+                            # fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
 
-                            print(inicio, fim)
-                            
-                            t_clim_ini = inicio.replace(inicio[:4], ano_ini)
-                            t_clim_fim = fim.replace(fim[:4], ano_fim)
+                            # t_clim_ini = inicio.replace(inicio[:4], ano_ini)
+                            # t_clim_fim = fim.replace(fim[:4], ano_fim)
 
-                            print(t_clim_ini, t_clim_fim)
+                            inicio = pd.to_datetime(tempo_ini)
+                            fim = pd.to_datetime(tempo_fim)
+
+                            dif_anos_ini = tempo_ini.dt.year - int(ano_ini)
+                            dif_anos_fim = tempo_fim.dt.year - int(ano_fim)
+
+                            t_clim_ini = inicio - pd.DateOffset(years=int(dif_anos_ini))
+                            t_clim_fim = fim - pd.DateOffset(years=int(dif_anos_fim))
 
                             # Sel nos tempos encontrados
+                            print(t_clim_ini, t_clim_fim)
                             print(ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).alvo_previsao)
                             ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
 
