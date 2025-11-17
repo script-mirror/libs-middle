@@ -1844,12 +1844,16 @@ class GeraProdutosPrevisao:
 
                             inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
                             fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
+
+                            print(inicio, fim)
                             
                             t_clim_ini = inicio.replace(inicio[:4], ano_ini)
                             t_clim_fim = fim.replace(fim[:4], ano_fim)
 
+                            print(t_clim_ini, t_clim_fim)
+
                             # Sel nos tempos encontrados
-                            print(ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)))
+                            print(ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).alvo_previsao)
                             ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
 
                             # Anomalia
