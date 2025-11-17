@@ -1851,8 +1851,8 @@ class GeraProdutosPrevisao:
                             inicio = pd.to_datetime(tempo_ini)
                             fim = pd.to_datetime(tempo_fim)
 
-                            dif_anos_ini = tempo_ini.dt.year - int(ano_ini)
-                            dif_anos_fim = tempo_fim.dt.year - int(ano_fim)
+                            dif_anos_ini = inicio - int(ano_ini)
+                            dif_anos_fim = fim - int(ano_fim)
 
                             if dif_anos_fim < dif_anos_ini:
                                 dif_anos_fim = dif_anos_ini
