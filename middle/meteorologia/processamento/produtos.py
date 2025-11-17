@@ -1137,7 +1137,6 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 # Definir a variavel modelo e remover se ja existir
                 ds = ds.assign_coords(modelo=['ECMWF-MENSAL'])
 
-
         print(f'✅ Arquivo aberto com sucesso: {variavel} do modelo {self.modelo.upper()}\n')
         print(f'Dataset após ajustes:')
         print(ds)
@@ -1850,6 +1849,7 @@ class GeraProdutosPrevisao:
                             t_clim_fim = fim.replace(fim[:4], ano_fim)
 
                             # Sel nos tempos encontrados
+                            print(ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)))
                             ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).sum(dim='alvo_previsao').sortby(['latitude'])
 
                             # Anomalia
