@@ -953,6 +953,10 @@ class Constants:
     @property
     def GET_DESSEM_PREVISAO(self):
         return f"{self.BASE_URL}/api/v2/decks/dessem/previsao"
+    
+    @property
+    def GET_LIMITES_PLD(self):
+        return f"{self.BASE_URL}/api/v2/decks/dessem/limites-pld"
 
     # Restricoes Eletricas Endpoints
     @property
