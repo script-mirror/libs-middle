@@ -3074,8 +3074,25 @@ class GeraProdutosPrevisao:
                         # Selando o tempo na climatologia
                         tempoini = pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[0].values).strftime('%Y-%m-%d %H')
                         tempo_fim = pd.to_datetime(self.geop_mean.sel(valid_time=self.geop_mean.valid_time.dt.month == time.dt.month).valid_time[-1].values).strftime('%Y-%m-%d %H')
-                        t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
-                        t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                        
+                        # Verificar se cruza o ano
+                        ano_prev_1 = tempoini.split('-')[0]
+                        ano_prev_2 = tempo_fim.split('-')[0]
+                        mes_prev_1 = int(tempoini.split('-')[1])
+                        
+                        if int(ano_prev_1) == int(ano_prev_2):
+                            # Se o mês está no primeiro semestre (jan-jun), usa o último ano da climatologia
+                            # Se o mês está no segundo semestre (jul-dez), usa o primeiro ano da climatologia
+                            if mes_prev_1 <= 6:
+                                t_clim_ini = tempoini.replace(tempoini[:4], ano_fim)
+                                t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                            else:
+                                t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
+                                t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_ini)
+                        else:
+                            t_clim_ini = tempoini.replace(tempoini[:4], ano_ini)
+                            t_clim_fim = tempo_fim.replace(tempo_fim[:4], ano_fim)
+                        
                         ds_clim_sel = ds_clim.sel(alvo_previsao=slice(t_clim_ini, t_clim_fim)).mean(dim='alvo_previsao').sortby(['latitude'])
                     
                         # Anomalia
