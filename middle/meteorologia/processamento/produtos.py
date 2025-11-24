@@ -1842,24 +1842,31 @@ class GeraProdutosPrevisao:
 
                             path_to_save_anomalia = f'{self.path_savefiguras}/mes-energ-anomalia'
 
-                            # inicio = pd.to_datetime(tempo_ini).strftime('%Y-%m-%d %H')
-                            # fim = pd.to_datetime(tempo_fim).strftime('%Y-%m-%d %H')
-
-                            # t_clim_ini = inicio.replace(inicio[:4], ano_ini)
-                            # t_clim_fim = fim.replace(fim[:4], ano_fim)
-
                             inicio = pd.to_datetime(tempo_ini)
                             fim = pd.to_datetime(tempo_fim)
 
-                            # diferença em anos
-                            dif_anos_ini = inicio.year - int(ano_ini)
-                            dif_anos_fim = fim.year - int(ano_fim)
+                            # Verificar se cruza o ano
+                            if inicio.year == fim.year:
+                                # Se o mês está no primeiro semestre (jan-jun), usa o último ano da climatologia
+                                # Se o mês está no segundo semestre (jul-dez), usa o primeiro ano da climatologia
+                                if inicio.month <= 6:
+                                    # Primeiro semestre: usar ano final da climatologia
+                                    dif_anos_ini = inicio.year - int(ano_fim)
+                                    dif_anos_fim = fim.year - int(ano_fim)
+                                else:
+                                    # Segundo semestre: usar ano inicial da climatologia
+                                    dif_anos_ini = inicio.year - int(ano_ini)
+                                    dif_anos_fim = fim.year - int(ano_ini)
+                            else:
+                                # Cruza o ano: início usa ano_ini, fim usa ano_fim
+                                dif_anos_ini = inicio.year - int(ano_ini)
+                                dif_anos_fim = fim.year - int(ano_fim)
 
                             # Garantindo que o fim não seja menor que o início
                             if dif_anos_fim < dif_anos_ini:
                                 dif_anos_fim = dif_anos_ini
 
-                            # aplicar o deslocamento corretamente
+                            # Aplicar o deslocamento corretamente
                             t_clim_ini = inicio - pd.DateOffset(years=dif_anos_ini)
                             t_clim_fim = fim - pd.DateOffset(years=dif_anos_fim)
 
