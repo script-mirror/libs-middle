@@ -457,6 +457,10 @@ class Constants:
     # WEBHOOK
     #==============================================================================================================================================================
     @property
+    def WEBHOOK_ACOMPH(self):
+        return "Acomph"
+    
+    @property
     def WEBHOOK_DECK_DECOMP_PRELIMINAR(self):
         return 'Deck Preliminar DECOMP - Valor Esperado'
     
