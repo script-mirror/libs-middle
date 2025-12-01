@@ -3430,6 +3430,7 @@ class GeraProdutosPrevisao:
 
                 ano_ini = pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%Y')
                 ano_fim = pd.to_datetime(psi_clim200.valid_time[-1].values).strftime('%Y')
+                mes_prev_1 = int(pd.to_datetime(psi_clim200.valid_time[0].values).strftime('%m'))
 
                 if resample_freq == '24h':
 
@@ -3556,8 +3557,27 @@ class GeraProdutosPrevisao:
 
                         data_inicial = pd.to_datetime(intervalos_fmt[index][0]).strftime('%Y-%m-%d')
                         data_final = pd.to_datetime(intervalos_fmt[index][1]).strftime('%Y-%m-%d')
-                        intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
-                        intervalo2 = data_final.replace(data_final[:4], ano_ini)
+
+                        # intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
+                        # intervalo2 = data_final.replace(data_final[:4], ano_ini)
+
+                        # # Verificar se cruza o ano
+                        # ano_prev_1 = tempoini.split('-')[0]
+                        # ano_prev_2 = tempo_fim.split('-')[0]
+                        # mes_prev_1 = int(tempoini.split('-')[1])
+                        
+                        if int(ano_ini) == int(ano_fim):
+                            # Se o mês está no primeiro semestre (jan-jun), usa o último ano da climatologia
+                            # Se o mês está no segundo semestre (jul-dez), usa o primeiro ano da climatologia
+                            if mes_prev_1 <= 6:
+                                intervalo1 = data_inicial.replace(data_inicial[:4], ano_fim)
+                                intervalo2 = data_final.replace(data_final[:4], ano_fim)
+                            else:
+                                intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
+                                intervalo2 = data_final.replace(data_final[:4], ano_ini)
+                        else:
+                            intervalo1 = data_inicial.replace(data_inicial[:4], ano_ini)
+                            intervalo2 = data_final.replace(data_final[:4], ano_fim)
 
                         intervalo = u200_plot.intervalo.item().replace(' ', '\ ')
                         days_of_week = u200_plot.days_of_weeks.item()     
