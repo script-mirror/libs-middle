@@ -4893,7 +4893,7 @@ class GeraProdutosPrevisao:
                         ds=tp_plot['tp'],
                         variavel_plotagem='tp_anomalia_mensal',
                         title=titulo_tp,
-                        filename=formato_filename(modelo.item(), 'prate_mensal_as', index),
+                        filename=formato_filename(modelo.item(), 'prate_mensal_as', index+1),
                         shapefiles=self.shapefiles,
                         path_to_save=path_to_save,
                         extent=CONSTANTES['extents_mapa']['brasil'], add_valor_bacias=True
