@@ -693,7 +693,7 @@ class Constants:
         return f"{self.BASE_URL}/api/v2/decks/weol/weighted-average"
     
     @property
-    def ENDPOINT_PRODUTIBILIDADE(self):
+    def GET_PRODUTIBILIDADE(self):
         return f"{self.BASE_URL}/api/v2/ons/produtibilidade"
 
     @property
