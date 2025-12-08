@@ -5077,7 +5077,7 @@ class GeraProdutosPrevisao:
                     titulo_tp = gerar_titulo(
                         unico_tempo=True,
                         tipo=f'Prob de Precipitação {tipo} da Média',
-                        modelo='NMME',
+                        modelo='NMME' if self.modelo_fmt == 'nmme' else 'MME',
                         cond_ini=self.cond_ini.strftime('%b/%Y'),
                         data_ini=f'{dataini}',
                     )
