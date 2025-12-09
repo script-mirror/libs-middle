@@ -766,7 +766,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                     for variavel in variaveis:
 
-                        filename = f'{modelo}.{variavel}.ENSMEAN.anom.nc'
+                        filename = f'{modelo}.{variavel}.nc'
     
                         while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
                             url_download = f'{url}/{modelo}.{variavel}.{DIA_ATUAL_MES}.ENSMEAN.anom.nc'
