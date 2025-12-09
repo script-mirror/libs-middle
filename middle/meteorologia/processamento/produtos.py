@@ -1110,7 +1110,10 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 dss.append(ds)
 
             # Extrai o nome do modelo a partir do nome do arquivo
-            nomes_modelos = [f.split('/')[-1].split('_')[0].split('_')[0].upper() for f in files]
+            if modelo_fmt == 'nmme':
+                nomes_modelos = [f.split('/')[-1].split('.')[0].upper() for f in files]
+            else:
+                nomes_modelos = [f.split('/')[-1].split('_')[0].split('_')[0].upper() for f in files]
 
             # Renomeia todas as variáveis internas para um nome comum (ex: 'dados')
             dss_renomeados = []
