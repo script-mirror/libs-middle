@@ -186,7 +186,19 @@ CONSTANTES = {
         'NASA_GEOS5v2',
         'NCAR_CCSM4',
         'NCAR_CESM1',
-    ]
+    ],
+
+    'MODELOS_C3S': {
+        'ecmwf': '51',
+        'ukmo': '604',
+        'meteo_france': '9',
+        'dwd': '22',
+        'cmcc': '4',
+        'ncep': '2',
+        'jma': '3',
+        'eccc': '5',
+        'bom': '2'
+    }
 
 
 }

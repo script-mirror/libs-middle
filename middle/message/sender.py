@@ -26,6 +26,7 @@ def send_whatsapp_message(destinatario: str, mensagem: str, arquivo = None):
         logger.error("Variavel de ambiente WHATSAPP_API nao esta definida")
         raise Exception("Variavel de ambiente WHATSAPP_API nao esta definida."
                         "Utilize o load_env() para carregar as variáveis de ambiente.")
+    
     url = f"{url}/bot-whatsapp/whatsapp-message"
 
     fields = {

@@ -303,14 +303,20 @@ def resample_variavel(ds, modelo='ecmwf', coluna_prev='tp', freq='24h', qtdade_m
                 # Pegando o ano inicial da previsao (ds_sel)
                 ano_prev_1 = inicio.split('-')[0]
                 ano_prev_2 = fim.split('-')[0]
+                mes_prev_1 = int(inicio.split('-')[1])
 
                 if int(ano_prev_1) == int(ano_prev_2):
-                    intervalo1 = inicio.replace(inicio[:4], ano_ini)
-                    intervalo2 = fim.replace(inicio[:4], ano_ini)
-
+                    # Se o mês está no primeiro semestre (jan-jun), usa o último ano da climatologia
+                    # Se o mês está no segundo semestre (jul-dez), usa o primeiro ano da climatologia
+                    if mes_prev_1 <= 6:
+                        intervalo1 = inicio.replace(inicio[:4], ano_fim)
+                        intervalo2 = fim.replace(fim[:4], ano_fim)
+                    else:
+                        intervalo1 = inicio.replace(inicio[:4], ano_ini)
+                        intervalo2 = fim.replace(fim[:4], ano_ini)
                 else:
                     intervalo1 = inicio.replace(inicio[:4], ano_ini)
-                    intervalo2 = fim.replace(inicio[:4], ano_fim)          
+                    intervalo2 = fim.replace(fim[:4], ano_fim)          
 
                 # Sel nos tempos encontrados
                 ds_clim_sel = ds_clim.sel(alvo_previsao=slice(intervalo1, intervalo2))
