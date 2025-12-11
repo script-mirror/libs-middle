@@ -766,7 +766,7 @@ class ConfigProdutosPrevisaoCurtoPrazo:
 
                     for variavel in variaveis:
 
-                        filename = f'{modelo}.{variavel}.ENSMEAN.anom.nc'
+                        filename = f'{modelo}.{variavel}.nc'
     
                         while os.path.isfile(f'{caminho_para_salvar}/{filename}') == False:
                             url_download = f'{url}/{modelo}.{variavel}.{DIA_ATUAL_MES}.ENSMEAN.anom.nc'
@@ -1110,7 +1110,10 @@ class ConfigProdutosPrevisaoCurtoPrazo:
                 dss.append(ds)
 
             # Extrai o nome do modelo a partir do nome do arquivo
-            nomes_modelos = [f.split('/')[-1].split('_')[0].split('_')[0].upper() for f in files]
+            if modelo_fmt == 'nmme':
+                nomes_modelos = [f.split('/')[-1].split('.')[0].upper() for f in files]
+            else:
+                nomes_modelos = [f.split('/')[-1].split('_')[0].split('_')[0].upper() for f in files]
 
             # Renomeia todas as variáveis internas para um nome comum (ex: 'dados')
             dss_renomeados = []
@@ -5077,7 +5080,7 @@ class GeraProdutosPrevisao:
                     titulo_tp = gerar_titulo(
                         unico_tempo=True,
                         tipo=f'Prob de Precipitação {tipo} da Média',
-                        modelo='NMME',
+                        modelo='NMME' if self.modelo_fmt == 'nmme' else 'MME',
                         cond_ini=self.cond_ini.strftime('%b/%Y'),
                         data_ini=f'{dataini}',
                     )
