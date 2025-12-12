@@ -3,12 +3,29 @@ import requests
 import pandas as pd
 import os
 import re
+import random
 import time
+import socket
 from ._constants import Constants, setup_logger
 from typing import Optional
 logger = setup_logger()
 constants = Constants()
 
+def get_user_agents():
+    return [
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0',
+        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
+        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15'
+    ]
+
+def is_server_environment():
+    hostname = socket.gethostname().lower()
+    return any(keyword in hostname for keyword in ['airflow', 'docker', 'container', 'worker'])
 
 def get_decks_ccee(
     path: str,
@@ -21,15 +38,32 @@ def get_decks_ccee(
     
     session = None
     try:
+        # Detectar ambiente
+        is_server = is_server_environment()
+        logger.info(f"Ambiente detectado: {'Servidor' if is_server else 'Local'}")
+        
+        if is_server:
+            max_retries = max(max_retries, 5)  # Mínimo 5 tentativas no servidor
+            base_delay = 120  # 2 minutos base
+            timeout_request = 180  # 3 minutos
+            timeout_download = 300  # 5 minutos
+        else:
+            base_delay = 30
+            timeout_request = 60
+            timeout_download = 120
+        
         dtFinal_str = dtAtual.strftime('%d/%m/%Y')
         dtInicial_str = (dtAtual - timedelta(days=numDiasHistorico)).strftime('%d/%m/%Y')
+        
+        user_agent = random.choice(get_user_agents())
+        logger.info(f"User-Agent selecionado: {user_agent}")
 
         # Criar sessão para manter cookies
         session = requests.Session()
         
         # Headers iniciais para estabelecer sessão
         initial_headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0',
+            'User-Agent': user_agent,
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/png,image/svg+xml,*/*;q=0.8',
             'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -37,7 +71,9 @@ def get_decks_ccee(
             'Upgrade-Insecure-Requests': '1',
             'Sec-Fetch-Dest': 'document',
             'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'none'
+            'Sec-Fetch-Site': 'none',
+            'Cache-Control': 'no-cache',
+            'Pragma': 'no-cache'
         }
 
         # Primeiro, visitar a página principal para estabelecer cookies de sessão
@@ -45,7 +81,7 @@ def get_decks_ccee(
         main_response = session.get(
             'https://www.ccee.org.br/web/guest/acervo-ccee', 
             headers=initial_headers, 
-            timeout=30
+            timeout=timeout_request
         )
         main_response.raise_for_status()
         
@@ -53,11 +89,12 @@ def get_decks_ccee(
         for cookie in session.cookies:
             logger.info(f"Cookie: {cookie.name}={cookie.value[:50]}...")
 
-        # Aguardar um pouco para simular comportamento humano
-        time.sleep(2)
+        initial_wait = random.uniform(3, 8) if is_server else random.uniform(1, 3)
+        logger.info(f"Aguardando {initial_wait:.1f}s...")
+        time.sleep(initial_wait)
 
         headers = {
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0',
+            'User-Agent': user_agent,
             'Accept': '*/*',
             'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3',
             'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -96,20 +133,32 @@ def get_decks_ccee(
         # Make POST request with retries
         for attempt in range(max_retries):
             try:
-                # Aguardar entre tentativas
+                # Delay exponencial mais agressivo no servidor
                 if attempt > 0:
-                    delay = 30 * (attempt + 1)  # 30, 60, 90 segundos
+                    if is_server:
+                        # Servidor: delays maiores (2min, 5min, 10min, 15min, 20min)
+                        delay = min(1200, base_delay * (2 ** attempt))
+                    else:
+                        # Local: delays menores (30s, 60s, 90s)
+                        delay = base_delay * (attempt + 1)
+                    
                     logger.info(f"Aguardando {delay} segundos antes da tentativa {attempt + 1}...")
                     time.sleep(delay)
+                
+                # Delay aleatório adicional
+                random_delay = random.uniform(5, 20) if is_server else random.uniform(2, 8)
+                logger.info(f"Delay aleatório adicional: {random_delay:.1f}s")
+                time.sleep(random_delay)
+
+                logger.info(f"Iniciando tentativa {attempt + 1}/{max_retries}...")
 
                 response = session.post(
                     'https://www.ccee.org.br/web/guest/acervo-ccee',
                     headers=headers,
                     params=params,
                     data=data,
-                    timeout=60
+                    timeout=timeout_request
                 )
-                
                 logger.info(f"Tentativa {attempt + 1}: Status response: {response.status_code}")
                 
                 if response.status_code == 403:
@@ -121,12 +170,22 @@ def get_decks_ccee(
                     if attempt < max_retries - 1:
                         logger.info("Reestabelecendo sessão...")
                         session.cookies.clear()
+                        
+                        # Novo User-Agent para reestabelecimento
+                        new_user_agent = random.choice(get_user_agents())
+                        initial_headers['User-Agent'] = new_user_agent
+                        headers['User-Agent'] = new_user_agent
+                        
                         main_response = session.get(
                             'https://www.ccee.org.br/web/guest/acervo-ccee', 
                             headers=initial_headers, 
-                            timeout=30
+                            timeout=timeout_request
                         )
-                        time.sleep(5)
+                        
+                        # Espera extra após reestabelecer sessão
+                        session_wait = random.uniform(10, 20) if is_server else random.uniform(3, 8)
+                        logger.info(f"Aguardando {session_wait:.1f}s após reestabelecer sessão...")
+                        time.sleep(session_wait)
                     continue
                 
                 response.raise_for_status()
@@ -185,7 +244,7 @@ def get_decks_ccee(
         for attempt in range(max_retries):
             try:
                 download_headers = {
-                    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:146.0) Gecko/20100101 Firefox/146.0',
+                    'User-Agent': user_agent,  # Usar o mesmo User-Agent
                     'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                     'Accept-Language': 'pt-BR,pt;q=0.8,en-US;q=0.5,en;q=0.3',
                     'Accept-Encoding': 'gzip, deflate, br, zstd',
@@ -197,7 +256,7 @@ def get_decks_ccee(
                     'Sec-Fetch-Site': 'same-origin'
                 }
                 
-                response = session.get(url, headers=download_headers, timeout=120, stream=True)
+                response = session.get(url, headers=download_headers, timeout=timeout_download, stream=True)
                 response.raise_for_status()
                 
                 with open(path_full, 'wb') as f:
@@ -206,7 +265,7 @@ def get_decks_ccee(
                             f.write(chunk)
                 
                 logger.info(f"Download completed: {path_full}")
-                return path_full        # Define POST data
+                return path_full
 
                 
             except (requests.RequestException, requests.Timeout) as e:
