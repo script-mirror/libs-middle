@@ -13,19 +13,9 @@ constants = Constants()
 
 def get_user_agents():
     return [
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
         'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:121.0) Gecko/20100101 Firefox/121.0',
-        'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0',
-        'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edg/120.0.0.0',
-        'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15'
+        'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:121.0) Gecko/20100101 Firefox/121.0'
     ]
-
-def is_server_environment():
-    hostname = socket.gethostname().lower()
-    return any(keyword in hostname for keyword in ['airflow', 'docker', 'container', 'worker'])
 
 def get_decks_ccee(
     path: str,
@@ -38,19 +28,30 @@ def get_decks_ccee(
     
     session = None
     try:
-        # Detectar ambiente
-        is_server = is_server_environment()
-        logger.info(f"Ambiente detectado: {'Servidor' if is_server else 'Local'}")
+        # Detectar se está rodando em container
+        is_container = (
+            os.path.exists('/.dockerenv') or 
+            os.environ.get('AIRFLOW_HOME') is not None or
+            'airflow' in os.environ.get('HOSTNAME', '').lower() or
+            'container' in os.environ.get('HOSTNAME', '').lower()
+        )
         
-        if is_server:
-            max_retries = max(max_retries, 5)  # Mínimo 5 tentativas no servidor
-            base_delay = 120  # 2 minutos base
-            timeout_request = 180  # 3 minutos
-            timeout_download = 300  # 5 minutos
+        logger.info(f"Ambiente detectado: {'Container/Airflow' if is_container else 'Local'}")
+        
+        if is_container:
+            max_retries = max(max_retries, 8)
+            base_delay = 180  # 3 minutos base
+            timeout_request = 300  # 5 minutos
+            timeout_download = 600  # 10 minutos
+            initial_delay = random.uniform(60, 120)  # 1-2 minutos inicial
+            
+            logger.info(f"Aguardando {initial_delay:.1f}s inicial (container)...")
+            time.sleep(initial_delay)
         else:
             base_delay = 30
             timeout_request = 60
             timeout_download = 120
+            initial_delay = 0
         
         dtFinal_str = dtAtual.strftime('%d/%m/%Y')
         dtInicial_str = (dtAtual - timedelta(days=numDiasHistorico)).strftime('%d/%m/%Y')
@@ -89,7 +90,7 @@ def get_decks_ccee(
         for cookie in session.cookies:
             logger.info(f"Cookie: {cookie.name}={cookie.value[:50]}...")
 
-        initial_wait = random.uniform(3, 8) if is_server else random.uniform(1, 3)
+        initial_wait = random.uniform(10, 25) if is_container else random.uniform(1, 3)
         logger.info(f"Aguardando {initial_wait:.1f}s...")
         time.sleep(initial_wait)
 
@@ -135,8 +136,8 @@ def get_decks_ccee(
             try:
                 # Delay exponencial mais agressivo no servidor
                 if attempt > 0:
-                    if is_server:
-                        # Servidor: delays maiores (2min, 5min, 10min, 15min, 20min)
+                    if is_container:
+                        # Servidor: delays maiores (3min, 6min, 12min, 20min)
                         delay = min(1200, base_delay * (2 ** attempt))
                     else:
                         # Local: delays menores (30s, 60s, 90s)
@@ -146,7 +147,7 @@ def get_decks_ccee(
                     time.sleep(delay)
                 
                 # Delay aleatório adicional
-                random_delay = random.uniform(5, 20) if is_server else random.uniform(2, 8)
+                random_delay = random.uniform(15, 35) if is_container else random.uniform(2, 8)
                 logger.info(f"Delay aleatório adicional: {random_delay:.1f}s")
                 time.sleep(random_delay)
 
@@ -159,6 +160,8 @@ def get_decks_ccee(
                     data=data,
                     timeout=timeout_request
                 )
+                
+                # REMOVIDO: import pdb; pdb.set_trace()
                 logger.info(f"Tentativa {attempt + 1}: Status response: {response.status_code}")
                 
                 if response.status_code == 403:
@@ -182,8 +185,10 @@ def get_decks_ccee(
                             timeout=timeout_request
                         )
                         
+                        # REMOVIDO: pdb.set_trace()
+                        
                         # Espera extra após reestabelecer sessão
-                        session_wait = random.uniform(10, 20) if is_server else random.uniform(3, 8)
+                        session_wait = random.uniform(30, 60) if is_container else random.uniform(3, 8)
                         logger.info(f"Aguardando {session_wait:.1f}s após reestabelecer sessão...")
                         time.sleep(session_wait)
                     continue
@@ -266,7 +271,6 @@ def get_decks_ccee(
                 
                 logger.info(f"Download completed: {path_full}")
                 return path_full
-
                 
             except (requests.RequestException, requests.Timeout) as e:
                 logger.warning(f"Download attempt {attempt + 1}/{max_retries} failed: {str(e)}")
